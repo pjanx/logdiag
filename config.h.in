@@ -1,0 +1,84 @@
+/**
+ *  @file configure.h.in
+ *  @brief Tries to fix various differences in compilers and libraries.
+ *
+ */
+
+#ifndef CONFIGURE_H_INCLUDED
+#define CONFIGURE_H_INCLUDED
+
+#define PROJECT_NAME "${PROJECT_NAME}"
+#define PROJECT_VERSION "${project_VERSION}"
+
+#if ${OPTION_NOINSTALL}
+	/* For developers. */
+	#define PROJECT_SHARE_DIR "${CMAKE_SOURCE_DIR}/share/"
+#else
+	#define PROJECT_SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/"
+#endif
+
+
+#cmakedefine HAVE_SANE___RESTRICT
+#cmakedefine HAVE_RESTRICT
+
+#cmakedefine HAVE_SNPRINTF
+#cmakedefine HAVE_SPRINTF_S
+
+#cmakedefine HAVE_STRDUP
+#cmakedefine HAVE__STRDUP
+
+#cmakedefine HAVE_STRTOK_R
+#cmakedefine HAVE_STRTOK_S
+#cmakedefine HAVE_THREADSAFE_STRTOK
+
+#cmakedefine HAVE_GETTEXT
+
+
+#define Q_(s) (s)
+#ifdef HAVE_GETTEXT
+	#include <locale.h>
+	#include <libintl.h>
+	#define _(s) gettext(s)
+	#define N_(s1, s2, n) ngettext(s1, s2, n)
+
+	#define GETTEXT_DOMAIN "${PROJECT_NAME}"
+	#define GETTEXT_DIRNAME "${CMAKE_INSTALL_PREFIX}/share/locale"
+#else /* ! HAVE_GETTEXT */
+	#define _(s) (s)
+	#define N_(s1, s2, n) ((n) == 1 ? (s1) : (s2))
+#endif /* ! HAVE_GETTEXT */
+
+
+#ifndef HAVE_SANE___RESTRICT
+	#ifdef HAVE_RESTRICT
+		#define __restrict restrict
+	#else
+		#define __restrict
+	#endif
+#endif /* ! HAVE_SANE___RESTRICT */
+
+#ifndef HAVE_SNPRINTF
+	#ifdef HAVE_SPRINTF_S
+		#define snprintf sprintf_s
+	#endif
+#endif /* ! HAVE_SPRINTF */
+
+#ifdef HAVE__STRDUP
+	#define strdup _strdup
+#elif !defined(HAVE_STRDUP)
+static inline char *strdup (char *s)
+{
+	return strcpy(malloc(strlen(s) + 1), s);
+}
+#endif /* HAVE_STRDUP */
+
+#ifndef HAVE_STRTOK_R
+	#ifdef HAVE_STRTOK_S
+		#define strtok_r strtok_s
+	#elif defined(HAVE_THREADSAFE_STRTOK)
+		#define strtok_r(a, b, c) strtok(a, b)
+	#endif
+#endif /* ! HAVE_STRTOK_R */
+
+#endif /* CONFIGURE_H_INCLUDED */
+

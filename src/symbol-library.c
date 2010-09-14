@@ -11,7 +11,6 @@
 #include <gtk/gtk.h>
 #include <lua.h>
 /* #include <lauxlib.h> */
-#include <stdlib.h>
 
 #include "config.h"
 

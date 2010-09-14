@@ -21,12 +21,6 @@
 #cmakedefine HAVE_SANE___RESTRICT
 #cmakedefine HAVE_RESTRICT
 
-#cmakedefine HAVE_SNPRINTF
-#cmakedefine HAVE_SPRINTF_S
-
-#cmakedefine HAVE_STRDUP
-#cmakedefine HAVE__STRDUP
-
 #cmakedefine HAVE_STRTOK_R
 #cmakedefine HAVE_STRTOK_S
 #cmakedefine HAVE_THREADSAFE_STRTOK
@@ -56,21 +50,6 @@
 		#define __restrict
 	#endif
 #endif /* ! HAVE_SANE___RESTRICT */
-
-#ifndef HAVE_SNPRINTF
-	#ifdef HAVE_SPRINTF_S
-		#define snprintf sprintf_s
-	#endif
-#endif /* ! HAVE_SPRINTF */
-
-#ifdef HAVE__STRDUP
-	#define strdup _strdup
-#elif !defined(HAVE_STRDUP)
-static inline char *strdup (char *s)
-{
-	return strcpy(malloc(strlen(s) + 1), s);
-}
-#endif /* HAVE_STRDUP */
 
 #ifndef HAVE_STRTOK_R
 	#ifdef HAVE_STRTOK_S

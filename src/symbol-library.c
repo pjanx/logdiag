@@ -74,8 +74,8 @@ logdiag_symbol_library_init (LogdiagSymbolLibrary *self)
 	/* TODO: lua */
 	self->priv->lua_state = NULL;
 
-	/* TODO: use _new_full and specify destroy functions. */
-	self->categories = g_hash_table_new (g_str_hash, g_str_equal);
+	self->categories = g_hash_table_new_full (g_str_hash, g_str_equal,
+		(GDestroyNotify) g_free, (GDestroyNotify) g_object_unref);
 }
 
 static void
@@ -110,7 +110,7 @@ logdiag_symbol_library_new (void)
  *
  * Loads a category into the library.
  */
-LogdiagSymbolCategory *
+static LogdiagSymbolCategory *
 load_category (LogdiagSymbolLibrary *self, const char *path, const char *name)
 {
 	LogdiagSymbolCategory *cat;
@@ -119,6 +119,9 @@ load_category (LogdiagSymbolLibrary *self, const char *path, const char *name)
 	g_return_val_if_fail (LOGDIAG_IS_SYMBOL_LIBRARY (self), NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 	g_return_val_if_fail (name != NULL, NULL);
+
+	if (!g_file_test (path, G_FILE_TEST_IS_DIR))
+		return NULL;
 
 	icon_file = g_build_filename (path, "icon.svg", NULL);
 	if (!g_file_test (icon_file, G_FILE_TEST_IS_REGULAR))

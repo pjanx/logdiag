@@ -14,6 +14,7 @@
 
 #include "window-main.h"
 #include "symbol-library.h"
+#include "symbol-category.h"
 
 
 /**
@@ -45,6 +46,24 @@ struct _LogdiagWindowMainPrivate
 G_DEFINE_TYPE (LogdiagWindowMain, logdiag_window_main, GTK_TYPE_WINDOW);
 
 
+/* ===== Local functions =================================================== */
+
+/*
+ * cb_load_category:
+ *
+ * A hashtable foreach callback for adding categories into the toolbar.
+ */
+static void
+cb_load_category (gpointer key, gpointer value, gpointer user_data);
+
+/*
+ * load_toolbar:
+ *
+ * Load symbols from the library into the toolbar.
+ */
+static void
+load_toolbar (LogdiagWindowMain *self);
+
 /*
  * cb_ui_proxy_connected:
  *
@@ -75,6 +94,8 @@ cb_menu_item_deselected (GtkItem *item, LogdiagWindowMain *window);
 static void
 cb_show_about_dialog (GtkAction *action, LogdiagWindowMain *window);
 
+
+/* ===== Local variables =================================================== */
 
 /* Actions for menus, toolbars, accelerators. */
 static GtkActionEntry mw_actionEntries[] =
@@ -177,10 +198,10 @@ logdiag_window_main_init (LogdiagWindowMain *self)
 	priv->menu = gtk_ui_manager_get_widget (ui_manager, "/MenuBar");
 	gtk_box_pack_start (GTK_BOX (priv->vbox), priv->menu, FALSE, FALSE, 0);
 
-
 	priv->hbox = gtk_hbox_new(FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (priv->vbox), priv->hbox, TRUE, TRUE, 0);
 
+	/* Add the symbol toolbar. */
 	priv->toolbar = gtk_toolbar_new ();
 	/* NOTE: For GTK 2.16+, s/toolbar/orientable/ */
 	gtk_toolbar_set_orientation
@@ -190,18 +211,13 @@ logdiag_window_main_init (LogdiagWindowMain *self)
 	gtk_toolbar_set_style
 		(GTK_TOOLBAR (priv->toolbar), GTK_TOOLBAR_ICONS);
 
+	gtk_box_pack_start (GTK_BOX (priv->hbox), priv->toolbar, FALSE, FALSE, 0);
+
 	/* Symbol library. */
 	priv->library = logdiag_symbol_library_new ();
-	logdiag_symbol_library_load (priv->library, PROJECT_SHARE_DIR "library/");
+	logdiag_symbol_library_load (priv->library, PROJECT_SHARE_DIR "library");
 
-	/* TODO: Show contents of the library in the toolbar. */
-	GtkToolItem *item;
-	item = gtk_tool_button_new (/* icon widget */ NULL, _("Blah"));
-	gtk_tool_button_set_icon_name (GTK_TOOL_BUTTON (item), "network");
-	gtk_toolbar_insert (GTK_TOOLBAR (priv->toolbar), item, 0);
-	/* http://library.gnome.org/devel/gdk-pixbuf/unstable/ */
-
-	gtk_box_pack_start (GTK_BOX (priv->hbox), priv->toolbar, FALSE, FALSE, 0);
+	load_toolbar (self);
 
 	/* TODO: GtkHPaned */
 
@@ -218,6 +234,44 @@ logdiag_window_main_init (LogdiagWindowMain *self)
 	g_signal_connect (self, "destroy", G_CALLBACK (gtk_main_quit), NULL);
 	gtk_window_set_default_size (GTK_WINDOW (self), 500, 400);
 	gtk_widget_show_all (GTK_WIDGET (self));
+}
+
+static void
+cb_load_category (gpointer key, gpointer value, gpointer user_data)
+{
+	const gchar *name;
+	LogdiagSymbolCategory *cat;
+	LogdiagWindowMain *self;
+	GdkPixbuf *pbuf;
+	GtkWidget *img;
+	GtkToolItem *item;
+
+	name = key;
+	cat = value;
+	self = user_data;
+
+	g_return_if_fail (key != NULL);
+	g_return_if_fail (LOGDIAG_IS_SYMBOL_CATEGORY (cat));
+
+	/* XXX: Hardcoded icon width, unref? */
+	pbuf = gdk_pixbuf_new_from_file_at_size (cat->image_path, 32, -1, NULL);
+	if (!pbuf)
+		return;
+	img = gtk_image_new_from_pixbuf (pbuf);
+	g_object_unref (pbuf);
+
+	item = gtk_tool_button_new (img, name);
+	gtk_tool_item_set_tooltip_text (item, name);
+	gtk_toolbar_insert (GTK_TOOLBAR (self->priv->toolbar), item, 0);
+}
+
+static void
+load_toolbar (LogdiagWindowMain *self)
+{
+	/* TODO: Clear the toolbar first, if there was already something in it. */
+
+	g_hash_table_foreach (self->priv->library->categories,
+		cb_load_category, self);
 }
 
 static void

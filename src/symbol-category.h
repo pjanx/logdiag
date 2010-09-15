@@ -27,7 +27,6 @@ G_BEGIN_DECLS
 	((obj), LOGDIAG_SYMBOL_CATEGORY, LogdiagSymbolCategoryClass))
 
 typedef struct _LogdiagSymbolCategory LogdiagSymbolCategory;
-/*typedef struct _LogdiagSymbolCategoryPrivate LogdiagSymbolCategoryPrivate;*/
 typedef struct _LogdiagSymbolCategoryClass LogdiagSymbolCategoryClass;
 
 
@@ -46,8 +45,8 @@ struct _LogdiagSymbolCategory
 
 /*< public >*/
 	gpointer parent;
-	char *name;
-	char *image_path;
+	gchar *name;
+	gchar *image_path;
 	GHashTable *children;
 };
 

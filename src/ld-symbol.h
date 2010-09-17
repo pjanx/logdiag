@@ -8,55 +8,55 @@
  *
  */
 
-#ifndef __SYMBOL_H__
-#define __SYMBOL_H__
+#ifndef __LD_SYMBOL_H__
+#define __LD_SYMBOL_H__
 
 G_BEGIN_DECLS
 
 
-#define LOGDIAG_TYPE_SYMBOL (logdiag_symbol_get_type ())
-#define LOGDIAG_SYMBOL(obj) (G_TYPE_CHECK_INSTANCE_CAST \
-	((obj), LOGDIAG_TYPE_SYMBOL, LogdiagSymbol))
-#define LOGDIAG_SYMBOL_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST \
-	((klass), LOGDIAG_TYPE_SYMBOL, LogdiagSymbolClass))
-#define LOGDIAG_IS_SYMBOL(obj) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((obj), LOGDIAG_TYPE_SYMBOL))
-#define LOGDIAG_IS_SYMBOL_CLASS(klass) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((klass), LOGDIAG_TYPE_SYMBOL))
-#define LOGDIAG_SYMBOL_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS \
-	((obj), LOGDIAG_SYMBOL, LogdiagSymbolClass))
+#define LD_TYPE_SYMBOL (ld_symbol_get_type ())
+#define LD_SYMBOL(obj) (G_TYPE_CHECK_INSTANCE_CAST \
+	((obj), LD_TYPE_SYMBOL, LdSymbol))
+#define LD_SYMBOL_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST \
+	((klass), LD_TYPE_SYMBOL, LdSymbolClass))
+#define LD_IS_SYMBOL(obj) (G_TYPE_CHECK_INSTANCE_TYPE \
+	((obj), LD_TYPE_SYMBOL))
+#define LD_IS_SYMBOL_CLASS(klass) (G_TYPE_CHECK_INSTANCE_TYPE \
+	((klass), LD_TYPE_SYMBOL))
+#define LD_SYMBOL_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS \
+	((obj), LD_SYMBOL, LdSymbolClass))
 
-typedef struct _LogdiagSymbol LogdiagSymbol;
-typedef struct _LogdiagSymbolPrivate LogdiagSymbolPrivate;
-typedef struct _LogdiagSymbolClass LogdiagSymbolClass;
+typedef struct _LdSymbol LdSymbol;
+typedef struct _LdSymbolPrivate LdSymbolPrivate;
+typedef struct _LdSymbolClass LdSymbolClass;
 
 
 /**
- * LogdiagSymbol:
+ * LdSymbol:
  * @name: The name of this symbol.
  */
-struct _LogdiagSymbol
+struct _LdSymbol
 {
 /*< private >*/
 	GObject parent_instance;
-	LogdiagSymbolPrivate *priv;
+	LdSymbolPrivate *priv;
 
 /*< public >*/
 	gchar *name;
 };
 
-struct _LogdiagSymbolClass
+struct _LdSymbolClass
 {
 	GObjectClass parent_class;
 };
 
 
-GType logdiag_symbol_get_type (void) G_GNUC_CONST;
+GType ld_symbol_get_type (void) G_GNUC_CONST;
 
-LogdiagSymbol *logdiag_symbol_new (LogdiagSymbolLibrary *library,
+LdSymbol *ld_symbol_new (LdSymbolLibrary *library,
 	const gchar *filename);
-char *logdiag_symbol_build_identifier (LogdiagSymbol *self);
-void logdiag_symbol_draw (LogdiagSymbol *self, cairo_t *surface,
+char *ld_symbol_build_identifier (LdSymbol *self);
+void ld_symbol_draw (LdSymbol *self, cairo_t *surface,
 	GHashTable *param, gint x, gint y, gdouble zoom);
 
 /* TODO: Funkce pro získání terminálů. */
@@ -65,5 +65,5 @@ void logdiag_symbol_draw (LogdiagSymbol *self, cairo_t *surface,
 
 G_END_DECLS
 
-#endif /* ! __SYMBOL_H__ */
+#endif /* ! __LD_SYMBOL_H__ */
 

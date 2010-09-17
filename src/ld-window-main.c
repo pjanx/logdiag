@@ -24,7 +24,7 @@
  * SECTION:ld-window-main
  * @short_description: The main application window.
  *
- * #LogdiagWindowMain is the main window of the application.
+ * #LdWindowMain is the main window of the application.
  */
 /* NOTE: The main window should not maybe be included in either
  * the documentation or the static library.
@@ -32,15 +32,15 @@
 
 
 /* Private members of the window. */
-struct _LogdiagWindowMainPrivate
+struct _LdWindowMainPrivate
 {
 	GtkWidget *vbox;
 	GtkWidget *hbox;
 	GtkWidget *menu;
 	GtkWidget *toolbar;
 
-	LogdiagSymbolLibrary *library;
-	LogdiagCanvas *canvas;
+	LdSymbolLibrary *library;
+	LdCanvas *canvas;
 
 	GtkWidget *statusbar;
 	guint statusbar_menu_context_id;
@@ -48,13 +48,13 @@ struct _LogdiagWindowMainPrivate
 
 struct DocumentData
 {
-	LogdiagDocument *document;
+	LdDocument *document;
 	const gchar *file_name;
 	/* Canvas viewport settings (for multitabbed) */
 };
 
 /* Define the type. */
-G_DEFINE_TYPE (LogdiagWindowMain, logdiag_window_main, GTK_TYPE_WINDOW);
+G_DEFINE_TYPE (LdWindowMain, ld_window_main, GTK_TYPE_WINDOW);
 
 
 /* ===== Local functions =================================================== */
@@ -73,7 +73,7 @@ cb_load_category (gpointer key, gpointer value, gpointer user_data);
  * Load symbols from the library into the toolbar.
  */
 static void
-load_toolbar (LogdiagWindowMain *self);
+load_toolbar (LdWindowMain *self);
 
 /*
  * cb_ui_proxy_connected:
@@ -82,7 +82,7 @@ load_toolbar (LogdiagWindowMain *self);
  */
 static void
 cb_ui_proxy_connected (GtkUIManager *ui, GtkAction *action,
-	GtkWidget *proxy, LogdiagWindowMain *window);
+	GtkWidget *proxy, LdWindowMain *window);
 
 /*
  * cb_ui_proxy_disconnected:
@@ -91,19 +91,19 @@ cb_ui_proxy_connected (GtkUIManager *ui, GtkAction *action,
  */
 static void
 cb_ui_proxy_disconnected (GtkUIManager *ui, GtkAction *action,
-	GtkWidget *proxy, LogdiagWindowMain *window);
+	GtkWidget *proxy, LdWindowMain *window);
 
 /* A menu item was selected. */
 static void
-cb_menu_item_selected (GtkWidget *item, LogdiagWindowMain *window);
+cb_menu_item_selected (GtkWidget *item, LdWindowMain *window);
 
 /* A menu item was deselected. */
 static void
-cb_menu_item_deselected (GtkItem *item, LogdiagWindowMain *window);
+cb_menu_item_deselected (GtkItem *item, LdWindowMain *window);
 
 /* Show the about dialog. */
 static void
-cb_show_about_dialog (GtkAction *action, LogdiagWindowMain *window);
+cb_show_about_dialog (GtkAction *action, LdWindowMain *window);
 
 
 /* ===== Local variables =================================================== */
@@ -140,18 +140,18 @@ static GtkActionEntry mw_actionEntries[] =
 
 
 /**
- * logdiag_window_main_new:
+ * ld_window_main_new:
  *
  * Create an instance.
  */
 GtkWidget *
-logdiag_window_main_new (void)
+ld_window_main_new (void)
 {
-	return g_object_new (LOGDIAG_TYPE_WINDOW_MAIN, NULL);
+	return g_object_new (LD_TYPE_WINDOW_MAIN, NULL);
 }
 
 static void
-logdiag_window_main_class_init (LogdiagWindowMainClass *klass)
+ld_window_main_class_init (LdWindowMainClass *klass)
 {
 	GObjectClass *object_class;
 	GtkWidgetClass *widget_class;
@@ -159,19 +159,19 @@ logdiag_window_main_class_init (LogdiagWindowMainClass *klass)
 	object_class = G_OBJECT_CLASS (klass);
 	widget_class = GTK_WIDGET_CLASS (klass);
 
-	g_type_class_add_private (klass, sizeof (LogdiagWindowMainPrivate));
+	g_type_class_add_private (klass, sizeof (LdWindowMainPrivate));
 }
 
 static void
-logdiag_window_main_init (LogdiagWindowMain *self)
+ld_window_main_init (LdWindowMain *self)
 {
-	LogdiagWindowMainPrivate *priv;
+	LdWindowMainPrivate *priv;
 	GtkActionGroup *action_group;
 	GtkUIManager *ui_manager;
 	GError *error;
 
 	self->priv = priv = G_TYPE_INSTANCE_GET_PRIVATE
-		(self, LOGDIAG_TYPE_WINDOW_MAIN, LogdiagWindowMainPrivate);
+		(self, LD_TYPE_WINDOW_MAIN, LdWindowMainPrivate);
 
 	priv->vbox = gtk_vbox_new (FALSE, 0);
 	gtk_container_add (GTK_CONTAINER (self), priv->vbox);
@@ -225,13 +225,13 @@ logdiag_window_main_init (LogdiagWindowMain *self)
 	gtk_box_pack_start (GTK_BOX (priv->hbox), priv->toolbar, FALSE, FALSE, 0);
 
 	/* Symbol library. */
-	priv->library = logdiag_symbol_library_new ();
-	logdiag_symbol_library_load (priv->library, PROJECT_SHARE_DIR "library");
+	priv->library = ld_symbol_library_new ();
+	ld_symbol_library_load (priv->library, PROJECT_SHARE_DIR "library");
 
 	load_toolbar (self);
 
 	/* Canvas. */
-	priv->canvas = logdiag_canvas_new ();
+	priv->canvas = ld_canvas_new ();
 	gtk_box_pack_start (GTK_BOX (priv->hbox), GTK_WIDGET (priv->canvas),
 		FALSE, FALSE, 0);
 
@@ -256,8 +256,8 @@ static void
 cb_load_category (gpointer key, gpointer value, gpointer user_data)
 {
 	const gchar *name;
-	LogdiagSymbolCategory *cat;
-	LogdiagWindowMain *self;
+	LdSymbolCategory *cat;
+	LdWindowMain *self;
 	GdkPixbuf *pbuf;
 	GtkWidget *img;
 	GtkToolItem *item;
@@ -267,7 +267,7 @@ cb_load_category (gpointer key, gpointer value, gpointer user_data)
 	self = user_data;
 
 	g_return_if_fail (key != NULL);
-	g_return_if_fail (LOGDIAG_IS_SYMBOL_CATEGORY (cat));
+	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (cat));
 
 	/* XXX: Hardcoded icon width, unref? */
 	pbuf = gdk_pixbuf_new_from_file_at_size (cat->image_path, 32, -1, NULL);
@@ -282,7 +282,7 @@ cb_load_category (gpointer key, gpointer value, gpointer user_data)
 }
 
 static void
-load_toolbar (LogdiagWindowMain *self)
+load_toolbar (LdWindowMain *self)
 {
 	/* TODO: Clear the toolbar first, if there was already something in it. */
 
@@ -292,7 +292,7 @@ load_toolbar (LogdiagWindowMain *self)
 
 static void
 cb_ui_proxy_connected (GtkUIManager *ui, GtkAction *action,
-	GtkWidget *proxy, LogdiagWindowMain *window)
+	GtkWidget *proxy, LdWindowMain *window)
 {
 	if (GTK_IS_MENU_ITEM (proxy))
 	{
@@ -305,7 +305,7 @@ cb_ui_proxy_connected (GtkUIManager *ui, GtkAction *action,
 
 static void
 cb_ui_proxy_disconnected (GtkUIManager *ui, GtkAction *action,
-	GtkWidget *proxy, LogdiagWindowMain *window)
+	GtkWidget *proxy, LdWindowMain *window)
 {
 	if (GTK_IS_MENU_ITEM (proxy))
 	{
@@ -317,7 +317,7 @@ cb_ui_proxy_disconnected (GtkUIManager *ui, GtkAction *action,
 }
 
 static void
-cb_menu_item_selected (GtkWidget *item, LogdiagWindowMain *window)
+cb_menu_item_selected (GtkWidget *item, LdWindowMain *window)
 {
 	GtkAction *action;
 	gchar *tooltip;
@@ -333,14 +333,14 @@ cb_menu_item_selected (GtkWidget *item, LogdiagWindowMain *window)
 }
 
 static void
-cb_menu_item_deselected (GtkItem *item, LogdiagWindowMain *window)
+cb_menu_item_deselected (GtkItem *item, LdWindowMain *window)
 {
 	gtk_statusbar_pop (GTK_STATUSBAR (window->priv->statusbar),
 		window->priv->statusbar_menu_context_id);
 }
 
 static void
-cb_show_about_dialog (GtkAction *action, LogdiagWindowMain *window)
+cb_show_about_dialog (GtkAction *action, LdWindowMain *window)
 {
 	gtk_show_about_dialog (GTK_WINDOW (window),
 		"program-name", PROJECT_NAME,

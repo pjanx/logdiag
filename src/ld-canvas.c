@@ -20,39 +20,39 @@
 /**
  * SECTION:ld-canvas
  * @short_description: A canvas.
- * @see_also: #LogdiagDocument
+ * @see_also: #LdDocument
  *
- * #LogdiagCanvas is used for displaying #LogdiagDocument objects.
+ * #LdCanvas is used for displaying #LdDocument objects.
  */
 
 /*
- * LogdiagCanvasPrivate:
+ * LdCanvasPrivate:
  * @document: A document object assigned to this canvas as a model.
  */
-struct _LogdiagCanvasPrivate
+struct _LdCanvasPrivate
 {
-	LogdiagDocument *document;
+	LdDocument *document;
 };
 
-G_DEFINE_TYPE (LogdiagCanvas, logdiag_canvas, GTK_TYPE_DRAWING_AREA);
+G_DEFINE_TYPE (LdCanvas, ld_canvas, GTK_TYPE_DRAWING_AREA);
 
 static void
-logdiag_canvas_finalize (GObject *gobject);
+ld_canvas_finalize (GObject *gobject);
 
 
 static void
-logdiag_canvas_class_init (LogdiagCanvasClass *klass)
+ld_canvas_class_init (LdCanvasClass *klass)
 {
 	GObjectClass *object_class;
 	GtkWidgetClass *widget_class;
 
 	object_class = G_OBJECT_CLASS (klass);
-	object_class->finalize = logdiag_canvas_finalize;
+	object_class->finalize = ld_canvas_finalize;
 
 	widget_class = GTK_WIDGET_CLASS (klass);
 
 /**
- * LogdiagCanvas::set-scroll-adjustments:
+ * LdCanvas::set-scroll-adjustments:
  * @canvas: The canvas object.
  *
  * Contents of the library have changed.
@@ -61,39 +61,39 @@ logdiag_canvas_class_init (LogdiagCanvasClass *klass)
 	widget_class->set_scroll_adjustments_signal = g_signal_new
 		("set-scroll-adjustments", G_TYPE_FROM_CLASS (widget_class),
 		G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
-		0, // G_STRUCT_OFFSET (LogdiagCanvasClass, ...)
+		0, // G_STRUCT_OFFSET (LdCanvasClass, ...)
 		NULL, NULL,
 		gtk_marshal_NONE__POINTER_POINTER,
 		G_TYPE_NONE, 2, GTK_TYPE_ADJUSTMENT, GTK_TYPE_ADJUSTMENT);
 */
-	g_type_class_add_private (klass, sizeof (LogdiagCanvasPrivate));
+	g_type_class_add_private (klass, sizeof (LdCanvasPrivate));
 }
 
 static void
-logdiag_canvas_init (LogdiagCanvas *self)
+ld_canvas_init (LdCanvas *self)
 {
 	self->priv = G_TYPE_INSTANCE_GET_PRIVATE
-		(self, LOGDIAG_TYPE_CANVAS, LogdiagCanvasPrivate);
+		(self, LD_TYPE_CANVAS, LdCanvasPrivate);
 }
 
 static void
-logdiag_canvas_finalize (GObject *gobject)
+ld_canvas_finalize (GObject *gobject)
 {
-	LogdiagCanvas *self;
+	LdCanvas *self;
 
-	self = LOGDIAG_CANVAS (gobject);
+	self = LD_CANVAS (gobject);
 
 	/* Chain up to the parent class. */
-	G_OBJECT_CLASS (logdiag_canvas_parent_class)->finalize (gobject);
+	G_OBJECT_CLASS (ld_canvas_parent_class)->finalize (gobject);
 }
 
 /**
- * logdiag_canvas_new:
+ * ld_canvas_new:
  *
  * Create an instance.
  */
-LogdiagCanvas *
-logdiag_canvas_new (void)
+LdCanvas *
+ld_canvas_new (void)
 {
-	return g_object_new (LOGDIAG_TYPE_CANVAS, NULL);
+	return g_object_new (LD_TYPE_CANVAS, NULL);
 }

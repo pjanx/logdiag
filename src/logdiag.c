@@ -31,7 +31,7 @@ int main (int argc, char *argv[])
 	 */
 
 	gtk_init (&argc, &argv);
-	wnd = logdiag_window_main_new ();
+	wnd = ld_window_main_new ();
 	gtk_main ();
 
 	return 0;

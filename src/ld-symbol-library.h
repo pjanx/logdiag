@@ -8,46 +8,46 @@
  *
  */
 
-#ifndef __SYMBOL_LIBRARY_H__
-#define __SYMBOL_LIBRARY_H__
+#ifndef __LD_SYMBOL_LIBRARY_H__
+#define __LD_SYMBOL_LIBRARY_H__
 
 G_BEGIN_DECLS
 
 
-#define LOGDIAG_TYPE_SYMBOL_LIBRARY (logdiag_symbol_library_get_type ())
-#define LOGDIAG_SYMBOL_LIBRARY(obj) (G_TYPE_CHECK_INSTANCE_CAST \
-	((obj), LOGDIAG_TYPE_SYMBOL_LIBRARY, LogdiagSymbolLibrary))
-#define LOGDIAG_SYMBOL_LIBRARY_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST \
-	((klass), LOGDIAG_TYPE_SYMBOL_LIBRARY, LogdiagSymbolLibraryClass))
-#define LOGDIAG_IS_SYMBOL_LIBRARY(obj) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((obj), LOGDIAG_TYPE_SYMBOL_LIBRARY))
-#define LOGDIAG_IS_SYMBOL_LIBRARY_CLASS(klass) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((klass), LOGDIAG_TYPE_SYMBOL_LIBRARY))
-#define LOGDIAG_SYMBOL_LIBRARY_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS \
-	((obj), LOGDIAG_SYMBOL_LIBRARY, LogdiagSymbolLibraryClass))
+#define LD_TYPE_SYMBOL_LIBRARY (ld_symbol_library_get_type ())
+#define LD_SYMBOL_LIBRARY(obj) (G_TYPE_CHECK_INSTANCE_CAST \
+	((obj), LD_TYPE_SYMBOL_LIBRARY, LdSymbolLibrary))
+#define LD_SYMBOL_LIBRARY_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST \
+	((klass), LD_TYPE_SYMBOL_LIBRARY, LdSymbolLibraryClass))
+#define LD_IS_SYMBOL_LIBRARY(obj) (G_TYPE_CHECK_INSTANCE_TYPE \
+	((obj), LD_TYPE_SYMBOL_LIBRARY))
+#define LD_IS_SYMBOL_LIBRARY_CLASS(klass) (G_TYPE_CHECK_INSTANCE_TYPE \
+	((klass), LD_TYPE_SYMBOL_LIBRARY))
+#define LD_SYMBOL_LIBRARY_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS \
+	((obj), LD_SYMBOL_LIBRARY, LdSymbolLibraryClass))
 
-typedef struct _LogdiagSymbolLibrary LogdiagSymbolLibrary;
-typedef struct _LogdiagSymbolLibraryPrivate LogdiagSymbolLibraryPrivate;
-typedef struct _LogdiagSymbolLibraryClass LogdiagSymbolLibraryClass;
+typedef struct _LdSymbolLibrary LdSymbolLibrary;
+typedef struct _LdSymbolLibraryPrivate LdSymbolLibraryPrivate;
+typedef struct _LdSymbolLibraryClass LdSymbolLibraryClass;
 
 
 /**
- * LogdiagSymbolLibrary:
- * @categories: Lists all the categories (#LogdiagSymbolCategory).
+ * LdSymbolLibrary:
+ * @categories: Lists all the categories (#LdSymbolCategory).
  *
  * Object structure.
  */
-struct _LogdiagSymbolLibrary
+struct _LdSymbolLibrary
 {
 /*< private >*/
 	GObject parent_instance;
-	LogdiagSymbolLibraryPrivate *priv;
+	LdSymbolLibraryPrivate *priv;
 
 /*< public >*/
 	GHashTable *categories;
 };
 
-struct _LogdiagSymbolLibraryClass
+struct _LdSymbolLibraryClass
 {
 /*< private >*/
 	GObjectClass parent_class;
@@ -55,15 +55,15 @@ struct _LogdiagSymbolLibraryClass
 };
 
 
-GType logdiag_symbol_library_get_type (void) G_GNUC_CONST;
+GType ld_symbol_library_get_type (void) G_GNUC_CONST;
 
-LogdiagSymbolLibrary *logdiag_symbol_library_new (void);
-gboolean logdiag_symbol_library_load (LogdiagSymbolLibrary *self,
+LdSymbolLibrary *ld_symbol_library_new (void);
+gboolean ld_symbol_library_load (LdSymbolLibrary *self,
 	const char *directory);
-void logdiag_symbol_library_clear (LogdiagSymbolLibrary *self);
+void ld_symbol_library_clear (LdSymbolLibrary *self);
 
 
 G_END_DECLS
 
-#endif /* ! __SYMBOL_LIBRARY_H__ */
+#endif /* ! __LD_SYMBOL_LIBRARY_H__ */
 

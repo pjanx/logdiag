@@ -8,37 +8,37 @@
  *
  */
 
-#ifndef __SYMBOL_CATEGORY_H__
-#define __SYMBOL_CATEGORY_H__
+#ifndef __LD_SYMBOL_CATEGORY_H__
+#define __LD_SYMBOL_CATEGORY_H__
 
 G_BEGIN_DECLS
 
 
-#define LOGDIAG_TYPE_SYMBOL_CATEGORY (logdiag_symbol_category_get_type ())
-#define LOGDIAG_SYMBOL_CATEGORY(obj) (G_TYPE_CHECK_INSTANCE_CAST \
-	((obj), LOGDIAG_TYPE_SYMBOL_CATEGORY, LogdiagSymbolCategory))
-#define LOGDIAG_SYMBOL_CATEGORY_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST \
-	((klass), LOGDIAG_TYPE_SYMBOL_CATEGORY, LogdiagSymbolCategoryClass))
-#define LOGDIAG_IS_SYMBOL_CATEGORY(obj) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((obj), LOGDIAG_TYPE_SYMBOL_CATEGORY))
-#define LOGDIAG_IS_SYMBOL_CATEGORY_CLASS(klass) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((klass), LOGDIAG_TYPE_SYMBOL_CATEGORY))
-#define LOGDIAG_SYMBOL_CATEGORY_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS \
-	((obj), LOGDIAG_SYMBOL_CATEGORY, LogdiagSymbolCategoryClass))
+#define LD_TYPE_SYMBOL_CATEGORY (ld_symbol_category_get_type ())
+#define LD_SYMBOL_CATEGORY(obj) (G_TYPE_CHECK_INSTANCE_CAST \
+	((obj), LD_TYPE_SYMBOL_CATEGORY, LdSymbolCategory))
+#define LD_SYMBOL_CATEGORY_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST \
+	((klass), LD_TYPE_SYMBOL_CATEGORY, LdSymbolCategoryClass))
+#define LD_IS_SYMBOL_CATEGORY(obj) (G_TYPE_CHECK_INSTANCE_TYPE \
+	((obj), LD_TYPE_SYMBOL_CATEGORY))
+#define LD_IS_SYMBOL_CATEGORY_CLASS(klass) (G_TYPE_CHECK_INSTANCE_TYPE \
+	((klass), LD_TYPE_SYMBOL_CATEGORY))
+#define LD_SYMBOL_CATEGORY_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS \
+	((obj), LD_SYMBOL_CATEGORY, LdSymbolCategoryClass))
 
-typedef struct _LogdiagSymbolCategory LogdiagSymbolCategory;
-typedef struct _LogdiagSymbolCategoryClass LogdiagSymbolCategoryClass;
+typedef struct _LdSymbolCategory LdSymbolCategory;
+typedef struct _LdSymbolCategoryClass LdSymbolCategoryClass;
 
 
 /**
- * LogdiagSymbolCategory:
- * @parent: The parent object, may be LogdiagSymbolLibrary
- * or another LogdiagSymbolCategory.
+ * LdSymbolCategory:
+ * @parent: The parent object, may be LdSymbolLibrary
+ * or another LdSymbolCategory.
  * @name: The name of the category.
  * @image_path: Path to the image for this category.
  * @children: Children of this category.
  */
-struct _LogdiagSymbolCategory
+struct _LdSymbolCategory
 {
 /*< private >*/
 	GObject parent_instance;
@@ -50,19 +50,19 @@ struct _LogdiagSymbolCategory
 	GHashTable *children;
 };
 
-struct _LogdiagSymbolCategoryClass
+struct _LdSymbolCategoryClass
 {
 	GObjectClass parent_class;
 };
 
 
-GType logdiag_symbol_category_get_type (void) G_GNUC_CONST;
+GType ld_symbol_category_get_type (void) G_GNUC_CONST;
 
-LogdiagSymbolCategory *
-logdiag_symbol_category_new (LogdiagSymbolLibrary *parent);
+LdSymbolCategory *
+ld_symbol_category_new (LdSymbolLibrary *parent);
 
 
 G_END_DECLS
 
-#endif /* ! __SYMBOL_CATEGORY_H__ */
+#endif /* ! __LD_SYMBOL_CATEGORY_H__ */
 

@@ -8,53 +8,53 @@
  *
  */
 
-#ifndef __WINDOW_MAIN_H__
-#define __WINDOW_MAIN_H__
+#ifndef __LD_WINDOW_MAIN_H__
+#define __LD_WINDOW_MAIN_H__
 
 G_BEGIN_DECLS
 
 
-#define LOGDIAG_TYPE_WINDOW_MAIN (logdiag_window_main_get_type ())
-#define LOGDIAG_WINDOW_MAIN(obj) (G_TYPE_CHECK_INSTANCE_CAST \
-	((obj), LOGDIAG_TYPE_WINDOW_MAIN, LogdiagWindowMain))
-#define LOGDIAG_WINDOW_MAIN_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST \
-	((klass), LOGDIAG_TYPE_WINDOW_MAIN, LogdiagWindowMainClass))
-#define LOGDIAG_IS_WINDOW_MAIN(obj) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((obj), LOGDIAG_TYPE_WINDOW_MAIN))
-#define LOGDIAG_IS_WINDOW_MAIN_CLASS(klass) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((klass), LOGDIAG_TYPE_WINDOW_MAIN))
-#define LOGDIAG_WINDOW_MAIN_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS \
-	((obj), LOGDIAG_WINDOW_MAIN, LogdiagWindowMainClass))
+#define LD_TYPE_WINDOW_MAIN (ld_window_main_get_type ())
+#define LD_WINDOW_MAIN(obj) (G_TYPE_CHECK_INSTANCE_CAST \
+	((obj), LD_TYPE_WINDOW_MAIN, LdWindowMain))
+#define LD_WINDOW_MAIN_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST \
+	((klass), LD_TYPE_WINDOW_MAIN, LdWindowMainClass))
+#define LD_IS_WINDOW_MAIN(obj) (G_TYPE_CHECK_INSTANCE_TYPE \
+	((obj), LD_TYPE_WINDOW_MAIN))
+#define LD_IS_WINDOW_MAIN_CLASS(klass) (G_TYPE_CHECK_INSTANCE_TYPE \
+	((klass), LD_TYPE_WINDOW_MAIN))
+#define LD_WINDOW_MAIN_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS \
+	((obj), LD_WINDOW_MAIN, LdWindowMainClass))
 
-typedef struct _LogdiagWindowMain LogdiagWindowMain;
-typedef struct _LogdiagWindowMainPrivate LogdiagWindowMainPrivate;
-typedef struct _LogdiagWindowMainClass LogdiagWindowMainClass;
+typedef struct _LdWindowMain LdWindowMain;
+typedef struct _LdWindowMainPrivate LdWindowMainPrivate;
+typedef struct _LdWindowMainClass LdWindowMainClass;
 
 
 /**
- * LogdiagWindowMain:
+ * LdWindowMain:
  *
  * Object structure.
  */
-struct _LogdiagWindowMain
+struct _LdWindowMain
 {
 /*< private >*/
 	GtkWindow parent_instance;
-	LogdiagWindowMainPrivate *priv;
+	LdWindowMainPrivate *priv;
 };
 
-struct _LogdiagWindowMainClass
+struct _LdWindowMainClass
 {
 	GtkWindowClass parent_class;
 };
 
 
-GType logdiag_window_main_get_type (void) G_GNUC_CONST;
+GType ld_window_main_get_type (void) G_GNUC_CONST;
 
-GtkWidget *logdiag_window_main_new (void);
+GtkWidget *ld_window_main_new (void);
 
 
 G_END_DECLS
 
-#endif /* ! __WINDOW_MAIN_H__ */
+#endif /* ! __LD_WINDOW_MAIN_H__ */
 

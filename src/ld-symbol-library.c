@@ -23,36 +23,36 @@
 /**
  * SECTION:ld-symbol-library
  * @short_description: A symbol library.
- * @see_also: #LogdiagSymbol, #LogdiagSymbolCategory
+ * @see_also: #LdSymbol, #LdSymbolCategory
  *
- * #LogdiagSymbolLibrary is used for loading symbols from their files.
+ * #LdSymbolLibrary is used for loading symbols from their files.
  */
 
 /*
- * LogdiagSymbolLibraryPrivate:
+ * LdSymbolLibraryPrivate:
  * @lua_state: Lua state.
  */
-struct _LogdiagSymbolLibraryPrivate
+struct _LdSymbolLibraryPrivate
 {
 	lua_State *lua_state;
 };
 
-G_DEFINE_TYPE (LogdiagSymbolLibrary, logdiag_symbol_library, G_TYPE_OBJECT);
+G_DEFINE_TYPE (LdSymbolLibrary, ld_symbol_library, G_TYPE_OBJECT);
 
 static void
-logdiag_symbol_library_finalize (GObject *gobject);
+ld_symbol_library_finalize (GObject *gobject);
 
 
 static void
-logdiag_symbol_library_class_init (LogdiagSymbolLibraryClass *klass)
+ld_symbol_library_class_init (LdSymbolLibraryClass *klass)
 {
 	GObjectClass *object_class;
 
 	object_class = G_OBJECT_CLASS (klass);
-	object_class->finalize = logdiag_symbol_library_finalize;
+	object_class->finalize = ld_symbol_library_finalize;
 
 /**
- * LogdiagSymbolLibrary::changed:
+ * LdSymbolLibrary::changed:
  * @library: The library object.
  *
  * Contents of the library have changed.
@@ -62,14 +62,14 @@ logdiag_symbol_library_class_init (LogdiagSymbolLibraryClass *klass)
 		G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_NO_HOOKS,
 		0, NULL, NULL, g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
 
-	g_type_class_add_private (klass, sizeof (LogdiagSymbolLibraryPrivate));
+	g_type_class_add_private (klass, sizeof (LdSymbolLibraryPrivate));
 }
 
 static void
-logdiag_symbol_library_init (LogdiagSymbolLibrary *self)
+ld_symbol_library_init (LdSymbolLibrary *self)
 {
 	self->priv = G_TYPE_INSTANCE_GET_PRIVATE
-		(self, LOGDIAG_TYPE_SYMBOL_LIBRARY, LogdiagSymbolLibraryPrivate);
+		(self, LD_TYPE_SYMBOL_LIBRARY, LdSymbolLibraryPrivate);
 
 	/* TODO: lua */
 	self->priv->lua_state = NULL;
@@ -79,27 +79,27 @@ logdiag_symbol_library_init (LogdiagSymbolLibrary *self)
 }
 
 static void
-logdiag_symbol_library_finalize (GObject *gobject)
+ld_symbol_library_finalize (GObject *gobject)
 {
-	LogdiagSymbolLibrary *self;
+	LdSymbolLibrary *self;
 
-	self = LOGDIAG_SYMBOL_LIBRARY (gobject);
+	self = LD_SYMBOL_LIBRARY (gobject);
 
 	g_hash_table_destroy (self->categories);
 
 	/* Chain up to the parent class. */
-	G_OBJECT_CLASS (logdiag_symbol_library_parent_class)->finalize (gobject);
+	G_OBJECT_CLASS (ld_symbol_library_parent_class)->finalize (gobject);
 }
 
 /**
- * logdiag_symbol_library_new:
+ * ld_symbol_library_new:
  *
  * Create an instance.
  */
-LogdiagSymbolLibrary *
-logdiag_symbol_library_new (void)
+LdSymbolLibrary *
+ld_symbol_library_new (void)
 {
-	return g_object_new (LOGDIAG_TYPE_SYMBOL_LIBRARY, NULL);
+	return g_object_new (LD_TYPE_SYMBOL_LIBRARY, NULL);
 }
 
 /*
@@ -110,13 +110,13 @@ logdiag_symbol_library_new (void)
  *
  * Loads a category into the library.
  */
-static LogdiagSymbolCategory *
-load_category (LogdiagSymbolLibrary *self, const char *path, const char *name)
+static LdSymbolCategory *
+load_category (LdSymbolLibrary *self, const char *path, const char *name)
 {
-	LogdiagSymbolCategory *cat;
+	LdSymbolCategory *cat;
 	gchar *icon_file;
 
-	g_return_val_if_fail (LOGDIAG_IS_SYMBOL_LIBRARY (self), NULL);
+	g_return_val_if_fail (LD_IS_SYMBOL_LIBRARY (self), NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 	g_return_val_if_fail (name != NULL, NULL);
 
@@ -134,26 +134,26 @@ load_category (LogdiagSymbolLibrary *self, const char *path, const char *name)
 	/* TODO: Search for category.json and read the category name from it. */
 	/* TODO: Search for xyz.lua and load the objects into the category. */
 
-	cat = logdiag_symbol_category_new (self);
+	cat = ld_symbol_category_new (self);
 	cat->name = g_strdup (name);
 	cat->image_path = icon_file;
 	return cat;
 }
 
 /**
- * logdiag_symbol_library_load:
+ * ld_symbol_library_load:
  * @self: A symbol library object.
  * @directory: A directory to be loaded.
  *
  * Load the contents of a directory into the library.
  */
 gboolean
-logdiag_symbol_library_load (LogdiagSymbolLibrary *self, const char *path)
+ld_symbol_library_load (LdSymbolLibrary *self, const char *path)
 {
 	GDir *dir;
 	const gchar *item;
 
-	g_return_val_if_fail (LOGDIAG_IS_SYMBOL_LIBRARY (self), FALSE);
+	g_return_val_if_fail (LD_IS_SYMBOL_LIBRARY (self), FALSE);
 	g_return_val_if_fail (path != NULL, FALSE);
 
 	dir = g_dir_open (path, 0, NULL);
@@ -162,7 +162,7 @@ logdiag_symbol_library_load (LogdiagSymbolLibrary *self, const char *path)
 
 	while ((item = g_dir_read_name (dir)))
 	{
-		LogdiagSymbolCategory *cat;
+		LdSymbolCategory *cat;
 		gchar *categ_path;
 
 		categ_path = g_build_filename (path, item, NULL);
@@ -176,15 +176,15 @@ logdiag_symbol_library_load (LogdiagSymbolLibrary *self, const char *path)
 }
 
 /**
- * logdiag_symbol_library_clear:
+ * ld_symbol_library_clear:
  * @self: A symbol library object.
  *
  * Clears all the contents.
  */
 void
-logdiag_symbol_library_clear (LogdiagSymbolLibrary *self)
+ld_symbol_library_clear (LdSymbolLibrary *self)
 {
-	g_return_if_fail (LOGDIAG_IS_SYMBOL_LIBRARY (self));
+	g_return_if_fail (LD_IS_SYMBOL_LIBRARY (self));
 
 	g_hash_table_remove_all (self->categories);
 	return;
@@ -196,28 +196,28 @@ logdiag_symbol_library_clear (LogdiagSymbolLibrary *self)
 /**
  * SECTION:ld-symbol-category
  * @short_description: A category of symbols.
- * @see_also: #LogdiagSymbol, #LogdiagSymbolLibrary
+ * @see_also: #LdSymbol, #LdSymbolLibrary
  *
- * #LogdiagSymbolCategory represents a category of #LogdiagSymbol objects.
+ * #LdSymbolCategory represents a category of #LdSymbol objects.
  */
 
-G_DEFINE_TYPE (LogdiagSymbolCategory, logdiag_symbol_category, G_TYPE_OBJECT);
+G_DEFINE_TYPE (LdSymbolCategory, ld_symbol_category, G_TYPE_OBJECT);
 
 static void
-logdiag_symbol_category_finalize (GObject *gobject);
+ld_symbol_category_finalize (GObject *gobject);
 
 
 static void
-logdiag_symbol_category_class_init (LogdiagSymbolCategoryClass *klass)
+ld_symbol_category_class_init (LdSymbolCategoryClass *klass)
 {
 	GObjectClass *object_class;
 
 	object_class = G_OBJECT_CLASS (klass);
-	object_class->finalize = logdiag_symbol_category_finalize;
+	object_class->finalize = ld_symbol_category_finalize;
 }
 
 static void
-logdiag_symbol_category_init (LogdiagSymbolCategory *self)
+ld_symbol_category_init (LdSymbolCategory *self)
 {
 	/* TODO: use _new_full, correct equal and specify destroy functions. */
 	/* XXX: How's the situation with subcategory names and symbol names
@@ -227,11 +227,11 @@ logdiag_symbol_category_init (LogdiagSymbolCategory *self)
 }
 
 static void
-logdiag_symbol_category_finalize (GObject *gobject)
+ld_symbol_category_finalize (GObject *gobject)
 {
-	LogdiagSymbolCategory *self;
+	LdSymbolCategory *self;
 
-	self = LOGDIAG_SYMBOL_CATEGORY (gobject);
+	self = LD_SYMBOL_CATEGORY (gobject);
 
 	if (self->name)
 		g_free (self->name);
@@ -242,21 +242,21 @@ logdiag_symbol_category_finalize (GObject *gobject)
 	g_hash_table_destroy (self->children);
 
 	/* Chain up to the parent class. */
-	G_OBJECT_CLASS (logdiag_symbol_category_parent_class)->finalize (gobject);
+	G_OBJECT_CLASS (ld_symbol_category_parent_class)->finalize (gobject);
 }
 
 /**
- * logdiag_symbol_category_new:
+ * ld_symbol_category_new:
  * @parent: The parent library for this category.
  *
  * Create an instance.
  */
-LogdiagSymbolCategory *
-logdiag_symbol_category_new (LogdiagSymbolLibrary *parent)
+LdSymbolCategory *
+ld_symbol_category_new (LdSymbolLibrary *parent)
 {
-	LogdiagSymbolCategory *cat;
+	LdSymbolCategory *cat;
 
-	cat = g_object_new (LOGDIAG_TYPE_SYMBOL_CATEGORY, NULL);
+	cat = g_object_new (LD_TYPE_SYMBOL_CATEGORY, NULL);
 
 	cat->parent = parent;
 	g_object_ref (parent);
@@ -270,71 +270,71 @@ logdiag_symbol_category_new (LogdiagSymbolLibrary *parent)
 /**
  * SECTION:ld-symbol
  * @short_description: A symbol.
- * @see_also: #LogdiagDocument, #LogdiagCanvas
+ * @see_also: #LdDocument, #LdCanvas
  *
- * #LogdiagSymbol represents a symbol in the #LogdiagDocument that is in turn
- * drawn onto the #LogdiagCanvas.
+ * #LdSymbol represents a symbol in the #LdDocument that is in turn
+ * drawn onto the #LdCanvas.
  */
 
 /*
- * LogdiagSymbolPrivate:
- * @library: The parent LogdiagSymbolLibrary.
+ * LdSymbolPrivate:
+ * @library: The parent LdSymbolLibrary.
  * The library contains the real function for rendering.
  */
-struct _LogdiagSymbolPrivate
+struct _LdSymbolPrivate
 {
-	LogdiagSymbolLibrary *library;
+	LdSymbolLibrary *library;
 };
 
-G_DEFINE_TYPE (LogdiagSymbol, logdiag_symbol, G_TYPE_OBJECT);
+G_DEFINE_TYPE (LdSymbol, ld_symbol, G_TYPE_OBJECT);
 
 static void
-logdiag_symbol_finalize (GObject *gobject);
+ld_symbol_finalize (GObject *gobject);
 
 
 static void
-logdiag_symbol_class_init (LogdiagSymbolClass *klass)
+ld_symbol_class_init (LdSymbolClass *klass)
 {
 	GObjectClass *object_class;
 
 	object_class = G_OBJECT_CLASS (klass);
-	object_class->finalize = logdiag_symbol_finalize;
+	object_class->finalize = ld_symbol_finalize;
 
-	g_type_class_add_private (klass, sizeof (LogdiagSymbolPrivate));
+	g_type_class_add_private (klass, sizeof (LdSymbolPrivate));
 }
 
 static void
-logdiag_symbol_init (LogdiagSymbol *self)
+ld_symbol_init (LdSymbol *self)
 {
 	self->priv = G_TYPE_INSTANCE_GET_PRIVATE
-		(self, LOGDIAG_TYPE_SYMBOL_LIBRARY, LogdiagSymbolPrivate);
+		(self, LD_TYPE_SYMBOL_LIBRARY, LdSymbolPrivate);
 }
 
 static void
-logdiag_symbol_finalize (GObject *gobject)
+ld_symbol_finalize (GObject *gobject)
 {
-	LogdiagSymbol *self;
+	LdSymbol *self;
 
-	self = LOGDIAG_SYMBOL (gobject);
+	self = LD_SYMBOL (gobject);
 	g_object_unref (self->priv->library);
 
 	/* Chain up to the parent class. */
-	G_OBJECT_CLASS (logdiag_symbol_parent_class)->finalize (gobject);
+	G_OBJECT_CLASS (ld_symbol_parent_class)->finalize (gobject);
 }
 
 /**
- * logdiag_symbol_new:
+ * ld_symbol_new:
  * @library: A library object.
  * @filename: The file from which the symbol will be loaded.
  *
  * Load a symbol from a file into the library.
  */
-LogdiagSymbol *logdiag_symbol_new (LogdiagSymbolLibrary *library,
+LdSymbol *ld_symbol_new (LdSymbolLibrary *library,
 	const gchar *filename)
 {
-	LogdiagSymbol *symbol;
+	LdSymbol *symbol;
 
-	symbol = g_object_new (LOGDIAG_TYPE_SYMBOL, NULL);
+	symbol = g_object_new (LD_TYPE_SYMBOL, NULL);
 	/* TODO: Use the filename, Luke. */
 
 	symbol->priv->library = library;
@@ -342,20 +342,20 @@ LogdiagSymbol *logdiag_symbol_new (LogdiagSymbolLibrary *library,
 }
 
 /**
- * logdiag_symbol_build_identifier:
+ * ld_symbol_build_identifier:
  * @self: A symbol object.
  *
  * Build an identifier for the symbol.
  * The identifier is in the format "Category/Category/Symbol".
  */
 char *
-logdiag_symbol_build_identifier (LogdiagSymbol *self)
+ld_symbol_build_identifier (LdSymbol *self)
 {
 	return NULL;
 }
 
 /**
- * logdiag_symbol_draw:
+ * ld_symbol_draw:
  * @self: A symbol object.
  * @surface: A cairo surface to be drawn on.
  * @param: Parameters for the symbol in a table.
@@ -366,7 +366,7 @@ logdiag_symbol_build_identifier (LogdiagSymbol *self)
  * Draw the symbol onto a Cairo surface.
  */
 void
-logdiag_symbol_draw (LogdiagSymbol *self, cairo_t *surface,
+ld_symbol_draw (LdSymbol *self, cairo_t *surface,
 	GHashTable *param, gint x, gint y, gdouble zoom)
 {
 	return;

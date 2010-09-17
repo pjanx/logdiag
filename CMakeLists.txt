@@ -80,12 +80,14 @@ GTK_DOC_RUN (WORKING_DIR ${project_DOC_DIR}
 # Project source files
 set (logdiag_SOURCES
 	src/logdiag.c
+	src/ld-marshal.c
 	src/ld-window-main.c
 	src/ld-document.c
 	src/ld-canvas.c
 	src/ld-symbol-library.c)
 set (logdiag_HEADERS
 	${CMAKE_CURRENT_BINARY_DIR}/config.h
+	src/ld-marshal.h
 	src/ld-window-main.h
 	src/ld-document.h
 	src/ld-canvas.h

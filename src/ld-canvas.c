@@ -12,6 +12,7 @@
 
 #include "config.h"
 
+#include "ld-marshal.h"
 #include "ld-canvas.h"
 #include "ld-document.h"
 
@@ -63,7 +64,7 @@ ld_canvas_class_init (LdCanvasClass *klass)
 		G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
 		0, // G_STRUCT_OFFSET (LdCanvasClass, ...)
 		NULL, NULL,
-		gtk_marshal_NONE__POINTER_POINTER,
+		g_cclosure_user_marshal_VOID__OBJECT_OBJECT,
 		G_TYPE_NONE, 2, GTK_TYPE_ADJUSTMENT, GTK_TYPE_ADJUSTMENT);
 */
 	g_type_class_add_private (klass, sizeof (LdCanvasPrivate));

@@ -18,7 +18,10 @@ endif (OPTION_NOINSTALL)
 set (project_VERSION_MAJOR "0")
 set (project_VERSION_MINOR "0")
 set (project_VERSION_PATCH "1")
-set (project_VERSION "0.0.1")
+
+set (project_VERSION "${project_VERSION_MAJOR}")
+set (project_VERSION "${project_VERSION}.${project_VERSION_MINOR}")
+set (project_VERSION "${project_VERSION}.${project_VERSION_PATCH}")
 
 # For custom modules
 set (CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -76,19 +79,19 @@ GTK_DOC_RUN (WORKING_DIR ${project_DOC_DIR}
 
 # Project source files
 set (logdiag_SOURCES
-	src/main.c
-	src/window-main.c
-	src/document.c
-	src/canvas.c
-	src/symbol-library.c)
+	src/logdiag.c
+	src/ld-window-main.c
+	src/ld-document.c
+	src/ld-canvas.c
+	src/ld-symbol-library.c)
 set (logdiag_HEADERS
 	${CMAKE_CURRENT_BINARY_DIR}/config.h
-	src/window-main.h
-	src/document.h
-	src/canvas.h
-	src/symbol.h
-	src/symbol-category.h
-	src/symbol-library.h)
+	src/ld-window-main.h
+	src/ld-document.h
+	src/ld-canvas.h
+	src/ld-symbol.h
+	src/ld-symbol-category.h
+	src/ld-symbol-library.h)
 
 # Generate a configure file
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/config.h.in

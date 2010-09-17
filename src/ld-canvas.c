@@ -1,5 +1,5 @@
 /*
- * canvas.c
+ * ld-canvas.c
  *
  * This file is a part of logdiag.
  * Copyright Přemysl Janouch 2010. All rights reserved.
@@ -12,13 +12,13 @@
 
 #include "config.h"
 
-#include "canvas.h"
-#include "document.h"
+#include "ld-canvas.h"
+#include "ld-document.h"
 
 /* http://www.gnomejournal.org/article/34/writing-a-widget-using-cairo-and-gtk28 */
 
 /**
- * SECTION:canvas
+ * SECTION:ld-canvas
  * @short_description: A canvas.
  * @see_also: #LogdiagDocument
  *

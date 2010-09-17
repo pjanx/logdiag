@@ -1,5 +1,5 @@
 /*
- * symbol-library.c
+ * ld-symbol-library.c
  *
  * This file is a part of logdiag.
  * Copyright Přemysl Janouch 2010. All rights reserved.
@@ -14,14 +14,14 @@
 
 #include "config.h"
 
-#include "symbol-library.h"
-#include "symbol-category.h"
-#include "symbol.h"
+#include "ld-symbol-library.h"
+#include "ld-symbol-category.h"
+#include "ld-symbol.h"
 
 /* ===== Symbol library ==================================================== */
 
 /**
- * SECTION:symbol-library
+ * SECTION:ld-symbol-library
  * @short_description: A symbol library.
  * @see_also: #LogdiagSymbol, #LogdiagSymbolCategory
  *
@@ -194,7 +194,7 @@ logdiag_symbol_library_clear (LogdiagSymbolLibrary *self)
 /* ===== Symbol category =================================================== */
 
 /**
- * SECTION:symbol-category
+ * SECTION:ld-symbol-category
  * @short_description: A category of symbols.
  * @see_also: #LogdiagSymbol, #LogdiagSymbolLibrary
  *
@@ -268,7 +268,7 @@ logdiag_symbol_category_new (LogdiagSymbolLibrary *parent)
 /* ===== Symbol ============================================================ */
 
 /**
- * SECTION:symbol
+ * SECTION:ld-symbol
  * @short_description: A symbol.
  * @see_also: #LogdiagDocument, #LogdiagCanvas
  *

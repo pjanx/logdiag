@@ -1,5 +1,5 @@
 /*
- * document.h
+ * ld-document.h
  *
  * This file is a part of logdiag.
  * Copyright Přemysl Janouch 2010. All rights reserved.

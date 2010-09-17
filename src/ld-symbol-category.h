@@ -1,5 +1,5 @@
 /*
- * symbol-category.h
+ * ld-symbol-category.h
  *
  * This file is a part of logdiag.
  * Copyright Přemysl Janouch 2010. All rights reserved.

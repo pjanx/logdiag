@@ -12,16 +12,16 @@
 
 #include "config.h"
 
-#include "window-main.h"
-#include "canvas.h"
-#include "document.h"
-#include "symbol-library.h"
-#include "symbol-category.h"
-#include "symbol.h"
+#include "ld-window-main.h"
+#include "ld-canvas.h"
+#include "ld-document.h"
+#include "ld-symbol-library.h"
+#include "ld-symbol-category.h"
+#include "ld-symbol.h"
 
 
 /**
- * SECTION:window-main
+ * SECTION:ld-window-main
  * @short_description: The main application window.
  *
  * #LogdiagWindowMain is the main window of the application.

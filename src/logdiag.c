@@ -1,5 +1,5 @@
 /*
- * main.c -- logdiag main source file.
+ * logdiag.c -- logdiag main source file.
  *
  * This file is a part of logdiag.
  * Copyright Přemysl Janouch 2010. All rights reserved.
@@ -12,7 +12,7 @@
 
 #include "config.h"
 
-#include "window-main.h"
+#include "ld-window-main.h"
 
 
 int main (int argc, char *argv[])

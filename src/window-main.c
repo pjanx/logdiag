@@ -13,8 +13,11 @@
 #include "config.h"
 
 #include "window-main.h"
+#include "canvas.h"
+#include "document.h"
 #include "symbol-library.h"
 #include "symbol-category.h"
+#include "symbol.h"
 
 
 /**
@@ -37,9 +40,17 @@ struct _LogdiagWindowMainPrivate
 	GtkWidget *toolbar;
 
 	LogdiagSymbolLibrary *library;
+	LogdiagCanvas *canvas;
 
 	GtkWidget *statusbar;
 	guint statusbar_menu_context_id;
+};
+
+struct DocumentData
+{
+	LogdiagDocument *document;
+	const gchar *file_name;
+	/* Canvas viewport settings (for multitabbed) */
 };
 
 /* Define the type. */
@@ -219,6 +230,11 @@ logdiag_window_main_init (LogdiagWindowMain *self)
 
 	load_toolbar (self);
 
+	/* Canvas. */
+	priv->canvas = logdiag_canvas_new ();
+	gtk_box_pack_start (GTK_BOX (priv->hbox), GTK_WIDGET (priv->canvas),
+		FALSE, FALSE, 0);
+
 	/* TODO: GtkHPaned */
 
 	priv->statusbar = gtk_statusbar_new ();
@@ -227,7 +243,7 @@ logdiag_window_main_init (LogdiagWindowMain *self)
 	gtk_box_pack_end (GTK_BOX (priv->vbox), priv->statusbar, FALSE, FALSE, 0);
 
 
-	/* Do this on disposal. */
+	/* TODO: Do this on disposal. */
 	/* g_object_unref(ui_manager); */
 
 	/* Proceed to showing the window. */

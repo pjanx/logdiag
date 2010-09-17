@@ -177,6 +177,7 @@ logdiag_symbol_library_load (LogdiagSymbolLibrary *self, const char *path)
 
 /**
  * logdiag_symbol_library_clear:
+ * @self: A symbol library object.
  *
  * Clears all the contents.
  */
@@ -246,6 +247,7 @@ logdiag_symbol_category_finalize (GObject *gobject)
 
 /**
  * logdiag_symbol_category_new:
+ * @parent: The parent library for this category.
  *
  * Create an instance.
  */
@@ -276,16 +278,72 @@ logdiag_symbol_category_new (LogdiagSymbolLibrary *parent)
 
 /*
  * LogdiagSymbolPrivate:
- * @parent_library: The parent LogdiagSymbolLibrary.
+ * @library: The parent LogdiagSymbolLibrary.
  * The library contains the real function for rendering.
  */
 struct _LogdiagSymbolPrivate
 {
-	LogdiagSymbolLibrary *parent_library;
+	LogdiagSymbolLibrary *library;
 };
+
+G_DEFINE_TYPE (LogdiagSymbol, logdiag_symbol, G_TYPE_OBJECT);
+
+static void
+logdiag_symbol_finalize (GObject *gobject);
+
+
+static void
+logdiag_symbol_class_init (LogdiagSymbolClass *klass)
+{
+	GObjectClass *object_class;
+
+	object_class = G_OBJECT_CLASS (klass);
+	object_class->finalize = logdiag_symbol_finalize;
+
+	g_type_class_add_private (klass, sizeof (LogdiagSymbolPrivate));
+}
+
+static void
+logdiag_symbol_init (LogdiagSymbol *self)
+{
+	self->priv = G_TYPE_INSTANCE_GET_PRIVATE
+		(self, LOGDIAG_TYPE_SYMBOL_LIBRARY, LogdiagSymbolPrivate);
+}
+
+static void
+logdiag_symbol_finalize (GObject *gobject)
+{
+	LogdiagSymbol *self;
+
+	self = LOGDIAG_SYMBOL (gobject);
+	g_object_unref (self->priv->library);
+
+	/* Chain up to the parent class. */
+	G_OBJECT_CLASS (logdiag_symbol_parent_class)->finalize (gobject);
+}
+
+/**
+ * logdiag_symbol_new:
+ * @library: A library object.
+ * @filename: The file from which the symbol will be loaded.
+ *
+ * Load a symbol from a file into the library.
+ */
+LogdiagSymbol *logdiag_symbol_new (LogdiagSymbolLibrary *library,
+	const gchar *filename)
+{
+	LogdiagSymbol *symbol;
+
+	symbol = g_object_new (LOGDIAG_TYPE_SYMBOL, NULL);
+	/* TODO: Use the filename, Luke. */
+
+	symbol->priv->library = library;
+	g_object_ref (library);
+}
 
 /**
  * logdiag_symbol_build_identifier:
+ * @self: A symbol object.
  *
  * Build an identifier for the symbol.
  * The identifier is in the format "Category/Category/Symbol".
@@ -298,6 +356,12 @@ logdiag_symbol_build_identifier (LogdiagSymbol *self)
 
 /**
  * logdiag_symbol_draw:
+ * @self: A symbol object.
+ * @surface: A cairo surface to be drawn on.
+ * @param: Parameters for the symbol in a table.
+ * @x: The X coordinate on the surface.
+ * @y: The Y coordinate on the surface.
+ * @zoom: Zoom ratio.
  *
  * Draw the symbol onto a Cairo surface.
  */

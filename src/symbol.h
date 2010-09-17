@@ -27,34 +27,34 @@ G_BEGIN_DECLS
 	((obj), LOGDIAG_SYMBOL, LogdiagSymbolClass))
 
 typedef struct _LogdiagSymbol LogdiagSymbol;
-/*typedef struct _LogdiagSymbolPrivate LogdiagSymbolPrivate;*/
+typedef struct _LogdiagSymbolPrivate LogdiagSymbolPrivate;
 typedef struct _LogdiagSymbolClass LogdiagSymbolClass;
 
 
 /**
  * LogdiagSymbol:
- * @parent: The parent category.
  * @name: The name of this symbol.
  */
 struct _LogdiagSymbol
 {
 /*< private >*/
 	GObject parent_instance;
-/*	LogdiagSymbolPrivate *priv;*/
+	LogdiagSymbolPrivate *priv;
 
 /*< public >*/
-	LogdiagSymbolCategory *parent;
-	char *name;
+	gchar *name;
 };
 
 struct _LogdiagSymbolClass
 {
-	GtkObjectClass parent_class;
+	GObjectClass parent_class;
 };
 
 
 GType logdiag_symbol_get_type (void) G_GNUC_CONST;
 
+LogdiagSymbol *logdiag_symbol_new (LogdiagSymbolLibrary *library,
+	const gchar *filename);
 char *logdiag_symbol_build_identifier (LogdiagSymbol *self);
 void logdiag_symbol_draw (LogdiagSymbol *self, cairo_t *surface,
 	GHashTable *param, gint x, gint y, gdouble zoom);

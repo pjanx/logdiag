@@ -35,7 +35,7 @@ typedef struct _LogdiagSymbolCategoryClass LogdiagSymbolCategoryClass;
  * @parent: The parent object, may be LogdiagSymbolLibrary
  * or another LogdiagSymbolCategory.
  * @name: The name of the category.
- * @image_path: Path to the image of the category.
+ * @image_path: Path to the image for this category.
  * @children: Children of this category.
  */
 struct _LogdiagSymbolCategory
@@ -52,7 +52,7 @@ struct _LogdiagSymbolCategory
 
 struct _LogdiagSymbolCategoryClass
 {
-	GtkObjectClass parent_class;
+	GObjectClass parent_class;
 };
 
 

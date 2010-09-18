@@ -100,6 +100,35 @@ configure_file (${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 	${CMAKE_CURRENT_BINARY_DIR}/config.h)
 include_directories (${CMAKE_CURRENT_BINARY_DIR})
 
+# Generate marshallers
+function (glib_genmarshal base prefix)
+	find_program (GLIB_GENMARSHAL_EXECUTABLE glib-genmarshal)
+
+	if (GLIB_GENMARSHAL_EXECUTABLE)
+		get_filename_component (base_path "${base}" PATH)
+		get_filename_component (base_name "${base}" NAME)
+		set (command_base ${GLIB_GENMARSHAL_EXECUTABLE}
+			--prefix ${prefix} "${base_name}.list")
+
+		# NOTE: VERBATIM may cause problems, so it is not used here
+		add_custom_command (OUTPUT ${base}.c
+			COMMAND ${command_base} --body   > "${base_name}.c"
+			DEPENDS "${base}.list"
+			WORKING_DIRECTORY "${base_path}"
+			COMMENT "Generating marshallers source file")
+		add_custom_command (OUTPUT ${base}.h
+			COMMAND ${command_base} --header > "${base_name}.h"
+			DEPENDS "${base}.list"
+			WORKING_DIRECTORY "${base_path}"
+			COMMENT "Generating marshallers header file")
+	else (GLIB_GENMARSHAL_EXECUTABLE)
+		message (WARNING "glib-genmarshal is not present on this system")
+	endif (GLIB_GENMARSHAL_EXECUTABLE)
+endfunction (glib_genmarshal)
+
+glib_genmarshal (${CMAKE_CURRENT_SOURCE_DIR}/src/ld-marshal
+	g_cclosure_user_marshal)
+
 # Build the executable
 include_directories (${GTK2_INCLUDE_DIRS})
 add_executable (logdiag ${logdiag_SOURCES} ${logdiag_HEADERS})

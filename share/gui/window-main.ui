@@ -11,9 +11,11 @@
 			<menuitem action="Quit" />
 		</menu>
 		<menu name="EditMenu" action="EditMenu">
+<!--
 			<menuitem action="Cut" />
 			<menuitem action="Copy" />
 			<menuitem action="Paste" />
+-->
 			<menuitem action="Delete" />
 			<separator />
 			<menuitem action="SelectAll" />

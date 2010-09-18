@@ -59,7 +59,7 @@ GType ld_symbol_library_get_type (void) G_GNUC_CONST;
 
 LdSymbolLibrary *ld_symbol_library_new (void);
 gboolean ld_symbol_library_load (LdSymbolLibrary *self,
-	const char *directory);
+	const gchar *directory);
 void ld_symbol_library_clear (LdSymbolLibrary *self);
 
 

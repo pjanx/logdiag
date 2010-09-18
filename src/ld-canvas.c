@@ -52,7 +52,8 @@ ld_canvas_class_init (LdCanvasClass *klass)
 
 	widget_class = GTK_WIDGET_CLASS (klass);
 
-/**
+/* TODO: Scrolling support; make the comment bellow a gtk-doc comment then. */
+/*
  * LdCanvas::set-scroll-adjustments:
  * @canvas: The canvas object.
  *

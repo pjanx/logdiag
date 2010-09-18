@@ -55,12 +55,11 @@ GType ld_symbol_get_type (void) G_GNUC_CONST;
 
 LdSymbol *ld_symbol_new (LdSymbolLibrary *library,
 	const gchar *filename);
-char *ld_symbol_build_identifier (LdSymbol *self);
+gchar *ld_symbol_build_identifier (LdSymbol *self);
 void ld_symbol_draw (LdSymbol *self, cairo_t *surface,
 	GHashTable *param, gint x, gint y, gdouble zoom);
 
-/* TODO: Funkce pro získání terminálů. */
-
+/* TODO: An interface for symbol terminals. */
 
 
 G_END_DECLS

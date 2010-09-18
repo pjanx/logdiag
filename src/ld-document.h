@@ -27,12 +27,13 @@ G_BEGIN_DECLS
 	((obj), LD_DOCUMENT, LdDocumentClass))
 
 typedef struct _LdDocument LdDocument;
-/*typedef struct _LdDocumentPrivate LdDocumentPrivate;*/
 typedef struct _LdDocumentClass LdDocumentClass;
 
 
 /**
  * LdDocument:
+ *
+ * A document object.
  */
 struct _LdDocument
 {
@@ -55,34 +56,45 @@ gboolean ld_document_new_from_file (const char *file_name, GError *error);
 gboolean ld_document_save_to_file (const char *file_name, GError *error);
 
 #if 0
+/* ===== Data proposal ===================================================== */
+typedef struct _LdDocumentPrivate LdDocumentPrivate;
+
 /*
  * LdDocumentPrivate:
  * @objects: All the objects in the document.
+ * @selection: All currently selected objects.
  */
 struct _LdDocumentPrivate
 {
 	GSList *objects;
+	GSList *selection;
 };
 
-/** The contents of the document have changed. */
-signal documentChanged (...);
+/* ===== Interface proposal ================================================ */
+/* The contents of the document have changed. */
+signal document-changed (...)
 
-/* TODO: A list of objects: */
-LdDocumentSymbol
-LdDocumentLabel
-
+/* Add a symbol to the document at specified coordinates. */
+/* TODO: Should the coordinates be double or int? */
+void
 ld_document_add_symbol (LdSymbol *symbol, x, y);
 
-/* XXX: Separated lists of objects
- *      or a single list for all objects?
- */
-/* TODO: Wires. */
+/* Parse a document in JSON and insert it into the document. */
+gboolean
+ld_document_insert_json (LdDocument *self, GError *error);
+
+/* TODO: Create an interface for a list of this object: */
+/* NOTE: In the future, labels will be also supported. */
+LdDocumentSymbol
+
+/* TODO: Create an interface for wires between pins of various symbols. */
+
+/* TODO: Create an interface for object selection. */
 ld_document_selection_...
+
+gchar *
 ld_document_selection_get_json (LdDocument *self);
-ld_document_insert_json (LdDocument *self);
-/** Go back or forward in the history of changes. */
-/* TODO: An interface that informs about the history. */
-ld_document_history_go (LdDocument *self);
+
 #endif /* 0 */
 
 

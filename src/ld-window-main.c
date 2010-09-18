@@ -1,5 +1,5 @@
 /*
- * window-main.c
+ * ld-window-main.c
  *
  * This file is a part of logdiag.
  * Copyright Přemysl Janouch 2010. All rights reserved.
@@ -34,6 +34,8 @@
 /* Private members of the window. */
 struct _LdWindowMainPrivate
 {
+	GtkUIManager *ui_manager;
+
 	GtkWidget *vbox;
 	GtkWidget *hbox;
 	GtkWidget *menu;
@@ -56,52 +58,34 @@ struct DocumentData
 /* Define the type. */
 G_DEFINE_TYPE (LdWindowMain, ld_window_main, GTK_TYPE_WINDOW);
 
+#define TOOLBAR_ICON_WIDTH 32
+
 
 /* ===== Local functions =================================================== */
 
-/*
- * cb_load_category:
- *
- * A hashtable foreach callback for adding categories into the toolbar.
- */
+static void
+ld_window_main_finalize (GObject *gobject);
+
 static void
 cb_load_category (gpointer key, gpointer value, gpointer user_data);
 
-/*
- * load_toolbar:
- *
- * Load symbols from the library into the toolbar.
- */
 static void
 load_toolbar (LdWindowMain *self);
 
-/*
- * cb_ui_proxy_connected:
- *
- * An item was connected to the manager.
- */
 static void
 cb_ui_proxy_connected (GtkUIManager *ui, GtkAction *action,
 	GtkWidget *proxy, LdWindowMain *window);
 
-/*
- * cb_ui_proxy_disconnected:
- *
- * An item was disconnected from the manager.
- */
 static void
 cb_ui_proxy_disconnected (GtkUIManager *ui, GtkAction *action,
 	GtkWidget *proxy, LdWindowMain *window);
 
-/* A menu item was selected. */
 static void
 cb_menu_item_selected (GtkWidget *item, LdWindowMain *window);
 
-/* A menu item was deselected. */
 static void
 cb_menu_item_deselected (GtkItem *item, LdWindowMain *window);
 
-/* Show the about dialog. */
 static void
 cb_show_about_dialog (GtkAction *action, LdWindowMain *window);
 
@@ -123,17 +107,22 @@ static GtkActionEntry mw_actionEntries[] =
 		{"Export", NULL, Q_("_Export"), NULL,
 			Q_("Export the document"), NULL},
 		{"Quit", GTK_STOCK_QUIT, NULL, NULL,
-			Q_("Quit the program"), NULL},
+			Q_("Quit the application"), NULL},
 
 	{"EditMenu", NULL, Q_("_Edit")},
+/* These are not probably going to show up in the 1st version of this app:
 		{"Cut", GTK_STOCK_CUT, NULL, NULL, NULL, NULL},
 		{"Copy", GTK_STOCK_COPY, NULL, NULL, NULL, NULL},
 		{"Paste", GTK_STOCK_PASTE, NULL, NULL, NULL, NULL},
-		{"Delete", GTK_STOCK_DELETE, NULL, NULL, NULL, NULL},
-		{"SelectAll", GTK_STOCK_SELECT_ALL, NULL, NULL, NULL, NULL},
+*/
+		{"Delete", GTK_STOCK_DELETE, NULL, NULL,
+			Q_("Delete the contents of the selection"), NULL},
+		{"SelectAll", GTK_STOCK_SELECT_ALL, NULL, NULL,
+			Q_("Select all objects in the document"), NULL},
 
 	{"HelpMenu", NULL, Q_("_Help")},
-		{"About", GTK_STOCK_ABOUT, NULL, NULL, NULL,
+		{"About", GTK_STOCK_ABOUT, NULL, NULL,
+			Q_("Show a dialog about this application"),
 			G_CALLBACK(cb_show_about_dialog)}
 };
 
@@ -157,6 +146,8 @@ ld_window_main_class_init (LdWindowMainClass *klass)
 	GtkWidgetClass *widget_class;
 
 	object_class = G_OBJECT_CLASS (klass);
+	object_class->finalize = ld_window_main_finalize;
+
 	widget_class = GTK_WIDGET_CLASS (klass);
 
 	g_type_class_add_private (klass, sizeof (LdWindowMainPrivate));
@@ -167,7 +158,6 @@ ld_window_main_init (LdWindowMain *self)
 {
 	LdWindowMainPrivate *priv;
 	GtkActionGroup *action_group;
-	GtkUIManager *ui_manager;
 	GError *error;
 
 	self->priv = priv = G_TYPE_INSTANCE_GET_PRIVATE
@@ -177,25 +167,25 @@ ld_window_main_init (LdWindowMain *self)
 	gtk_container_add (GTK_CONTAINER (self), priv->vbox);
 
 
-	ui_manager = gtk_ui_manager_new ();
+	priv->ui_manager = gtk_ui_manager_new ();
 
-	/* TODO: Show tooltips in the statusbar:
+	/* Reference:
 	 * http://git.gnome.org/browse/glade3/tree/src/glade-window.c : 2165
 	 */
-	g_signal_connect (ui_manager, "connect-proxy",
+	g_signal_connect (priv->ui_manager, "connect-proxy",
 		G_CALLBACK (cb_ui_proxy_connected), self);
-	g_signal_connect (ui_manager, "disconnect-proxy",
+	g_signal_connect (priv->ui_manager, "disconnect-proxy",
 		G_CALLBACK (cb_ui_proxy_disconnected), self);
 
 	/* Prepare our actions. */
 	action_group = gtk_action_group_new ("MainActions");
 	gtk_action_group_add_actions (action_group,
 		mw_actionEntries, G_N_ELEMENTS (mw_actionEntries), self);
-	gtk_ui_manager_insert_action_group (ui_manager, action_group, 0);
+	gtk_ui_manager_insert_action_group (priv->ui_manager, action_group, 0);
 
 	error = NULL;
 	gtk_ui_manager_add_ui_from_file
-		(ui_manager, PROJECT_SHARE_DIR "gui/window-main.ui", &error);
+		(priv->ui_manager, PROJECT_SHARE_DIR "gui/window-main.ui", &error);
 	if (error)
 	{
 		g_message (_("Building UI failed: %s"), error->message);
@@ -204,9 +194,9 @@ ld_window_main_init (LdWindowMain *self)
 
 	/* Load keyboard accelerators into the window. */
 	gtk_window_add_accel_group
-		(GTK_WINDOW (self), gtk_ui_manager_get_accel_group (ui_manager));
+		(GTK_WINDOW (self), gtk_ui_manager_get_accel_group (priv->ui_manager));
 
-	priv->menu = gtk_ui_manager_get_widget (ui_manager, "/MenuBar");
+	priv->menu = gtk_ui_manager_get_widget (priv->ui_manager, "/MenuBar");
 	gtk_box_pack_start (GTK_BOX (priv->vbox), priv->menu, FALSE, FALSE, 0);
 
 	priv->hbox = gtk_hbox_new(FALSE, 0);
@@ -230,28 +220,54 @@ ld_window_main_init (LdWindowMain *self)
 
 	load_toolbar (self);
 
+	/* TODO in the future: GtkHPaned */
+
 	/* Canvas. */
+	/* TODO: Put it into a GtkScrolledWindow. */
 	priv->canvas = ld_canvas_new ();
 	gtk_box_pack_start (GTK_BOX (priv->hbox), GTK_WIDGET (priv->canvas),
-		FALSE, FALSE, 0);
-
-	/* TODO: GtkHPaned */
+		TRUE, TRUE, 0);
 
 	priv->statusbar = gtk_statusbar_new ();
 	priv->statusbar_menu_context_id = gtk_statusbar_get_context_id
 		(GTK_STATUSBAR (priv->statusbar), "menu");
 	gtk_box_pack_end (GTK_BOX (priv->vbox), priv->statusbar, FALSE, FALSE, 0);
 
-
-	/* TODO: Do this on disposal. */
-	/* g_object_unref(ui_manager); */
-
 	/* Proceed to showing the window. */
 	g_signal_connect (self, "destroy", G_CALLBACK (gtk_main_quit), NULL);
+
 	gtk_window_set_default_size (GTK_WINDOW (self), 500, 400);
+	gtk_window_set_position (GTK_WINDOW (self), GTK_WIN_POS_CENTER);
 	gtk_widget_show_all (GTK_WIDGET (self));
 }
 
+/*
+ * ld_window_main_finalize:
+ *
+ * Dispose of all the resources owned by this window.
+ */
+static void
+ld_window_main_finalize (GObject *gobject)
+{
+	LdWindowMain *self;
+
+	self = LD_WINDOW_MAIN (gobject);
+
+	/* Dispose of objects. Note that GtkObject has floating ref. by default
+	 * and gtk_object_destroy () should be used for it.
+	 */
+	g_object_unref (self->priv->library);
+	g_object_unref (self->priv->ui_manager);
+
+	/* Chain up to the parent class. */
+	G_OBJECT_CLASS (ld_window_main_parent_class)->finalize (gobject);
+}
+
+/*
+ * cb_load_category:
+ *
+ * A hashtable foreach callback for adding categories into the toolbar.
+ */
 static void
 cb_load_category (gpointer key, gpointer value, gpointer user_data)
 {
@@ -269,10 +285,10 @@ cb_load_category (gpointer key, gpointer value, gpointer user_data)
 	g_return_if_fail (key != NULL);
 	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (cat));
 
-	/* XXX: Hardcoded icon width, unref? */
-	pbuf = gdk_pixbuf_new_from_file_at_size (cat->image_path, 32, -1, NULL);
-	if (!pbuf)
-		return;
+	pbuf = gdk_pixbuf_new_from_file_at_size
+		(cat->image_path, TOOLBAR_ICON_WIDTH, -1, NULL);
+	g_return_if_fail (pbuf != NULL);
+
 	img = gtk_image_new_from_pixbuf (pbuf);
 	g_object_unref (pbuf);
 
@@ -281,15 +297,27 @@ cb_load_category (gpointer key, gpointer value, gpointer user_data)
 	gtk_toolbar_insert (GTK_TOOLBAR (self->priv->toolbar), item, 0);
 }
 
+/*
+ * load_toolbar:
+ *
+ * Load symbols from the library into the toolbar.
+ */
 static void
 load_toolbar (LdWindowMain *self)
 {
-	/* TODO: Clear the toolbar first, if there was already something in it. */
+	/* Clear the toolbar first, if there was already something in it. */
+	gtk_container_foreach (GTK_CONTAINER (self->priv->toolbar),
+		(GtkCallback) gtk_widget_destroy, NULL);
 
 	g_hash_table_foreach (self->priv->library->categories,
 		cb_load_category, self);
 }
 
+/*
+ * cb_ui_proxy_connected:
+ *
+ * An item was connected to the manager.
+ */
 static void
 cb_ui_proxy_connected (GtkUIManager *ui, GtkAction *action,
 	GtkWidget *proxy, LdWindowMain *window)
@@ -303,6 +331,11 @@ cb_ui_proxy_connected (GtkUIManager *ui, GtkAction *action,
 	}
 }
 
+/*
+ * cb_ui_proxy_disconnected:
+ *
+ * An item was disconnected from the manager.
+ */
 static void
 cb_ui_proxy_disconnected (GtkUIManager *ui, GtkAction *action,
 	GtkWidget *proxy, LdWindowMain *window)

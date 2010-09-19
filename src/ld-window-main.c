@@ -13,8 +13,8 @@
 #include "config.h"
 
 #include "ld-window-main.h"
-#include "ld-canvas.h"
 #include "ld-document.h"
+#include "ld-canvas.h"
 #include "ld-symbol-library.h"
 #include "ld-symbol-category.h"
 #include "ld-symbol.h"

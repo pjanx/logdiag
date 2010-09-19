@@ -45,13 +45,23 @@ struct _LdCanvas
 
 struct _LdCanvasClass
 {
+/*< private >*/
 	GtkDrawingAreaClass parent_class;
+
+/*
+	void (*set_scroll_adjustments) (GtkAdjustment *x, GtkAdjustment *y);
+*/
 };
 
 
 GType ld_canvas_get_type (void) G_GNUC_CONST;
 
 LdCanvas *ld_canvas_new (void);
+
+void ld_canvas_set_document (LdCanvas *self, LdDocument *document);
+LdDocument *ld_canvas_get_document (LdCanvas *self);
+
+/* TODO: The rest of the interface. */
 
 
 G_END_DECLS

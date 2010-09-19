@@ -13,10 +13,9 @@
 #include "config.h"
 
 #include "ld-marshal.h"
-#include "ld-canvas.h"
 #include "ld-document.h"
+#include "ld-canvas.h"
 
-/* http://www.gnomejournal.org/article/34/writing-a-widget-using-cairo-and-gtk28 */
 
 /**
  * SECTION:ld-canvas
@@ -37,8 +36,32 @@ struct _LdCanvasPrivate
 
 G_DEFINE_TYPE (LdCanvas, ld_canvas, GTK_TYPE_DRAWING_AREA);
 
+enum
+{
+	PROP_0,
+	PROP_DOCUMENT
+};
+
+static void
+ld_canvas_get_property (GObject *object, guint property_id,
+	GValue *value, GParamSpec *pspec);
+
+static void
+ld_canvas_set_property (GObject *object, guint property_id,
+	const GValue *value, GParamSpec *pspec);
+
 static void
 ld_canvas_finalize (GObject *gobject);
+
+
+static gboolean
+on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data);
+
+static void
+draw_grid (GtkWidget *widget, cairo_t *cr);
+
+static void
+canvas_paint (GtkWidget *widget, cairo_t *cr);
 
 
 static void
@@ -46,9 +69,22 @@ ld_canvas_class_init (LdCanvasClass *klass)
 {
 	GObjectClass *object_class;
 	GtkWidgetClass *widget_class;
+	GParamSpec *pspec;
 
 	object_class = G_OBJECT_CLASS (klass);
+	object_class->get_property = ld_canvas_get_property;
+	object_class->set_property = ld_canvas_set_property;
 	object_class->finalize = ld_canvas_finalize;
+
+/**
+ * LdCanvas:document:
+ *
+ * The underlying #LdDocument object of this canvas.
+ */
+	pspec = g_param_spec_object ("document", "Document",
+		"The underlying document object of this canvas.",
+		LD_TYPE_DOCUMENT, G_PARAM_READWRITE);
+	g_object_class_install_property (object_class, PROP_DOCUMENT, pspec);
 
 	widget_class = GTK_WIDGET_CLASS (klass);
 
@@ -63,7 +99,7 @@ ld_canvas_class_init (LdCanvasClass *klass)
 	widget_class->set_scroll_adjustments_signal = g_signal_new
 		("set-scroll-adjustments", G_TYPE_FROM_CLASS (widget_class),
 		G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
-		0, // G_STRUCT_OFFSET (LdCanvasClass, ...)
+		G_STRUCT_OFFSET (LdCanvasClass, set_scroll_adjustments),
 		NULL, NULL,
 		g_cclosure_user_marshal_VOID__OBJECT_OBJECT,
 		G_TYPE_NONE, 2, GTK_TYPE_ADJUSTMENT, GTK_TYPE_ADJUSTMENT);
@@ -76,6 +112,8 @@ ld_canvas_init (LdCanvas *self)
 {
 	self->priv = G_TYPE_INSTANCE_GET_PRIVATE
 		(self, LD_TYPE_CANVAS, LdCanvasPrivate);
+
+	g_signal_connect (self, "expose-event", G_CALLBACK (on_expose_event), NULL);
 }
 
 static void
@@ -89,6 +127,40 @@ ld_canvas_finalize (GObject *gobject)
 	G_OBJECT_CLASS (ld_canvas_parent_class)->finalize (gobject);
 }
 
+static void
+ld_canvas_get_property (GObject *object, guint property_id,
+	GValue *value, GParamSpec *pspec)
+{
+	LdCanvas *self;
+
+	self = LD_CANVAS (object);
+	switch (property_id)
+	{
+	case PROP_DOCUMENT:
+		g_value_set_object (value, ld_canvas_get_document (self));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+	}
+}
+
+static void
+ld_canvas_set_property (GObject *object, guint property_id,
+	const GValue *value, GParamSpec *pspec)
+{
+	LdCanvas *self;
+
+	self = LD_CANVAS (object);
+	switch (property_id)
+	{
+	case PROP_DOCUMENT:
+		ld_canvas_set_document (self, LD_DOCUMENT (g_value_get_object (value)));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+	}
+}
+
 /**
  * ld_canvas_new:
  *
@@ -99,3 +171,85 @@ ld_canvas_new (void)
 {
 	return g_object_new (LD_TYPE_CANVAS, NULL);
 }
+
+/**
+ * ld_canvas_set_document:
+ * @self: An #LdCanvas object.
+ * @document: The #LdDocument to be assigned to the canvas.
+ *
+ * Assign an #LdDocument object to the canvas.
+ */
+void
+ld_canvas_set_document (LdCanvas *self, LdDocument *document)
+{
+	self->priv->document = document;
+}
+
+/**
+ * ld_canvas_get_document:
+ * @self: An #LdCanvas object.
+ *
+ * Get the #LdDocument object assigned to this canvas.
+ * The reference count on the document is not incremented.
+ */
+LdDocument *
+ld_canvas_get_document (LdCanvas *self)
+{
+	return self->priv->document;
+}
+
+static gboolean
+on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
+{
+	cairo_t *cr;
+
+	cr = gdk_cairo_create (widget->window);
+
+	cairo_rectangle (cr, event->area.x, event->area.y,
+		event->area.width, event->area.height);
+	cairo_clip (cr);
+
+	canvas_paint (widget, cr);
+
+	cairo_destroy (cr);
+
+	return FALSE;
+}
+
+static void
+draw_grid (GtkWidget *widget, cairo_t *cr)
+{
+	int x, y;
+
+	/* Drawing points:
+	 * http://lists.freedesktop.org/archives/cairo/2009-June/017459.html
+	 */
+	cairo_set_source_rgb (cr, 0.5, 0.5, 0.5);
+	cairo_set_line_width (cr, 1);
+	cairo_set_line_cap (cr, CAIRO_LINE_CAP_ROUND);
+
+	/* FIXME: Invariable grid size; it's slow because it draws whole area. */
+	for (x = 0; x < widget->allocation.width; x += 20)
+	{
+		for (y = 0; y < widget->allocation.height; y += 20)
+		{
+			/* Drawing sharp lines (also applies to these dots):
+			 * http://www.cairographics.org/FAQ/#sharp_lines
+			 */
+			cairo_move_to (cr, x + 0.5, y + 0.5);
+			cairo_close_path (cr);
+			cairo_stroke (cr);
+		}
+	}
+}
+
+static void
+canvas_paint (GtkWidget *widget, cairo_t *cr)
+{
+	/* Paint a white background. */
+	cairo_set_source_rgb (cr, 1, 1, 1);
+	cairo_paint (cr);
+
+	draw_grid (widget, cr);
+}
+

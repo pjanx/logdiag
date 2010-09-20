@@ -27,7 +27,7 @@ set (project_VERSION "${project_VERSION}.${project_VERSION_PATCH}")
 set (CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Gather package information
-find_package (GTK2 2.8 REQUIRED gtk)
+find_package (GTK2 2.12 REQUIRED gtk)
 
 # Test this machine
 include (CheckCSourceCompiles)
@@ -51,6 +51,10 @@ CHECK_FUNCTION_EXISTS ("strtok_s" HAVE_STRTOK_S)
 if (WIN32)
         set (HAVE_THREADSAFE_STRTOK true)
 endif (WIN32)
+
+# Lua
+find_package (Lua51 REQUIRED)
+
 
 # Localization
 find_package (Gettext)
@@ -130,9 +134,9 @@ glib_genmarshal (${CMAKE_CURRENT_SOURCE_DIR}/src/ld-marshal
 	g_cclosure_user_marshal)
 
 # Build the executable
-include_directories (${GTK2_INCLUDE_DIRS})
+include_directories (${GTK2_INCLUDE_DIRS} ${LUA_INCLUDE_DIR})
 add_executable (logdiag ${logdiag_SOURCES} ${logdiag_HEADERS})
-target_link_libraries (logdiag ${GTK2_LIBRARIES})
+target_link_libraries (logdiag ${GTK2_LIBRARIES} ${LUA_LIBRARIES})
 
 # Installation
 install (TARGETS logdiag DESTINATION bin)

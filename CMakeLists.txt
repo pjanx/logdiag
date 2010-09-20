@@ -88,6 +88,8 @@ set (logdiag_SOURCES
 	src/ld-window-main.c
 	src/ld-document.c
 	src/ld-canvas.c
+	src/ld-symbol.c
+	src/ld-symbol-category.c
 	src/ld-symbol-library.c)
 set (logdiag_HEADERS
 	${CMAKE_CURRENT_BINARY_DIR}/config.h

@@ -32,8 +32,8 @@ typedef struct _LdSymbolCategoryClass LdSymbolCategoryClass;
 
 /**
  * LdSymbolCategory:
- * @parent: The parent object, may be LdSymbolLibrary
- * or another LdSymbolCategory.
+ * @parent: The parent object, may be #LdSymbolLibrary
+ * or another #LdSymbolCategory.
  * @name: The name of the category.
  * @image_path: Path to the image for this category.
  * @children: Children of this category.

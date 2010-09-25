@@ -49,6 +49,8 @@ ld_lua_symbol_class_init (LdLuaSymbolClass *klass)
 	object_class = G_OBJECT_CLASS (klass);
 	object_class->finalize = ld_lua_symbol_finalize;
 
+	/* TODO: Override the "draw" method of LdSymbol. */
+
 	g_type_class_add_private (klass, sizeof (LdLuaSymbolPrivate));
 }
 

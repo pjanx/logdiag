@@ -51,9 +51,8 @@ struct _LdLuaClass
 GType ld_lua_get_type (void) G_GNUC_CONST;
 
 LdLua *ld_lua_new (void);
-/* TODO: Implement the following: */
-gboolean ld_lua_check_file (LdLua *lua, const gchar *filename);
-gboolean ld_lua_load_file_to_category (LdLua *lua, const gchar *filename,
+gboolean ld_lua_check_file (LdLua *self, const gchar *filename);
+gboolean ld_lua_load_file_to_category (LdLua *self, const gchar *filename,
 	LdSymbolCategory *category);
 
 

@@ -45,19 +45,26 @@ struct _LdSymbol
 	gchar *name;
 };
 
+/**
+ * LdSymbolClass:
+ * @parent_class: The parent class.
+ * @draw: Draw the symbol on a Cairo surface.
+ */
 struct _LdSymbolClass
 {
 	GObjectClass parent_class;
+
+	void (*draw) (LdSymbol *self, cairo_t *cr);
 };
 
 
 GType ld_symbol_get_type (void) G_GNUC_CONST;
 
-LdSymbol *ld_symbol_new (LdLibrary *library);
 gchar *ld_symbol_build_identifier (LdSymbol *self);
-void ld_symbol_draw (LdSymbol *self, cairo_t *cr, GHashTable *param);
 
-/* TODO: An interface for symbol terminals. */
+void ld_symbol_draw (LdSymbol *self, cairo_t *cr);
+
+/* TODO: An interface for symbol terminals etc. */
 
 
 G_END_DECLS

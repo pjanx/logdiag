@@ -9,8 +9,6 @@
  */
 
 #include <gtk/gtk.h>
-#include <lua.h>
-/* #include <lauxlib.h> */
 
 #include "config.h"
 
@@ -29,11 +27,11 @@
 
 /*
  * LdSymbolLibraryPrivate:
- * @lua_state: Lua state.
+ * @script_state: State of the scripting language.
  */
 struct _LdSymbolLibraryPrivate
 {
-	lua_State *lua_state;
+	gpointer script_state;
 };
 
 G_DEFINE_TYPE (LdSymbolLibrary, ld_symbol_library, G_TYPE_OBJECT);
@@ -70,8 +68,8 @@ ld_symbol_library_init (LdSymbolLibrary *self)
 	self->priv = G_TYPE_INSTANCE_GET_PRIVATE
 		(self, LD_TYPE_SYMBOL_LIBRARY, LdSymbolLibraryPrivate);
 
-	/* TODO: lua */
-	self->priv->lua_state = NULL;
+	/* TODO */
+	self->priv->script_state = NULL;
 
 	self->categories = g_hash_table_new_full (g_str_hash, g_str_equal,
 		(GDestroyNotify) g_free, (GDestroyNotify) g_object_unref);
@@ -151,6 +149,7 @@ ld_symbol_library_load (LdSymbolLibrary *self, const char *path)
 {
 	GDir *dir;
 	const gchar *item;
+	gboolean changed = FALSE;
 
 	g_return_val_if_fail (LD_IS_SYMBOL_LIBRARY (self), FALSE);
 	g_return_val_if_fail (path != NULL, FALSE);
@@ -169,8 +168,15 @@ ld_symbol_library_load (LdSymbolLibrary *self, const char *path)
 		if (cat)
 			g_hash_table_insert (self->categories, cat->name, cat);
 		g_free (categ_path);
+
+		changed = TRUE;
 	}
 	g_dir_close (dir);
+
+	if (changed)
+		g_signal_emit (self,
+			LD_SYMBOL_LIBRARY_GET_CLASS (self)->changed_signal, 0);
+
 	return TRUE;
 }
 
@@ -186,6 +192,8 @@ ld_symbol_library_clear (LdSymbolLibrary *self)
 	g_return_if_fail (LD_IS_SYMBOL_LIBRARY (self));
 
 	g_hash_table_remove_all (self->categories);
-	return;
+
+	g_signal_emit (self,
+		LD_SYMBOL_LIBRARY_GET_CLASS (self)->changed_signal, 0);
 }
 

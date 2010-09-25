@@ -38,6 +38,10 @@ typedef struct _LdSymbolCategoryClass LdSymbolCategoryClass;
  * @image_path: Path to the image for this category.
  * @children: Children of this category.
  */
+/* TODO: Make the public fields private and set them as properties
+ *       + implement setters and getters. On change the category
+ *       shall emit a "changed" signal in the Library.
+ */
 struct _LdSymbolCategory
 {
 /*< private >*/

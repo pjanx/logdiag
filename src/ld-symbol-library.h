@@ -51,6 +51,7 @@ struct _LdSymbolLibraryClass
 {
 /*< private >*/
 	GObjectClass parent_class;
+
 	guint changed_signal;
 };
 

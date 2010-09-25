@@ -79,13 +79,11 @@ ld_symbol_finalize (GObject *gobject)
  *
  * Load a symbol from a file into the library.
  */
-LdSymbol *ld_symbol_new (LdSymbolLibrary *library,
-	const gchar *filename)
+LdSymbol *ld_symbol_new (LdSymbolLibrary *library)
 {
 	LdSymbol *symbol;
 
 	symbol = g_object_new (LD_TYPE_SYMBOL, NULL);
-	/* TODO: Use the filename, Luke. */
 
 	symbol->priv->library = library;
 	g_object_ref (library);
@@ -107,17 +105,13 @@ ld_symbol_build_identifier (LdSymbol *self)
 /**
  * ld_symbol_draw:
  * @self: A symbol object.
- * @surface: A cairo surface to be drawn on.
+ * @cr: A cairo surface to be drawn on.
  * @param: Parameters for the symbol in a table.
- * @x: The X coordinate on the surface.
- * @y: The Y coordinate on the surface.
- * @zoom: Zoom ratio.
  *
  * Draw the symbol onto a Cairo surface.
  */
 void
-ld_symbol_draw (LdSymbol *self, cairo_t *surface,
-	GHashTable *param, gint x, gint y, gdouble zoom)
+ld_symbol_draw (LdSymbol *self, cairo_t *cr, GHashTable *param)
 {
 	return;
 }

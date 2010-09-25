@@ -15,7 +15,7 @@
 #include "ld-window-main.h"
 #include "ld-document.h"
 #include "ld-canvas.h"
-#include "ld-symbol-library.h"
+#include "ld-library.h"
 #include "ld-symbol-category.h"
 #include "ld-symbol.h"
 
@@ -41,7 +41,7 @@ struct _LdWindowMainPrivate
 	GtkWidget *menu;
 	GtkWidget *toolbar;
 
-	LdSymbolLibrary *library;
+	LdLibrary *library;
 	LdCanvas *canvas;
 
 	GtkWidget *statusbar;
@@ -215,8 +215,8 @@ ld_window_main_init (LdWindowMain *self)
 	gtk_box_pack_start (GTK_BOX (priv->hbox), priv->toolbar, FALSE, FALSE, 0);
 
 	/* Symbol library. */
-	priv->library = ld_symbol_library_new ();
-	ld_symbol_library_load (priv->library, PROJECT_SHARE_DIR "library");
+	priv->library = ld_library_new ();
+	ld_library_load (priv->library, PROJECT_SHARE_DIR "library");
 
 	load_toolbar (self);
 

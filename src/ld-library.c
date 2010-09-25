@@ -1,5 +1,5 @@
 /*
- * ld-symbol-library.c
+ * ld-library.c
  *
  * This file is a part of logdiag.
  * Copyright Přemysl Janouch 2010. All rights reserved.
@@ -12,44 +12,44 @@
 
 #include "config.h"
 
-#include "ld-symbol-library.h"
+#include "ld-library.h"
 #include "ld-symbol-category.h"
 #include "ld-symbol.h"
 
 
 /**
- * SECTION:ld-symbol-library
+ * SECTION:ld-library
  * @short_description: A symbol library.
  * @see_also: #LdSymbol, #LdSymbolCategory
  *
- * #LdSymbolLibrary is used for loading symbols from their files.
+ * #LdLibrary is used for loading symbols from their files.
  */
 
 /*
- * LdSymbolLibraryPrivate:
+ * LdLibraryPrivate:
  * @script_state: State of the scripting language.
  */
-struct _LdSymbolLibraryPrivate
+struct _LdLibraryPrivate
 {
 	gpointer script_state;
 };
 
-G_DEFINE_TYPE (LdSymbolLibrary, ld_symbol_library, G_TYPE_OBJECT);
+G_DEFINE_TYPE (LdLibrary, ld_library, G_TYPE_OBJECT);
 
 static void
-ld_symbol_library_finalize (GObject *gobject);
+ld_library_finalize (GObject *gobject);
 
 
 static void
-ld_symbol_library_class_init (LdSymbolLibraryClass *klass)
+ld_library_class_init (LdLibraryClass *klass)
 {
 	GObjectClass *object_class;
 
 	object_class = G_OBJECT_CLASS (klass);
-	object_class->finalize = ld_symbol_library_finalize;
+	object_class->finalize = ld_library_finalize;
 
 /**
- * LdSymbolLibrary::changed:
+ * LdLibrary::changed:
  * @library: The library object.
  *
  * Contents of the library have changed.
@@ -59,14 +59,14 @@ ld_symbol_library_class_init (LdSymbolLibraryClass *klass)
 		G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_NO_HOOKS,
 		0, NULL, NULL, g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
 
-	g_type_class_add_private (klass, sizeof (LdSymbolLibraryPrivate));
+	g_type_class_add_private (klass, sizeof (LdLibraryPrivate));
 }
 
 static void
-ld_symbol_library_init (LdSymbolLibrary *self)
+ld_library_init (LdLibrary *self)
 {
 	self->priv = G_TYPE_INSTANCE_GET_PRIVATE
-		(self, LD_TYPE_SYMBOL_LIBRARY, LdSymbolLibraryPrivate);
+		(self, LD_TYPE_LIBRARY, LdLibraryPrivate);
 
 	/* TODO */
 	self->priv->script_state = NULL;
@@ -76,27 +76,27 @@ ld_symbol_library_init (LdSymbolLibrary *self)
 }
 
 static void
-ld_symbol_library_finalize (GObject *gobject)
+ld_library_finalize (GObject *gobject)
 {
-	LdSymbolLibrary *self;
+	LdLibrary *self;
 
-	self = LD_SYMBOL_LIBRARY (gobject);
+	self = LD_LIBRARY (gobject);
 
 	g_hash_table_destroy (self->categories);
 
 	/* Chain up to the parent class. */
-	G_OBJECT_CLASS (ld_symbol_library_parent_class)->finalize (gobject);
+	G_OBJECT_CLASS (ld_library_parent_class)->finalize (gobject);
 }
 
 /**
- * ld_symbol_library_new:
+ * ld_library_new:
  *
  * Create an instance.
  */
-LdSymbolLibrary *
-ld_symbol_library_new (void)
+LdLibrary *
+ld_library_new (void)
 {
-	return g_object_new (LD_TYPE_SYMBOL_LIBRARY, NULL);
+	return g_object_new (LD_TYPE_LIBRARY, NULL);
 }
 
 /*
@@ -108,12 +108,12 @@ ld_symbol_library_new (void)
  * Loads a category into the library.
  */
 static LdSymbolCategory *
-load_category (LdSymbolLibrary *self, const char *path, const char *name)
+load_category (LdLibrary *self, const char *path, const char *name)
 {
 	LdSymbolCategory *cat;
 	gchar *icon_file;
 
-	g_return_val_if_fail (LD_IS_SYMBOL_LIBRARY (self), NULL);
+	g_return_val_if_fail (LD_IS_LIBRARY (self), NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 	g_return_val_if_fail (name != NULL, NULL);
 
@@ -138,20 +138,20 @@ load_category (LdSymbolLibrary *self, const char *path, const char *name)
 }
 
 /**
- * ld_symbol_library_load:
+ * ld_library_load:
  * @self: A symbol library object.
  * @directory: A directory to be loaded.
  *
  * Load the contents of a directory into the library.
  */
 gboolean
-ld_symbol_library_load (LdSymbolLibrary *self, const char *path)
+ld_library_load (LdLibrary *self, const char *path)
 {
 	GDir *dir;
 	const gchar *item;
 	gboolean changed = FALSE;
 
-	g_return_val_if_fail (LD_IS_SYMBOL_LIBRARY (self), FALSE);
+	g_return_val_if_fail (LD_IS_LIBRARY (self), FALSE);
 	g_return_val_if_fail (path != NULL, FALSE);
 
 	dir = g_dir_open (path, 0, NULL);
@@ -175,25 +175,25 @@ ld_symbol_library_load (LdSymbolLibrary *self, const char *path)
 
 	if (changed)
 		g_signal_emit (self,
-			LD_SYMBOL_LIBRARY_GET_CLASS (self)->changed_signal, 0);
+			LD_LIBRARY_GET_CLASS (self)->changed_signal, 0);
 
 	return TRUE;
 }
 
 /**
- * ld_symbol_library_clear:
+ * ld_library_clear:
  * @self: A symbol library object.
  *
  * Clears all the contents.
  */
 void
-ld_symbol_library_clear (LdSymbolLibrary *self)
+ld_library_clear (LdLibrary *self)
 {
-	g_return_if_fail (LD_IS_SYMBOL_LIBRARY (self));
+	g_return_if_fail (LD_IS_LIBRARY (self));
 
 	g_hash_table_remove_all (self->categories);
 
 	g_signal_emit (self,
-		LD_SYMBOL_LIBRARY_GET_CLASS (self)->changed_signal, 0);
+		LD_LIBRARY_GET_CLASS (self)->changed_signal, 0);
 }
 

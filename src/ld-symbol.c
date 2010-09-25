@@ -12,7 +12,7 @@
 
 #include "config.h"
 
-#include "ld-symbol-library.h"
+#include "ld-library.h"
 #include "ld-symbol-category.h"
 #include "ld-symbol.h"
 
@@ -28,12 +28,12 @@
 
 /*
  * LdSymbolPrivate:
- * @library: The parent LdSymbolLibrary.
+ * @library: The parent LdLibrary.
  * The library contains the real function for rendering.
  */
 struct _LdSymbolPrivate
 {
-	LdSymbolLibrary *library;
+	LdLibrary *library;
 };
 
 G_DEFINE_TYPE (LdSymbol, ld_symbol, G_TYPE_OBJECT);
@@ -79,7 +79,7 @@ ld_symbol_finalize (GObject *gobject)
  *
  * Load a symbol from a file into the library.
  */
-LdSymbol *ld_symbol_new (LdSymbolLibrary *library)
+LdSymbol *ld_symbol_new (LdLibrary *library)
 {
 	LdSymbol *symbol;
 

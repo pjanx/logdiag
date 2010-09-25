@@ -14,7 +14,7 @@
 G_BEGIN_DECLS
 
 
-#define LD_TYPE_DOCUMENT (ld_symbol_library_get_type ())
+#define LD_TYPE_DOCUMENT (ld_library_get_type ())
 #define LD_DOCUMENT(obj) (G_TYPE_CHECK_INSTANCE_CAST \
 	((obj), LD_TYPE_DOCUMENT, LdDocument))
 #define LD_DOCUMENT_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST \

@@ -32,7 +32,7 @@ typedef struct _LdSymbolCategoryClass LdSymbolCategoryClass;
 
 /**
  * LdSymbolCategory:
- * @parent: The parent object, may be #LdSymbolLibrary
+ * @parent: The parent object, may be #LdLibrary
  * or another #LdSymbolCategory.
  * @name: The name of the category.
  * @image_path: Path to the image for this category.
@@ -63,7 +63,7 @@ struct _LdSymbolCategoryClass
 GType ld_symbol_category_get_type (void) G_GNUC_CONST;
 
 LdSymbolCategory *
-ld_symbol_category_new (LdSymbolLibrary *parent);
+ld_symbol_category_new (LdLibrary *parent);
 
 
 G_END_DECLS

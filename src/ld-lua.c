@@ -15,7 +15,7 @@
 
 #include "config.h"
 
-#include "ld-symbol-library.h"
+#include "ld-library.h"
 #include "ld-lua.h"
 
 

@@ -88,9 +88,9 @@ set (logdiag_SOURCES
 	src/ld-window-main.c
 	src/ld-document.c
 	src/ld-canvas.c
-	src/ld-symbol.c
+	src/ld-library.c
 	src/ld-symbol-category.c
-	src/ld-symbol-library.c
+	src/ld-symbol.c
 	src/ld-lua.c)
 set (logdiag_HEADERS
 	${CMAKE_CURRENT_BINARY_DIR}/config.h
@@ -98,9 +98,9 @@ set (logdiag_HEADERS
 	src/ld-window-main.h
 	src/ld-document.h
 	src/ld-canvas.h
-	src/ld-symbol.h
+	src/ld-library.h
 	src/ld-symbol-category.h
-	src/ld-symbol-library.h
+	src/ld-symbol.h
 	src/ld-lua.h)
 
 # Generate a configure file

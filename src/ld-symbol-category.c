@@ -12,7 +12,7 @@
 
 #include "config.h"
 
-#include "ld-symbol-library.h"
+#include "ld-library.h"
 #include "ld-symbol-category.h"
 #include "ld-symbol.h"
 
@@ -20,7 +20,7 @@
 /**
  * SECTION:ld-symbol-category
  * @short_description: A category of symbols.
- * @see_also: #LdSymbol, #LdSymbolLibrary
+ * @see_also: #LdSymbol, #LdLibrary
  *
  * #LdSymbolCategory represents a category of #LdSymbol objects.
  */
@@ -76,7 +76,7 @@ ld_symbol_category_finalize (GObject *gobject)
  * Create an instance.
  */
 LdSymbolCategory *
-ld_symbol_category_new (LdSymbolLibrary *parent)
+ld_symbol_category_new (LdLibrary *parent)
 {
 	LdSymbolCategory *cat;
 

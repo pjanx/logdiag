@@ -16,12 +16,17 @@
 #include "config.h"
 
 #include "ld-library.h"
+#include "ld-symbol-category.h"
 #include "ld-lua.h"
 
 
-/* TODO */
-/* A virtual superclass can be made for this. */
-
+/**
+ * SECTION:ld-lua
+ * @short_description: Lua symbol engine.
+ * @see_also: #LdSymbol
+ *
+ * #LdLua is a symbol engine that uses Lua scripts to manage symbols.
+ */
 /* Lua state belongs to the library.
  * One Lua file should be able to register multiple symbols.
  */
@@ -36,12 +41,25 @@
  *
  */
 
-static void *
-ld_lua_alloc (void *ud, void *ptr, size_t osize, size_t nsize);
+/*
+ * LdLuaPrivate:
+ * @L: Lua state.
+ *
+ * The library contains the real function for rendering.
+ */
+struct _LdLuaPrivate
+{
+	lua_State *L;
+};
+
+G_DEFINE_TYPE (LdLua, ld_lua, G_TYPE_OBJECT);
+
+static void ld_lua_finalize (GObject *gobject);
+
+static void *ld_lua_alloc (void *ud, void *ptr, size_t osize, size_t nsize);
 
 
-static int
-ld_lua_logdiag_register (lua_State *L);
+static int ld_lua_logdiag_register (lua_State *L);
 
 static luaL_Reg ld_lua_logdiag_lib[] =
 {
@@ -50,18 +68,12 @@ static luaL_Reg ld_lua_logdiag_lib[] =
 };
 
 
-static int
-ld_lua_cairo_move_to (lua_State *L);
-static int
-ld_lua_cairo_line_to (lua_State *L);
-static int
-ld_lua_cairo_stroke (lua_State *L);
-static int
-ld_lua_cairo_stroke_preserve (lua_State *L);
-static int
-ld_lua_cairo_fill (lua_State *L);
-static int
-ld_lua_cairo_fill_preserve (lua_State *L);
+static int ld_lua_cairo_move_to (lua_State *L);
+static int ld_lua_cairo_line_to (lua_State *L);
+static int ld_lua_cairo_stroke (lua_State *L);
+static int ld_lua_cairo_stroke_preserve (lua_State *L);
+static int ld_lua_cairo_fill (lua_State *L);
+static int ld_lua_cairo_fill_preserve (lua_State *L);
 
 static luaL_Reg ld_lua_cairo_table[] =
 {
@@ -74,15 +86,30 @@ static luaL_Reg ld_lua_cairo_table[] =
 	{NULL, NULL}
 };
 
+
 /* ===== Generic =========================================================== */
 
-lua_State *
-ld_lua_init (void)
+static void
+ld_lua_class_init (LdLuaClass *klass)
+{
+	GObjectClass *object_class;
+
+	object_class = G_OBJECT_CLASS (klass);
+	object_class->finalize = ld_lua_finalize;
+
+	g_type_class_add_private (klass, sizeof (LdLuaPrivate));
+}
+
+static void
+ld_lua_init (LdLua *self)
 {
 	lua_State *L;
 
-	L = lua_newstate (ld_lua_alloc, NULL);
-	g_return_val_if_fail (L != NULL, NULL);
+	self->priv = G_TYPE_INSTANCE_GET_PRIVATE
+		(self, LD_TYPE_LUA, LdLuaPrivate);
+
+	L = self->priv->L = lua_newstate (ld_lua_alloc, NULL);
+	g_return_if_fail (L != NULL);
 
 	/* TODO: lua_atpanic () */
 
@@ -100,10 +127,29 @@ ld_lua_init (void)
 	luaL_register (L, "logdiag", ld_lua_logdiag_lib);
 }
 
-void
-ld_lua_destroy (lua_State *L)
+static void
+ld_lua_finalize (GObject *gobject)
 {
-	lua_close (L);
+	LdLua *self;
+
+	self = LD_LUA (gobject);
+	lua_close (self->priv->L);
+
+	/* Chain up to the parent class. */
+	G_OBJECT_CLASS (ld_lua_parent_class)->finalize (gobject);
+}
+
+/**
+ * ld_lua_new:
+ * @library: A library object.
+ * @filename: The file from which the symbol will be loaded.
+ *
+ * Load a symbol from a file into the library.
+ */
+LdLua *
+ld_lua_new (void)
+{
+	return g_object_new (LD_TYPE_LUA, NULL);
 }
 
 static void *
@@ -134,6 +180,7 @@ ld_lua_logdiag_register (lua_State *L)
 	/* TODO: Push a function. */
 	lua_call (L, 1, 0);
 #endif /* 0 */
+	return 0;
 }
 
 /* ===== Cairo ============================================================= */
@@ -147,6 +194,11 @@ push_cairo_object (lua_State *L, cairo_t *cr)
 	lua_newtable (L);
 
 	/* Add methods. */
+	/* XXX: The light user data pointer gets invalid after the end of
+	 *      "render" function invocation. If the script stores the "cr" object
+	 *      in some global variable and then tries to reuse it the next time,
+	 *      the application will go SIGSEGV.
+	 */
 	for (fn = ld_lua_cairo_table; fn->name; fn++)
 	{
 		lua_pushlightuserdata (L, cr);
@@ -155,6 +207,7 @@ push_cairo_object (lua_State *L, cairo_t *cr)
 	}
 }
 
+/* TODO: Implement the functions. */
 static int
 ld_lua_cairo_move_to (lua_State *L)
 {

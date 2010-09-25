@@ -15,6 +15,7 @@
 #include "ld-library.h"
 #include "ld-symbol-category.h"
 #include "ld-symbol.h"
+#include "ld-lua.h"
 
 
 /**
@@ -31,7 +32,7 @@
  */
 struct _LdLibraryPrivate
 {
-	gpointer script_state;
+	LdLua *lua;
 };
 
 G_DEFINE_TYPE (LdLibrary, ld_library, G_TYPE_OBJECT);
@@ -68,8 +69,7 @@ ld_library_init (LdLibrary *self)
 	self->priv = G_TYPE_INSTANCE_GET_PRIVATE
 		(self, LD_TYPE_LIBRARY, LdLibraryPrivate);
 
-	/* TODO */
-	self->priv->script_state = NULL;
+	self->priv->lua = ld_lua_new ();
 
 	self->categories = g_hash_table_new_full (g_str_hash, g_str_equal,
 		(GDestroyNotify) g_free, (GDestroyNotify) g_object_unref);
@@ -82,6 +82,7 @@ ld_library_finalize (GObject *gobject)
 
 	self = LD_LIBRARY (gobject);
 
+	g_object_unref (self->priv->lua);
 	g_hash_table_destroy (self->categories);
 
 	/* Chain up to the parent class. */

@@ -269,7 +269,7 @@ ld_lua_logdiag_register (lua_State *L)
 	 */
 
 /*
-	symbol = ld_lua_symbol_new (ud->category, ud->self);
+	symbol = ld_lua_symbol_new (ud->self);
 	ld_symbol_category_insert (ud->category, symbol, -1);
 	g_object_unref (symbol);
 */

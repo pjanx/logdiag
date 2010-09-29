@@ -29,16 +29,20 @@
 
 /*
  * LdLuaSymbolPrivate:
- * @lua: Parent Lua object.
+ * @lua: Parent #LdLua object.
+ * @ident: Identifier for the symbol.
  */
 struct _LdLuaSymbolPrivate
 {
 	LdLua *lua;
+	gchar *ident;
 };
 
 G_DEFINE_TYPE (LdLuaSymbol, ld_lua_symbol, LD_TYPE_SYMBOL);
 
 static void ld_lua_symbol_finalize (GObject *gobject);
+
+static void ld_lua_symbol_draw (LdSymbol *self, cairo_t *cr);
 
 
 static void
@@ -49,7 +53,7 @@ ld_lua_symbol_class_init (LdLuaSymbolClass *klass)
 	object_class = G_OBJECT_CLASS (klass);
 	object_class->finalize = ld_lua_symbol_finalize;
 
-	/* TODO: Override the "draw" method of LdSymbol. */
+	klass->parent_class.draw = ld_lua_symbol_draw;
 
 	g_type_class_add_private (klass, sizeof (LdLuaSymbolPrivate));
 }
@@ -69,6 +73,8 @@ ld_lua_symbol_finalize (GObject *gobject)
 	self = LD_LUA_SYMBOL (gobject);
 	g_object_unref (self->priv->lua);
 
+	g_free (self->priv->ident);
+
 	/* Chain up to the parent class. */
 	G_OBJECT_CLASS (ld_lua_symbol_parent_class)->finalize (gobject);
 }
@@ -76,23 +82,37 @@ ld_lua_symbol_finalize (GObject *gobject)
 
 /**
  * ld_symbol_new:
- * @library: A library object.
- * @filename: The file from which the symbol will be loaded.
+ * @lua: An #LdLua object.
+ * @ident: Identifier for the symbol.
  *
  * Load a symbol from a file into the library.
  */
 LdSymbol *
-ld_lua_symbol_new (LdSymbolCategory *parent, LdLua *lua)
+ld_lua_symbol_new (LdLua *lua, const gchar *ident)
 {
-	LdLuaSymbol *symbol;
+	LdLuaSymbol *self;
 
-	symbol = g_object_new (LD_TYPE_LUA_SYMBOL, NULL);
+	g_return_val_if_fail (LD_IS_LUA (lua), NULL);
+	g_return_val_if_fail (ident != NULL, NULL);
 
-	/* TODO: Create a separate ld-symbol-private.h, include it in this file
-	 *       and then assign and ref the parent category here.
-	 */
+	self = g_object_new (LD_TYPE_LUA_SYMBOL, NULL);
 
-	symbol->priv->lua = lua;
+	self->priv->lua = lua;
 	g_object_ref (lua);
+
+	self->priv->ident = g_strdup (ident);
+	return LD_SYMBOL (self);
+}
+
+static void
+ld_lua_symbol_draw (LdSymbol *self, cairo_t *cr)
+{
+	g_return_if_fail (LD_IS_SYMBOL (self));
+	g_return_if_fail (cr != NULL);
+
+	/* TODO: Implement. */
+	/* Retrieve the function for rendering from the registry or wherever
+	 * it's going to end up, and call it.
+	 */
 }
 

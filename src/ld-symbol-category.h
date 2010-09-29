@@ -65,6 +65,11 @@ GType ld_symbol_category_get_type (void) G_GNUC_CONST;
 LdSymbolCategory *
 ld_symbol_category_new (LdLibrary *parent);
 
+/* TODO: Methods for inserting and removing children. */
+/* TODO: Create a separate ld-symbol-private.h, include it in this ld-s-c.c
+ *       and then assign and ref the parent category here.
+ */
+
 
 G_END_DECLS
 

@@ -33,7 +33,6 @@ typedef struct _LdLuaSymbolClass LdLuaSymbolClass;
 
 /**
  * LdLuaSymbol:
- * @name: The name of this symbol.
  */
 struct _LdLuaSymbol
 {
@@ -54,7 +53,7 @@ struct _LdLuaSymbolClass
 
 GType ld_lua_symbol_get_type (void) G_GNUC_CONST;
 
-LdSymbol *ld_lua_symbol_new (LdSymbolCategory *parent, LdLua *lua);
+LdSymbol *ld_lua_symbol_new (LdLua *lua, const gchar *ident);
 
 
 G_END_DECLS

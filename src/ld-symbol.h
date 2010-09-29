@@ -65,6 +65,9 @@ gchar *ld_symbol_build_identifier (LdSymbol *self);
 void ld_symbol_draw (LdSymbol *self, cairo_t *cr);
 
 /* TODO: An interface for symbol terminals etc. */
+/* TODO: Store a pointer to the parent, probably as a property,
+ *       using g_object_add_weak_pointer/remove_weak_pointer.
+ */
 
 
 G_END_DECLS

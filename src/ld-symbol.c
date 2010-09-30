@@ -12,9 +12,9 @@
 
 #include "config.h"
 
-#include "ld-library.h"
-#include "ld-symbol-category.h"
 #include "ld-symbol.h"
+#include "ld-symbol-category.h"
+#include "ld-library.h"
 
 
 /**
@@ -28,12 +28,11 @@
 
 /*
  * LdSymbolPrivate:
- * @parent: The parent LdSymbolCategory. It is used to identify
- * the object within it's library.
+ * @name: The name of this symbol.
  */
 struct _LdSymbolPrivate
 {
-	LdSymbolCategory *parent;
+	gchar *name;
 };
 
 G_DEFINE_ABSTRACT_TYPE (LdSymbol, ld_symbol, G_TYPE_OBJECT);
@@ -65,24 +64,9 @@ ld_symbol_finalize (GObject *gobject)
 	LdSymbol *self;
 
 	self = LD_SYMBOL (gobject);
-	g_object_unref (self->priv->parent);
 
 	/* Chain up to the parent class. */
 	G_OBJECT_CLASS (ld_symbol_parent_class)->finalize (gobject);
-}
-
-/**
- * ld_symbol_build_identifier:
- * @self: A symbol object.
- *
- * Build an identifier for the symbol.
- * The identifier is in the format "Category/Category/Symbol".
- */
-gchar *
-ld_symbol_build_identifier (LdSymbol *self)
-{
-	/* TODO: Implement. */
-	return NULL;
 }
 
 /**

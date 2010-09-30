@@ -13,11 +13,13 @@
 #include "config.h"
 
 #include "ld-window-main.h"
+
+#include "ld-symbol.h"
+#include "ld-symbol-category.h"
+#include "ld-library.h"
+
 #include "ld-document.h"
 #include "ld-canvas.h"
-#include "ld-library.h"
-#include "ld-symbol-category.h"
-#include "ld-symbol.h"
 
 
 /**
@@ -286,7 +288,7 @@ cb_load_category (gpointer key, gpointer value, gpointer user_data)
 	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (cat));
 
 	pbuf = gdk_pixbuf_new_from_file_at_size
-		(cat->image_path, TOOLBAR_ICON_WIDTH, -1, NULL);
+		(ld_symbol_category_get_image_path (cat), TOOLBAR_ICON_WIDTH, -1, NULL);
 	g_return_if_fail (pbuf != NULL);
 
 	img = gtk_image_new_from_pixbuf (pbuf);

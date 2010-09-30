@@ -12,9 +12,10 @@
 
 #include "config.h"
 
-#include "ld-library.h"
-#include "ld-symbol-category.h"
 #include "ld-symbol.h"
+#include "ld-symbol-category.h"
+#include "ld-library.h"
+
 #include "ld-lua.h"
 
 
@@ -132,9 +133,10 @@ load_category (LdLibrary *self, const char *path, const char *name)
 	/* TODO: Search for category.json and read the category name from it. */
 	/* TODO: Search for xyz.lua and load the objects into the category. */
 
-	cat = ld_symbol_category_new (self);
-	cat->name = g_strdup (name);
-	cat->image_path = icon_file;
+	cat = ld_symbol_category_new (name);
+	ld_symbol_category_set_image_path (cat, icon_file);
+
+	g_free (icon_file);
 	return cat;
 }
 
@@ -167,7 +169,8 @@ ld_library_load (LdLibrary *self, const char *path)
 		categ_path = g_build_filename (path, item, NULL);
 		cat = load_category (self, categ_path, item);
 		if (cat)
-			g_hash_table_insert (self->categories, cat->name, cat);
+			g_hash_table_insert (self->categories,
+				g_strdup (ld_symbol_category_get_name (cat)), cat);
 		g_free (categ_path);
 
 		changed = TRUE;

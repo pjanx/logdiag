@@ -12,9 +12,10 @@
 
 #include "config.h"
 
-#include "ld-library.h"
 #include "ld-symbol.h"
 #include "ld-symbol-category.h"
+#include "ld-library.h"
+
 #include "ld-lua.h"
 #include "ld-lua-symbol.h"
 
@@ -35,6 +36,10 @@
 struct _LdLuaSymbolPrivate
 {
 	LdLua *lua;
+	/* XXX: Note that this identifier != symbol name,
+	 *      since there can be more symbols with the same name,
+	 *      only in different categories.
+	 */
 	gchar *ident;
 };
 
@@ -88,14 +93,17 @@ ld_lua_symbol_finalize (GObject *gobject)
  * Load a symbol from a file into the library.
  */
 LdSymbol *
-ld_lua_symbol_new (LdLua *lua, const gchar *ident)
+ld_lua_symbol_new (const gchar *name, LdLua *lua, const gchar *ident)
 {
 	LdLuaSymbol *self;
 
+	g_return_val_if_fail (name != NULL, NULL);
 	g_return_val_if_fail (LD_IS_LUA (lua), NULL);
 	g_return_val_if_fail (ident != NULL, NULL);
 
 	self = g_object_new (LD_TYPE_LUA_SYMBOL, NULL);
+
+	/* TODO: Set the symbol name. */
 
 	self->priv->lua = lua;
 	g_object_ref (lua);

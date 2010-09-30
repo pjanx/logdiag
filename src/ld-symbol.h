@@ -40,9 +40,6 @@ struct _LdSymbol
 /*< private >*/
 	GObject parent_instance;
 	LdSymbolPrivate *priv;
-
-/*< public >*/
-	gchar *name;
 };
 
 /**
@@ -60,13 +57,10 @@ struct _LdSymbolClass
 
 GType ld_symbol_get_type (void) G_GNUC_CONST;
 
-gchar *ld_symbol_build_identifier (LdSymbol *self);
-
 void ld_symbol_draw (LdSymbol *self, cairo_t *cr);
 
-/* TODO: An interface for symbol terminals etc. */
-/* TODO: Store a pointer to the parent, probably as a property,
- *       using g_object_add_weak_pointer/remove_weak_pointer.
+/* TODO: Interface for symbol terminals
+ *       Interface + property for symbol name (will be used by _new)
  */
 
 

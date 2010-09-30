@@ -15,9 +15,10 @@
 
 #include "config.h"
 
-#include "ld-library.h"
-#include "ld-symbol-category.h"
 #include "ld-symbol.h"
+#include "ld-symbol-category.h"
+#include "ld-library.h"
+
 #include "ld-lua.h"
 
 

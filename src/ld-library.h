@@ -59,8 +59,7 @@ struct _LdLibraryClass
 GType ld_library_get_type (void) G_GNUC_CONST;
 
 LdLibrary *ld_library_new (void);
-gboolean ld_library_load (LdLibrary *self,
-	const gchar *directory);
+gboolean ld_library_load (LdLibrary *self, const gchar *directory);
 void ld_library_clear (LdLibrary *self);
 
 

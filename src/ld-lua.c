@@ -207,7 +207,8 @@ ld_lua_alloc (void *ud, void *ptr, size_t osize, size_t nsize)
 gboolean ld_lua_check_file (LdLua *self, const gchar *filename)
 {
 	g_return_val_if_fail (LD_IS_LUA (self), FALSE);
-	return g_str_has_suffix (filename, ".lua");
+	return g_str_has_suffix (filename, ".lua")
+		&& g_file_test (filename, G_FILE_TEST_IS_REGULAR);
 }
 
 /**

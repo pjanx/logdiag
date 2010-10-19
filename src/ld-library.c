@@ -41,6 +41,20 @@ G_DEFINE_TYPE (LdLibrary, ld_library, G_TYPE_OBJECT);
 static void
 ld_library_finalize (GObject *gobject);
 
+static LdSymbolCategory *
+load_category (LdLibrary *self, const char *path, const char *name);
+
+static gboolean
+foreach_dir (const gchar *path,
+	gboolean (*callback) (const gchar *, const gchar *, gpointer),
+	gpointer userdata, GError **error);
+static gboolean
+load_category_cb (const gchar *base,
+	const gchar *filename, gpointer userdata);
+static gboolean
+ld_library_load_cb (const gchar *base,
+	const gchar *filename, gpointer userdata);
+
 
 static void
 ld_library_class_init (LdLibraryClass *klass)
@@ -102,6 +116,52 @@ ld_library_new (void)
 }
 
 /*
+ * foreach_dir:
+ *
+ * Call a user-defined function for each file within a directory.
+ */
+static gboolean
+foreach_dir (const gchar *path,
+	gboolean (*callback) (const gchar *, const gchar *, gpointer),
+	gpointer userdata, GError **error)
+{
+	GDir *dir;
+	const gchar *item;
+
+	/* FIXME: We don't set an error. */
+	g_return_val_if_fail (path != NULL, FALSE);
+	g_return_val_if_fail (callback != NULL, FALSE);
+
+	dir = g_dir_open (path, 0, error);
+	if (!dir)
+		return FALSE;
+
+	while ((item = g_dir_read_name (dir)))
+	{
+		gchar *filename;
+
+		filename = g_build_filename (path, item, NULL);
+		if (!callback (item, filename, userdata))
+			break;
+		g_free (filename);
+	}
+	g_dir_close (dir);
+	return TRUE;
+}
+
+/*
+ * LoadCategoryData:
+ *
+ * Data shared between load_category() and load_category_cb().
+ */
+typedef struct
+{
+	LdLibrary *self;
+	LdSymbolCategory *cat;
+}
+LoadCategoryData;
+
+/*
  * load_category:
  * @self: A symbol library object.
  * @path: The path to the category.
@@ -114,31 +174,74 @@ load_category (LdLibrary *self, const char *path, const char *name)
 {
 	LdSymbolCategory *cat;
 	gchar *icon_file;
+	LoadCategoryData data;
 
 	g_return_val_if_fail (LD_IS_LIBRARY (self), NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 	g_return_val_if_fail (name != NULL, NULL);
 
 	if (!g_file_test (path, G_FILE_TEST_IS_DIR))
-		return NULL;
+		goto load_category_fail_1;
 
 	icon_file = g_build_filename (path, "icon.svg", NULL);
 	if (!g_file_test (icon_file, G_FILE_TEST_IS_REGULAR))
 	{
 		g_warning ("The category in %s has no icon.", path);
-		g_free (icon_file);
-		return NULL;
+		goto load_category_fail_2;
 	}
 
 	/* TODO: Search for category.json and read the category name from it. */
-	/* TODO: Search for xyz.lua and load the objects into the category. */
 
 	cat = ld_symbol_category_new (name);
 	ld_symbol_category_set_image_path (cat, icon_file);
 
+	data.self = self;
+	data.cat = cat;
+	foreach_dir (path, load_category_cb, &data, NULL);
+
 	g_free (icon_file);
 	return cat;
+
+load_category_fail_2:
+	g_free (icon_file);
+load_category_fail_1:
+	return NULL;
 }
+
+/*
+ * load_category_cb:
+ *
+ * Load script files from a directory into a symbol category.
+ */
+static gboolean
+load_category_cb (const gchar *base, const gchar *filename, gpointer userdata)
+{
+	LoadCategoryData *data;
+
+	g_return_val_if_fail (base != NULL, FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+	g_return_val_if_fail (userdata != NULL, FALSE);
+
+	data = (LoadCategoryData *) userdata;
+
+	if (ld_lua_check_file (data->self->priv->lua, filename))
+		ld_lua_load_file_to_category
+			(data->self->priv->lua, filename, data->cat);
+
+	return TRUE;
+}
+
+/*
+ * LibraryLoadData:
+ *
+ * Data shared between ld_library_load() and ld_library_load_cb().
+ */
+typedef struct
+{
+	LdLibrary *self;
+	gboolean changed;
+}
+LibraryLoadData;
 
 /**
  * ld_library_load:
@@ -150,37 +253,45 @@ load_category (LdLibrary *self, const char *path, const char *name)
 gboolean
 ld_library_load (LdLibrary *self, const char *path)
 {
-	GDir *dir;
-	const gchar *item;
-	gboolean changed = FALSE;
+	LibraryLoadData data;
 
 	g_return_val_if_fail (LD_IS_LIBRARY (self), FALSE);
 	g_return_val_if_fail (path != NULL, FALSE);
 
-	dir = g_dir_open (path, 0, NULL);
-	if (!dir)
-		return FALSE;
+	data.self = self;
+	data.changed = FALSE;
+	foreach_dir (path, ld_library_load_cb, &data, NULL);
 
-	while ((item = g_dir_read_name (dir)))
-	{
-		LdSymbolCategory *cat;
-		gchar *categ_path;
+	if (data.changed)
+		g_signal_emit (self, LD_LIBRARY_GET_CLASS (self)->changed_signal, 0);
 
-		categ_path = g_build_filename (path, item, NULL);
-		cat = load_category (self, categ_path, item);
-		if (cat)
-			g_hash_table_insert (self->categories,
-				g_strdup (ld_symbol_category_get_name (cat)), cat);
-		g_free (categ_path);
+	return TRUE;
+}
 
-		changed = TRUE;
-	}
-	g_dir_close (dir);
+/*
+ * ld_library_load_cb:
+ *
+ * A callback that's called for each file in the root directory.
+ */
+static gboolean
+ld_library_load_cb (const gchar *base, const gchar *filename, gpointer userdata)
+{
+	LdSymbolCategory *cat;
+	gchar *categ_path;
+	LibraryLoadData *data;
 
-	if (changed)
-		g_signal_emit (self,
-			LD_LIBRARY_GET_CLASS (self)->changed_signal, 0);
+	g_return_val_if_fail (base != NULL, FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+	g_return_val_if_fail (userdata != NULL, FALSE);
 
+	data = (LibraryLoadData *) userdata;
+
+	cat = load_category (data->self, filename, base);
+	if (cat)
+		g_hash_table_insert (data->self->categories,
+			g_strdup (ld_symbol_category_get_name (cat)), cat);
+
+	data->changed = TRUE;
 	return TRUE;
 }
 

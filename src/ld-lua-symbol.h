@@ -53,8 +53,6 @@ struct _LdLuaSymbolClass
 
 GType ld_lua_symbol_get_type (void) G_GNUC_CONST;
 
-LdSymbol *ld_lua_symbol_new (const gchar *name, LdLua *lua, const gchar *ident);
-
 
 G_END_DECLS
 

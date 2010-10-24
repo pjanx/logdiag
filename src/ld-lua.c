@@ -20,25 +20,25 @@
 #include "ld-library.h"
 
 #include "ld-lua.h"
+#include "ld-lua-symbol.h"
+
+#include "ld-lua-private.h"
+#include "ld-lua-symbol-private.h"
 
 
 /**
  * SECTION:ld-lua
  * @short_description: Lua symbol engine.
- * @see_also: #LdSymbol
+ * @see_also: #LdLuaSymbol
  *
  * #LdLua is a symbol engine that uses Lua scripts to manage symbols.
  */
+
 /* How does the application call the function for rendering?
- *   logdiag.symbols -- readonly table (from lua) -- this can be probably
- *     accomplished using a custom metatable that errors out on newindex,
- *     items will be added to this table only in C.
- *     It can also be placed into the Lua registry.
- *   logdiag.symbols[ident].render(cr) -- here "ident" is the full path
- *     to this symbol
- *   logdiag.symbols[ident].names[lang, area, terminals] -- these
- *     subarrays need not be in this array
- *
+ *   registry.logdiag_symbols
+ *     -> table indexed by pointers to LdLuaSymbol objects
+ *   registry.logdiag_symbols.object.render(cr)
+ *     -> rendering function
  */
 
 /*
@@ -75,13 +75,18 @@ LdLuaData;
 
 #define LD_LUA_LIBRARY_NAME "logdiag"
 #define LD_LUA_DATA_INDEX LD_LUA_LIBRARY_NAME "_data"
+#define LD_LUA_SYMBOLS_INDEX LD_LUA_LIBRARY_NAME "_symbols"
 
-#define LD_LUA_RETRIEVE_DATA(L) \
-( \
-	lua_pushliteral ((L), LD_LUA_DATA_INDEX), \
-	lua_gettable ((L), LUA_REGISTRYINDEX), \
-	lua_touserdata ((L), -1) \
-)
+
+typedef struct
+{
+	LdLuaSymbol *symbol;
+	cairo_t *cr;
+}
+LdLuaDrawData;
+
+static int ld_lua_private_draw_cb (lua_State *L);
+static int ld_lua_private_unregister_cb (lua_State *L);
 
 
 static int ld_lua_logdiag_register (lua_State *L);
@@ -92,6 +97,8 @@ static luaL_Reg ld_lua_logdiag_lib[] =
 	{NULL, NULL}
 };
 
+
+static void push_cairo_object (lua_State *L, cairo_t *cr);
 
 static int ld_lua_cairo_move_to (lua_State *L);
 static int ld_lua_cairo_line_to (lua_State *L);
@@ -153,13 +160,15 @@ ld_lua_init (LdLua *self)
 	luaL_register (L, LD_LUA_LIBRARY_NAME, ld_lua_logdiag_lib);
 
 	/* Store user data to the registry. */
-	lua_pushliteral (L, LD_LUA_DATA_INDEX);
-
 	ud = lua_newuserdata (L, sizeof (LdLuaData));
 	ud->self = self;
 	ud->category = NULL;
 
-	lua_settable (L, LUA_REGISTRYINDEX);
+	lua_setfield (L, LUA_REGISTRYINDEX, LD_LUA_DATA_INDEX);
+
+	/* Create an empty symbols table. */
+	lua_newtable (L);
+	lua_setfield (L, LUA_REGISTRYINDEX, LD_LUA_SYMBOLS_INDEX);
 }
 
 static void
@@ -204,7 +213,8 @@ ld_lua_alloc (void *ud, void *ptr, size_t osize, size_t nsize)
  *
  * Check if the given filename can be loaded by #LdLua.
  */
-gboolean ld_lua_check_file (LdLua *self, const gchar *filename)
+gboolean
+ld_lua_check_file (LdLua *self, const gchar *filename)
 {
 	g_return_val_if_fail (LD_IS_LUA (self), FALSE);
 	return g_str_has_suffix (filename, ".lua")
@@ -221,7 +231,8 @@ gboolean ld_lua_check_file (LdLua *self, const gchar *filename)
  *
  * Returns: TRUE if no error has occured, FALSE otherwise.
  */
-gboolean ld_lua_load_file_to_category (LdLua *self, const gchar *filename,
+gboolean
+ld_lua_load_file_to_category (LdLua *self, const gchar *filename,
 	LdSymbolCategory *category)
 {
 	gint retval;
@@ -231,9 +242,10 @@ gboolean ld_lua_load_file_to_category (LdLua *self, const gchar *filename,
 	g_return_val_if_fail (filename != NULL, FALSE);
 	g_return_val_if_fail (LD_IS_SYMBOL_CATEGORY (category), FALSE);
 
-	/* TODO: Error reporting. */
-
-	ud = LD_LUA_RETRIEVE_DATA (self->priv->L);
+	/* XXX: If something from the following fails, Lua will call exit(). */
+	lua_getfield (self->priv->L, LUA_REGISTRYINDEX, LD_LUA_DATA_INDEX);
+	ud = lua_touserdata (self->priv->L, -1);
+	lua_pop (self->priv->L, 1);
 	g_return_val_if_fail (ud != NULL, FALSE);
 
 	ud->category = category;
@@ -250,8 +262,91 @@ gboolean ld_lua_load_file_to_category (LdLua *self, const gchar *filename,
 	return TRUE;
 
 ld_lua_lftc_fail:
+	g_warning ("Lua error: %s", lua_tostring (self->priv->L, -1));
+	lua_remove (self->priv->L, -1);
+
 	ud->category = NULL;
 	return FALSE;
+}
+
+/* ===== LdLuaSymbol callbacks ============================================= */
+
+/**
+ * ld_lua_private_draw:
+ * @self: An #LdLua object.
+ * @symbol: A symbol to be drawn.
+ * @cr: A Cairo context to be drawn onto.
+ *
+ * Draw a symbol onto a Cairo context.
+ */
+void
+ld_lua_private_draw (LdLua *self, LdLuaSymbol *symbol, cairo_t *cr)
+{
+	LdLuaDrawData data;
+
+	g_return_if_fail (LD_IS_LUA (self));
+	g_return_if_fail (LD_IS_LUA_SYMBOL (symbol));
+
+	data.symbol = symbol;
+	data.cr = cr;
+
+	if (lua_cpcall (self->priv->L, ld_lua_private_draw_cb, &data))
+	{
+		g_warning ("Lua error: %s", lua_tostring (self->priv->L, -1));
+		lua_remove (self->priv->L, -1);
+	}
+}
+
+static int
+ld_lua_private_draw_cb (lua_State *L)
+{
+	LdLuaDrawData *data;
+
+	data = lua_touserdata (L, -1);
+
+	/* Retrieve the function for rendering from the registry. */
+	lua_getfield (L, LUA_REGISTRYINDEX, LD_LUA_SYMBOLS_INDEX);
+	lua_pushlightuserdata (L, data->symbol);
+	lua_gettable (L, -2);
+
+	luaL_checktype (L, -1, LUA_TTABLE);
+	lua_getfield (L, -1, "render");
+	luaL_checktype (L, -1, LUA_TFUNCTION);
+
+	/* Call the function do draw the symbol. */
+	push_cairo_object (L, data->cr);
+	lua_pcall (L, 1, 0, 0);
+}
+
+/**
+ * ld_lua_private_unregister:
+ * @self: An #LdLua object.
+ * @symbol: A symbol to be unregistered.
+ *
+ * Unregister a symbol from the internal Lua state.
+ */
+void
+ld_lua_private_unregister (LdLua *self, LdLuaSymbol *symbol)
+{
+	g_return_if_fail (LD_IS_LUA (self));
+	g_return_if_fail (LD_IS_LUA_SYMBOL (symbol));
+
+	if (lua_cpcall (self->priv->L, ld_lua_private_unregister_cb, symbol))
+	{
+		g_warning ("Lua error: %s", lua_tostring (self->priv->L, -1));
+		lua_remove (self->priv->L, -1);
+	}
+}
+
+static int
+ld_lua_private_unregister_cb (lua_State *L)
+{
+	/* Set the entry in the symbol table to nil. */
+	lua_getfield (L, LUA_REGISTRYINDEX, LD_LUA_SYMBOLS_INDEX);
+	lua_insert (L, -2);
+	lua_pushnil (L);
+	lua_settable (L, -3);
+	return 0;
 }
 
 /* ===== Application library =============================================== */
@@ -260,21 +355,51 @@ static int
 ld_lua_logdiag_register (lua_State *L)
 {
 	LdLuaData *ud;
-	LdSymbol *symbol;
+	LdLuaSymbol *symbol;
+	const gchar *name;
 
-	ud = LD_LUA_RETRIEVE_DATA (L);
+	lua_getfield (L, LUA_REGISTRYINDEX, LD_LUA_DATA_INDEX);
+	ud = lua_touserdata (L, -1);
+	lua_pop (L, 1);
 	g_return_val_if_fail (ud != NULL, 0);
 
-	/* TODO: Create a symbol. */
-	/* XXX: Does ld_lua_symbol_new really need to be passed the category here?
-	 *      The symbol can have just a weak reference to the category.
+	/* TODO: Create a symbol using the given parameters:
+	 * 1. name
+	 * 2. names (table) -> use g_get_language_names ()
+	 * 3. area (table)
+	 * 4. terminals (table)
+	 * 5. render function
 	 */
 
-/*
-	symbol = ld_lua_symbol_new (ud->self);
-	ld_symbol_category_insert (ud->category, symbol, -1);
+	/* Check and retrieve arguments. */
+	name = lua_tostring (L, 1);
+	if (!name)
+		luaL_error (L, "register: bad or missing argument #%d", 1);
+	if (!lua_isfunction (L, 5))
+		luaL_error (L, "register: bad or missing argument #%d", 5);
+
+	/* Create a symbol object. */
+	symbol = g_object_new (LD_TYPE_LUA_SYMBOL, NULL);
+	symbol->priv->lua = ud->self;
+	g_object_ref (ud->self);
+
+	ld_symbol_set_name (LD_SYMBOL (symbol), name);
+
+	/* Create an entry in the symbol table. */
+	lua_getfield (L, LUA_REGISTRYINDEX, LD_LUA_SYMBOLS_INDEX);
+	lua_pushlightuserdata (L, symbol);
+
+	lua_newtable (L);
+	lua_pushvalue (L, 5);
+	lua_setfield (L, -2, "render");
+
+	lua_settable (L, -3);
+
+	/* Insert the symbol into the category. */
+	/* TODO: Don't just add blindly, also check for name collisions. */
+	ld_symbol_category_insert_child (ud->category, G_OBJECT (symbol), -1);
 	g_object_unref (symbol);
-*/
+
 	return 0;
 }
 

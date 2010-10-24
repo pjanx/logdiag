@@ -19,6 +19,8 @@
 #include "ld-lua.h"
 #include "ld-lua-symbol.h"
 
+#include "ld-lua-symbol-private.h"
+
 
 /**
  * SECTION:ld-lua-symbol
@@ -28,26 +30,11 @@
  * #LdLuaSymbol is an implementation of #LdSymbol.
  */
 
-/*
- * LdLuaSymbolPrivate:
- * @lua: Parent #LdLua object.
- * @ident: Identifier for the symbol.
- */
-struct _LdLuaSymbolPrivate
-{
-	LdLua *lua;
-	/* XXX: Note that this identifier != symbol name,
-	 *      since there can be more symbols with the same name,
-	 *      only in different categories.
-	 */
-	gchar *ident;
-};
-
 G_DEFINE_TYPE (LdLuaSymbol, ld_lua_symbol, LD_TYPE_SYMBOL);
 
 static void ld_lua_symbol_finalize (GObject *gobject);
 
-static void ld_lua_symbol_draw (LdSymbol *self, cairo_t *cr);
+static void ld_lua_symbol_draw (LdSymbol *symbol, cairo_t *cr);
 
 
 static void
@@ -76,51 +63,24 @@ ld_lua_symbol_finalize (GObject *gobject)
 	LdLuaSymbol *self;
 
 	self = LD_LUA_SYMBOL (gobject);
-	g_object_unref (self->priv->lua);
 
-	g_free (self->priv->ident);
+	ld_lua_private_unregister (self->priv->lua, self);
+	g_object_unref (self->priv->lua);
 
 	/* Chain up to the parent class. */
 	G_OBJECT_CLASS (ld_lua_symbol_parent_class)->finalize (gobject);
 }
 
 
-/**
- * ld_symbol_new:
- * @lua: An #LdLua object.
- * @ident: Identifier for the symbol.
- *
- * Load a symbol from a file into the library.
- */
-LdSymbol *
-ld_lua_symbol_new (const gchar *name, LdLua *lua, const gchar *ident)
+static void
+ld_lua_symbol_draw (LdSymbol *symbol, cairo_t *cr)
 {
 	LdLuaSymbol *self;
 
-	g_return_val_if_fail (name != NULL, NULL);
-	g_return_val_if_fail (LD_IS_LUA (lua), NULL);
-	g_return_val_if_fail (ident != NULL, NULL);
-
-	self = g_object_new (LD_TYPE_LUA_SYMBOL, NULL);
-
-	ld_symbol_set_name (LD_SYMBOL (self), name);
-
-	self->priv->lua = lua;
-	g_object_ref (lua);
-
-	self->priv->ident = g_strdup (ident);
-	return LD_SYMBOL (self);
-}
-
-static void
-ld_lua_symbol_draw (LdSymbol *self, cairo_t *cr)
-{
-	g_return_if_fail (LD_IS_SYMBOL (self));
 	g_return_if_fail (cr != NULL);
+	g_return_if_fail (LD_IS_SYMBOL (symbol));
 
-	/* TODO: Implement. */
-	/* Retrieve the function for rendering from the registry or wherever
-	 * it's going to end up, and call it.
-	 */
+	self = LD_LUA_SYMBOL (symbol);
+	ld_lua_private_draw (self->priv->lua, self, cr);
 }
 

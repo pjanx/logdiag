@@ -103,7 +103,9 @@ set (logdiag_HEADERS
 	src/ld-symbol-category.h
 	src/ld-symbol.h
 	src/ld-lua.h
-	src/ld-lua-symbol.h)
+	src/ld-lua-private.h
+	src/ld-lua-symbol.h
+	src/ld-lua-symbol-private.h)
 
 # Generate a configure file
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/config.h.in

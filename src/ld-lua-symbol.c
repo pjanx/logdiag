@@ -103,7 +103,7 @@ ld_lua_symbol_new (const gchar *name, LdLua *lua, const gchar *ident)
 
 	self = g_object_new (LD_TYPE_LUA_SYMBOL, NULL);
 
-	/* TODO: Set the symbol name. */
+	ld_symbol_set_name (LD_SYMBOL (self), name);
 
 	self->priv->lua = lua;
 	g_object_ref (lua);

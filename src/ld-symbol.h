@@ -57,11 +57,12 @@ struct _LdSymbolClass
 
 GType ld_symbol_get_type (void) G_GNUC_CONST;
 
+void ld_symbol_set_name (LdSymbol *self, const gchar *name);
+const gchar *ld_symbol_get_name (LdSymbol *self);
+
 void ld_symbol_draw (LdSymbol *self, cairo_t *cr);
 
-/* TODO: Interface for symbol terminals
- *       Interface + property for symbol name (will be used by _new)
- */
+/* TODO: Interface for symbol terminals. */
 
 
 G_END_DECLS

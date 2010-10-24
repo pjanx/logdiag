@@ -47,6 +47,7 @@ struct _LdSymbolCategory
  */
 struct _LdSymbolCategoryClass
 {
+/*< private >*/
 	GObjectClass parent_class;
 };
 
@@ -55,18 +56,17 @@ GType ld_symbol_category_get_type (void) G_GNUC_CONST;
 
 LdSymbolCategory *ld_symbol_category_new (const gchar *name);
 
-/* TODO: Create properties for "name" and "image_path". */
 void ld_symbol_category_set_name (LdSymbolCategory *self, const gchar *name);
 const gchar *ld_symbol_category_get_name (LdSymbolCategory *self);
 void ld_symbol_category_set_image_path (LdSymbolCategory *self,
 	const gchar *image_path);
 const gchar *ld_symbol_category_get_image_path (LdSymbolCategory *self);
-/* TODO: Implement. */
+
 void ld_symbol_category_insert_child (LdSymbolCategory *self,
 	GObject *child, gint pos);
 void ld_symbol_category_remove_child (LdSymbolCategory *self,
 	GObject *child);
-GSList *ld_symbol_category_get_children (LdSymbolCategory *self);
+const GSList *ld_symbol_category_get_children (LdSymbolCategory *self);
 
 
 G_END_DECLS

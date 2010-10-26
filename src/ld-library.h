@@ -42,9 +42,6 @@ struct _LdLibrary
 /*< private >*/
 	GObject parent_instance;
 	LdLibraryPrivate *priv;
-
-/*< public >*/
-	GHashTable *categories;
 };
 
 struct _LdLibraryClass
@@ -61,6 +58,10 @@ GType ld_library_get_type (void) G_GNUC_CONST;
 LdLibrary *ld_library_new (void);
 gboolean ld_library_load (LdLibrary *self, const gchar *directory);
 void ld_library_clear (LdLibrary *self);
+
+void ld_library_insert_child (LdLibrary *self, GObject *child, gint pos);
+void ld_library_remove_child (LdLibrary *self, GObject *child);
+const GSList *ld_library_get_children (LdLibrary *self);
 
 
 G_END_DECLS

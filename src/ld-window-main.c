@@ -69,7 +69,7 @@ static void
 ld_window_main_finalize (GObject *gobject);
 
 static void
-cb_load_category (gpointer key, gpointer value, gpointer user_data);
+cb_load_category (gpointer data, gpointer user_data);
 
 static void
 load_toolbar (LdWindowMain *self);
@@ -271,7 +271,7 @@ ld_window_main_finalize (GObject *gobject)
  * A hashtable foreach callback for adding categories into the toolbar.
  */
 static void
-cb_load_category (gpointer key, gpointer value, gpointer user_data)
+cb_load_category (gpointer data, gpointer user_data)
 {
 	const gchar *name;
 	LdSymbolCategory *cat;
@@ -280,12 +280,13 @@ cb_load_category (gpointer key, gpointer value, gpointer user_data)
 	GtkWidget *img;
 	GtkToolItem *item;
 
-	name = key;
-	cat = value;
+	g_return_if_fail (LD_IS_WINDOW_MAIN (user_data));
 	self = user_data;
 
-	g_return_if_fail (key != NULL);
-	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (cat));
+	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (data));
+	cat = data;
+
+	name = ld_symbol_category_get_name (cat);
 
 	pbuf = gdk_pixbuf_new_from_file_at_size
 		(ld_symbol_category_get_image_path (cat), TOOLBAR_ICON_WIDTH, -1, NULL);
@@ -307,12 +308,14 @@ cb_load_category (gpointer key, gpointer value, gpointer user_data)
 static void
 load_toolbar (LdWindowMain *self)
 {
+	GSList *categories;
+
 	/* Clear the toolbar first, if there was already something in it. */
 	gtk_container_foreach (GTK_CONTAINER (self->priv->toolbar),
 		(GtkCallback) gtk_widget_destroy, NULL);
 
-	g_hash_table_foreach (self->priv->library->categories,
-		cb_load_category, self);
+	categories = (GSList *) ld_library_get_children (self->priv->library);
+	g_slist_foreach (categories, cb_load_category, self);
 }
 
 /*

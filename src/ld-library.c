@@ -29,11 +29,13 @@
 
 /*
  * LdLibraryPrivate:
- * @script_state: State of the scripting language.
+ * @lua: State of the scripting language.
+ * @children: Child objects of the library.
  */
 struct _LdLibraryPrivate
 {
 	LdLua *lua;
+	GSList *children;
 };
 
 G_DEFINE_TYPE (LdLibrary, ld_library, G_TYPE_OBJECT);
@@ -85,9 +87,7 @@ ld_library_init (LdLibrary *self)
 		(self, LD_TYPE_LIBRARY, LdLibraryPrivate);
 
 	self->priv->lua = ld_lua_new ();
-
-	self->categories = g_hash_table_new_full (g_str_hash, g_str_equal,
-		(GDestroyNotify) g_free, (GDestroyNotify) g_object_unref);
+	self->priv->children = NULL;
 }
 
 static void
@@ -98,7 +98,9 @@ ld_library_finalize (GObject *gobject)
 	self = LD_LIBRARY (gobject);
 
 	g_object_unref (self->priv->lua);
-	g_hash_table_destroy (self->categories);
+
+	g_slist_foreach (self->priv->children, (GFunc) g_object_unref, NULL);
+	g_slist_free (self->priv->children);
 
 	/* Chain up to the parent class. */
 	G_OBJECT_CLASS (ld_library_parent_class)->finalize (gobject);
@@ -288,8 +290,7 @@ ld_library_load_cb (const gchar *base, const gchar *filename, gpointer userdata)
 
 	cat = load_category (data->self, filename, base);
 	if (cat)
-		g_hash_table_insert (data->self->categories,
-			g_strdup (ld_symbol_category_get_name (cat)), cat);
+		ld_library_insert_child (data->self, G_OBJECT (cat), -1);
 
 	data->changed = TRUE;
 	return TRUE;
@@ -306,9 +307,60 @@ ld_library_clear (LdLibrary *self)
 {
 	g_return_if_fail (LD_IS_LIBRARY (self));
 
-	g_hash_table_remove_all (self->categories);
+	g_slist_foreach (self->priv->children, (GFunc) g_object_unref, NULL);
+	g_slist_free (self->priv->children);
+	self->priv->children = NULL;
 
 	g_signal_emit (self,
 		LD_LIBRARY_GET_CLASS (self)->changed_signal, 0);
+}
+
+/**
+ * ld_library_insert_child:
+ * @self: An #LdLibrary object.
+ * @child: The child to be inserted.
+ * @pos: The position at which the child will be inserted.
+ *       Negative values will append to the end of list.
+ *
+ * Insert a child into the library.
+ */
+void
+ld_library_insert_child (LdLibrary *self, GObject *child, gint pos)
+{
+	g_return_if_fail (LD_IS_LIBRARY (self));
+	g_return_if_fail (G_IS_OBJECT (child));
+
+	g_object_ref (child);
+	self->priv->children = g_slist_insert (self->priv->children, child, pos);
+}
+
+/**
+ * ld_library_remove_child:
+ * @self: An #LdLibrary object.
+ * @child: The child to be removed.
+ *
+ * Removes a child from the library.
+ */
+void
+ld_library_remove_child (LdLibrary *self, GObject *child)
+{
+	g_return_if_fail (LD_IS_LIBRARY (self));
+	g_return_if_fail (G_IS_OBJECT (child));
+
+	g_object_unref (child);
+	self->priv->children = g_slist_remove (self->priv->children, child);
+}
+
+/**
+ * ld_library_get_children:
+ * @self: An #LdLibrary object.
+ *
+ * Return value: The internal list of children. Do not modify.
+ */
+const GSList *
+ld_library_get_children (LdLibrary *self)
+{
+	g_return_val_if_fail (LD_IS_LIBRARY (self), NULL);
+	return self->priv->children;
 }
 

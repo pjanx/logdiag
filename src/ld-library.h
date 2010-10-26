@@ -53,10 +53,19 @@ struct _LdLibraryClass
 };
 
 
+/**
+ * LD_LIBRARY_IDENTIFIER_SEPARATOR:
+ *
+ * Defines a string that separates categories and symbols in identifiers.
+ */
+#define LD_LIBRARY_IDENTIFIER_SEPARATOR "/"
+
+
 GType ld_library_get_type (void) G_GNUC_CONST;
 
 LdLibrary *ld_library_new (void);
 gboolean ld_library_load (LdLibrary *self, const gchar *directory);
+LdSymbol *ld_library_find_symbol (LdLibrary *self, const gchar *identifier);
 void ld_library_clear (LdLibrary *self);
 
 void ld_library_insert_child (LdLibrary *self, GObject *child, gint pos);

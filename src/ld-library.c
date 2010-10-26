@@ -297,6 +297,72 @@ ld_library_load_cb (const gchar *base, const gchar *filename, gpointer userdata)
 }
 
 /**
+ * ld_library_find_symbol:
+ * @self: A symbol library object.
+ * @identifier: An identifier of the symbol to be searched for.
+ *
+ * Search for a symbol in the library.
+ *
+ * Return value: A symbol object if found, NULL otherwise.
+ */
+/* XXX: With this level of indentation, this function is really ugly. */
+LdSymbol *
+ld_library_find_symbol (LdLibrary *self, const gchar *identifier)
+{
+	gchar **id_el_start, **id_el;
+	const GSList *list, *list_el;
+
+	g_return_val_if_fail (LD_IS_LIBRARY (self), NULL);
+	g_return_val_if_fail (identifier != NULL, NULL);
+
+	id_el_start = g_strsplit (identifier, LD_LIBRARY_IDENTIFIER_SEPARATOR, 0);
+	if (!id_el_start)
+		return NULL;
+
+	list = ld_library_get_children (self);
+	for (id_el = id_el_start; id_el[0]; id_el++)
+	{
+		LdSymbolCategory *cat;
+		LdSymbol *symbol;
+		gboolean found = FALSE;
+
+		for (list_el = list; list_el; list_el = g_slist_next (list_el))
+		{
+			/* If the current identifier element is a category (not last)
+			 * and this list element is a category.
+			 */
+			if (id_el[1] && LD_IS_SYMBOL_CATEGORY (list_el->data))
+			{
+				cat = LD_SYMBOL_CATEGORY (list_el->data);
+				if (strcmp (id_el[0], ld_symbol_category_get_name (cat)))
+					continue;
+
+				list = ld_symbol_category_get_children (cat);
+				found = TRUE;
+				break;
+			}
+			/* If the current identifier element is a symbol (last)
+			 * and this list element is a symbol.
+			 */
+			else if (!id_el[1] && LD_IS_SYMBOL (list_el->data))
+			{
+				symbol = LD_SYMBOL (list_el->data);
+				if (strcmp (id_el[0], ld_symbol_get_name (symbol)))
+					continue;
+
+				g_strfreev (id_el_start);
+				return symbol;
+			}
+		}
+
+		if (!found)
+			break;
+	}
+	g_strfreev (id_el_start);
+	return NULL;
+}
+
+/**
  * ld_library_clear:
  * @self: A symbol library object.
  *

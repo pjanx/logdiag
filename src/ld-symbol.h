@@ -14,6 +14,33 @@
 G_BEGIN_DECLS
 
 
+#define LD_TYPE_SYMBOL_AREA (ld_symbol_area_get_type ())
+
+typedef struct _LdSymbolArea LdSymbolArea;
+
+/**
+ * LdSymbolArea:
+ * @x1: Left-top X coordinate.
+ * @y1: Left-top Y coordinate.
+ * @x2: Right-bottom X coordinate.
+ * @y2: Right-bottom Y coordinate.
+ *
+ * Defines the area of the symbol relative to the center of the symbol,
+ * which is at the (0, 0) coordinates.
+ */
+struct _LdSymbolArea
+{
+	gdouble x1, y1;
+	gdouble x2, y2;
+};
+
+
+GType ld_symbol_area_get_type (void) G_GNUC_CONST;
+
+LdSymbolArea *ld_symbol_area_copy (const LdSymbolArea *self);
+void ld_symbol_area_free (LdSymbolArea *self);
+
+
 #define LD_TYPE_SYMBOL (ld_symbol_get_type ())
 #define LD_SYMBOL(obj) (G_TYPE_CHECK_INSTANCE_CAST \
 	((obj), LD_TYPE_SYMBOL, LdSymbol))
@@ -30,8 +57,6 @@ typedef struct _LdSymbol LdSymbol;
 typedef struct _LdSymbolPrivate LdSymbolPrivate;
 typedef struct _LdSymbolClass LdSymbolClass;
 
-typedef struct _LdSymbolArea LdSymbolArea;
-
 
 /**
  * LdSymbol:
@@ -42,22 +67,6 @@ struct _LdSymbol
 /*< private >*/
 	GObject parent_instance;
 	LdSymbolPrivate *priv;
-};
-
-/**
- * LdSymbolArea:
- * @x1: Left-top X coordinate.
- * @y1: Left-top Y coordinate.
- * @x2: Right-bottom X coordinate.
- * @y2: Right-bottom Y coordinate.
- *
- * Defines the area of the symbol relative to the center of the symbol,
- * which is at the (0, 0) coordinates.
- */
-struct _LdSymbolArea
-{
-	gdouble x1, y1;
-	gdouble x2, y2;
 };
 
 /**

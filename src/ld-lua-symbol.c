@@ -70,8 +70,11 @@ ld_lua_symbol_finalize (GObject *gobject)
 
 	self = LD_LUA_SYMBOL (gobject);
 
-	ld_lua_private_unregister (self->priv->lua, self);
-	g_object_unref (self->priv->lua);
+	if (self->priv->lua)
+	{
+		ld_lua_private_unregister (self->priv->lua, self);
+		g_object_unref (self->priv->lua);
+	}
 
 	if (self->priv->name)
 		g_free (self->priv->name);

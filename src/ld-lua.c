@@ -91,8 +91,10 @@ static int ld_lua_private_unregister_cb (lua_State *L);
 
 
 static int ld_lua_logdiag_register (lua_State *L);
+
+static int process_registration (lua_State *L);
 static gchar *get_translation (lua_State *L, int index);
-static void read_symbol_area (lua_State *L, int index, LdSymbolArea *area);
+static gboolean read_symbol_area (lua_State *L, int index, LdSymbolArea *area);
 
 static luaL_Reg ld_lua_logdiag_lib[] =
 {
@@ -230,6 +232,7 @@ ld_lua_check_file (LdLua *self, const gchar *filename)
  * @self: An #LdLua object.
  * @filename: The file to be loaded.
  * @callback: A callback for newly registered symbols.
+ * The callee is responsible for referencing the symbol.
  * @user_data: User data to be passed to the callback.
  *
  * Loads a file and creates #LdLuaSymbol objects for contained symbols.
@@ -301,7 +304,7 @@ ld_lua_private_draw (LdLua *self, LdLuaSymbol *symbol, cairo_t *cr)
 	if (lua_cpcall (self->priv->L, ld_lua_private_draw_cb, &data))
 	{
 		g_warning ("Lua error: %s", lua_tostring (self->priv->L, -1));
-		lua_remove (self->priv->L, -1);
+		lua_pop (self->priv->L, 1);
 	}
 }
 
@@ -342,7 +345,7 @@ ld_lua_private_unregister (LdLua *self, LdLuaSymbol *symbol)
 	if (lua_cpcall (self->priv->L, ld_lua_private_unregister_cb, symbol))
 	{
 		g_warning ("Lua error: %s", lua_tostring (self->priv->L, -1));
-		lua_remove (self->priv->L, -1);
+		lua_pop (self->priv->L, 1);
 	}
 }
 
@@ -359,53 +362,91 @@ ld_lua_private_unregister_cb (lua_State *L)
 
 /* ===== Application library =============================================== */
 
-/* XXX: This function is damn too long. */
 static int
 ld_lua_logdiag_register (lua_State *L)
 {
 	LdLuaData *ud;
 	LdLuaSymbol *symbol;
-	const gchar *name;
-	gchar *human_name;
 
 	lua_getfield (L, LUA_REGISTRYINDEX, LD_LUA_DATA_INDEX);
 	ud = lua_touserdata (L, -1);
 	lua_pop (L, 1);
 	g_return_val_if_fail (ud != NULL, 0);
 
-	/* Check and retrieve arguments. */
-	name = lua_tostring (L, 1);
-	if (!name)
-		luaL_error (L, "register: bad or missing argument #%d", 1);
-	if (!lua_istable (L, 2))
-		luaL_error (L, "register: bad or missing argument #%d", 2);
-	if (!lua_istable (L, 3))
-		luaL_error (L, "register: bad or missing argument #%d", 3);
-	if (!lua_istable (L, 4))
-		luaL_error (L, "register: bad or missing argument #%d", 4);
-	if (!lua_isfunction (L, 5))
-		luaL_error (L, "register: bad or missing argument #%d", 5);
-
-	/* Create a symbol using the given parameters. */
-	/* XXX: If an error occurs, this object will not be freed. */
 	symbol = g_object_new (LD_TYPE_LUA_SYMBOL, NULL);
-	symbol->priv->lua = ud->self;
-	g_object_ref (ud->self);
 
-	symbol->priv->name = g_strdup (name);
+	/* Use a protected environment, so script errors won't cause leaking
+	 * of the symbol object. Only the failure of one of the following three
+	 * function calls may cause the symbol to leak.
+	 */
+	lua_pushlightuserdata (L, symbol);
+	lua_pushcclosure (L, process_registration, 1);
+	lua_insert (L, 1);
+
+	/* On the stack, there are function arguments plus the function itself. */
+	if (lua_pcall (L, lua_gettop (L) - 1, 0, 0))
+	{
+		luaL_where (L, 1);
+		lua_insert (L, -2);
+		lua_concat (L, 2);
+
+		g_warning ("Lua symbol registration failed: %s",
+			lua_tostring (L, -1));
+		lua_pushboolean (L, FALSE);
+	}
+	else
+	{
+		/* We don't want an extra LdLua reference either. */
+		symbol->priv->lua = ud->self;
+		g_object_ref (ud->self);
+
+		ud->load_callback (LD_SYMBOL (symbol), ud->load_user_data);
+		lua_pushboolean (L, TRUE);
+	}
+	g_object_unref (symbol);
+
+	return 1;
+}
+
+/*
+ * process_registration:
+ * @L: A Lua state.
+ *
+ * Parse arguments, write them to a symbol object and register the object.
+ */
+static int
+process_registration (lua_State *L)
+{
+	LdLuaSymbol *symbol;
+	const gchar *name;
+	gchar *human_name;
+
+	int i, type, types[] =
+		{LUA_TSTRING, LUA_TTABLE, LUA_TTABLE, LUA_TTABLE, LUA_TFUNCTION};
+	int n_args_needed = sizeof (types) / sizeof (int);
+
+	if (lua_gettop (L) < n_args_needed)
+		return luaL_error (L, "Too few arguments.");
+
+	for (i = 0; i < n_args_needed; i++)
+		if ((type = lua_type (L, i + 1)) != types[i])
+			return luaL_error (L, "Bad type of argument #%d."
+				" Expected %s, got %s.", i + 1,
+				lua_typename (L, types[i]), lua_typename (L, type));
+
+	symbol = LD_LUA_SYMBOL (lua_touserdata (L, lua_upvalueindex (1)));
+	symbol->priv->name = g_strdup (lua_tostring (L, 1));
 
 	human_name = get_translation (L, 2);
 	if (!human_name)
 		human_name = g_strdup (name);
 	symbol->priv->human_name = human_name;
 
-	/* TODO: Check the values. */
-	read_symbol_area (L, 3, &symbol->priv->area);
+	if (!read_symbol_area (L, 3, &symbol->priv->area))
+		return luaL_error (L, "Malformed symbol area array.");
 
-	/* TODO: Read and set the terminals (they're in a table). */
-	lua_pushvalue (L, 4);
+	/* TODO: Read and set the terminals. */
 
-	/* Create an entry in the symbol table. */
 	lua_getfield (L, LUA_REGISTRYINDEX, LD_LUA_SYMBOLS_INDEX);
 	lua_pushlightuserdata (L, symbol);
 
@@ -414,11 +455,6 @@ ld_lua_logdiag_register (lua_State *L)
 	lua_setfield (L, -2, "render");
 
 	lua_settable (L, -3);
-
-	/* The caller is responsible for referencing the symbol. */
-	ud->load_callback (LD_SYMBOL (symbol), ud->load_user_data);
-	g_object_unref (symbol);
-
 	return 0;
 }
 
@@ -459,24 +495,36 @@ get_translation (lua_State *L, int index)
  * @area: Where the area will be returned.
  *
  * Read a symbol area from a Lua table.
+ *
+ * Return value: TRUE on success, FALSE on failure.
  */
-static void
+static gboolean
 read_symbol_area (lua_State *L, int index, LdSymbolArea *area)
 {
 	if (lua_objlen (L, index) != 4)
-		return;
+		return FALSE;
 
 	lua_rawgeti (L, index, 1);
+	if (!lua_isnumber (L, -1))
+		return FALSE;
 	area->x1 = lua_tonumber (L, -1);
 
 	lua_rawgeti (L, index, 2);
+	if (!lua_isnumber (L, -1))
+		return FALSE;
 	area->y1 = lua_tonumber (L, -1);
 
 	lua_rawgeti (L, index, 3);
+	if (!lua_isnumber (L, -1))
+		return FALSE;
 	area->x2 = lua_tonumber (L, -1);
 
 	lua_rawgeti (L, index, 4);
+	if (!lua_isnumber (L, -1))
+		return FALSE;
 	area->y2 = lua_tonumber (L, -1);
+
+	return TRUE;
 }
 
 /* ===== Cairo ============================================================= */

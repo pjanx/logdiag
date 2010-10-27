@@ -90,6 +90,8 @@ static int ld_lua_private_unregister_cb (lua_State *L);
 
 
 static int ld_lua_logdiag_register (lua_State *L);
+static gchar *get_translation (lua_State *L, int index);
+static void read_symbol_area (lua_State *L, int index, LdSymbolArea *area);
 
 static luaL_Reg ld_lua_logdiag_lib[] =
 {
@@ -351,12 +353,14 @@ ld_lua_private_unregister_cb (lua_State *L)
 
 /* ===== Application library =============================================== */
 
+/* XXX: This function is damn too long. */
 static int
 ld_lua_logdiag_register (lua_State *L)
 {
 	LdLuaData *ud;
 	LdLuaSymbol *symbol;
 	const gchar *name;
+	gchar *human_name;
 
 	lua_getfield (L, LUA_REGISTRYINDEX, LD_LUA_DATA_INDEX);
 	ud = lua_touserdata (L, -1);
@@ -367,19 +371,33 @@ ld_lua_logdiag_register (lua_State *L)
 	name = lua_tostring (L, 1);
 	if (!name)
 		luaL_error (L, "register: bad or missing argument #%d", 1);
+	if (!lua_istable (L, 2))
+		luaL_error (L, "register: bad or missing argument #%d", 2);
+	if (!lua_istable (L, 3))
+		luaL_error (L, "register: bad or missing argument #%d", 3);
+	if (!lua_istable (L, 4))
+		luaL_error (L, "register: bad or missing argument #%d", 4);
 	if (!lua_isfunction (L, 5))
 		luaL_error (L, "register: bad or missing argument #%d", 5);
 
-	/* TODO: Create a symbol using the given parameters:
-	 * 2. names (table) -> use g_get_language_names ()
-	 * 3. area (table)
-	 * 4. terminals (table)
-	 */
+	/* Create a symbol using the given parameters. */
+	/* XXX: If an error occurs, this object will not be freed. */
 	symbol = g_object_new (LD_TYPE_LUA_SYMBOL, NULL);
 	symbol->priv->lua = ud->self;
 	g_object_ref (ud->self);
 
 	symbol->priv->name = g_strdup (name);
+
+	human_name = get_translation (L, 2);
+	if (!human_name)
+		human_name = g_strdup (name);
+	symbol->priv->human_name = human_name;
+
+	/* TODO: Check the values. */
+	read_symbol_area (L, 3, &symbol->priv->area);
+
+	/* TODO: Read and set the terminals (they're in a table). */
+	lua_pushvalue (L, 4);
 
 	/* Create an entry in the symbol table. */
 	lua_getfield (L, LUA_REGISTRYINDEX, LD_LUA_SYMBOLS_INDEX);
@@ -397,6 +415,63 @@ ld_lua_logdiag_register (lua_State *L)
 	g_object_unref (symbol);
 
 	return 0;
+}
+
+/*
+ * get_translation:
+ * @L: A Lua state.
+ * @index: Stack index of the table.
+ *
+ * Select an applicable translation from a table.
+ * The return value has to be freed with g_free().
+ *
+ * Return value: The translation, if found. If none was found, returns NULL.
+ */
+static gchar *
+get_translation (lua_State *L, int index)
+{
+	const gchar *const *lang;
+	gchar *result;
+
+	for (lang = g_get_language_names (); *lang; lang++)
+	{
+		lua_getfield (L, 2, *lang);
+		if (lua_isstring (L, -1))
+		{
+			result = g_strdup (lua_tostring (L, -1));
+			lua_pop (L, 1);
+			return result;
+		}
+		lua_pop (L, 1);
+	}
+	return NULL;
+}
+
+/*
+ * read_symbol_area:
+ * @L: A Lua state.
+ * @index: Stack index of the table.
+ * @area: Where the area will be returned.
+ *
+ * Read a symbol area from a Lua table.
+ */
+static void
+read_symbol_area (lua_State *L, int index, LdSymbolArea *area)
+{
+	if (lua_objlen (L, index) != 4)
+		return;
+
+	lua_rawgeti (L, index, 1);
+	area->x1 = lua_tonumber (L, -1);
+
+	lua_rawgeti (L, index, 2);
+	area->y1 = lua_tonumber (L, -1);
+
+	lua_rawgeti (L, index, 3);
+	area->x2 = lua_tonumber (L, -1);
+
+	lua_rawgeti (L, index, 4);
+	area->y2 = lua_tonumber (L, -1);
 }
 
 /* ===== Cairo ============================================================= */

@@ -30,6 +30,8 @@ typedef struct _LdSymbol LdSymbol;
 typedef struct _LdSymbolPrivate LdSymbolPrivate;
 typedef struct _LdSymbolClass LdSymbolClass;
 
+typedef struct _LdSymbolArea LdSymbolArea;
+
 
 /**
  * LdSymbol:
@@ -43,26 +45,50 @@ struct _LdSymbol
 };
 
 /**
+ * LdSymbolArea:
+ * @x1: Left-top X coordinate.
+ * @y1: Left-top Y coordinate.
+ * @x2: Right-bottom X coordinate.
+ * @y2: Right-bottom Y coordinate.
+ *
+ * Defines the area of the symbol relative to the center of the symbol,
+ * which is at the (0, 0) coordinates.
+ */
+struct _LdSymbolArea
+{
+	gdouble x1, y1;
+	gdouble x2, y2;
+};
+
+/**
  * LdSymbolClass:
  * @parent_class: The parent class.
+ * @get_name: Get the name of the symbol.
+ * @get_human_name: Get the localized human name of the symbol.
+ * @get_area: Get the area of the symbol.
  * @draw: Draw the symbol on a Cairo surface.
  */
 struct _LdSymbolClass
 {
 	GObjectClass parent_class;
 
+	const gchar *(*get_name) (LdSymbol *self);
+	const gchar *(*get_human_name) (LdSymbol *self);
+	void (*get_area) (LdSymbol *self, LdSymbolArea *area);
 	void (*draw) (LdSymbol *self, cairo_t *cr);
 };
 
 
 GType ld_symbol_get_type (void) G_GNUC_CONST;
 
-void ld_symbol_set_name (LdSymbol *self, const gchar *name);
 const gchar *ld_symbol_get_name (LdSymbol *self);
-
+const gchar *ld_symbol_get_human_name (LdSymbol *self);
+void ld_symbol_get_area (LdSymbol *self, LdSymbolArea *area);
 void ld_symbol_draw (LdSymbol *self, cairo_t *cr);
 
-/* TODO: Interface for symbol terminals. */
+/* TODO: Interface for terminals.
+ *       Something like a list of gdouble pairs (-> a new structure).
+ */
 
 
 G_END_DECLS

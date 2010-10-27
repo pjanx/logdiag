@@ -26,21 +26,14 @@
  * drawn onto the #LdCanvas.
  */
 
-/*
- * LdSymbolPrivate:
- * @name: The name of this symbol.
- */
-struct _LdSymbolPrivate
-{
-	gchar *name;
-};
-
 G_DEFINE_ABSTRACT_TYPE (LdSymbol, ld_symbol, G_TYPE_OBJECT);
 
 enum
 {
 	PROP_0,
-	PROP_NAME
+	PROP_NAME,
+	PROP_HUMAN_NAME,
+	/* TODO: Property for the area. */
 };
 
 static void
@@ -63,7 +56,6 @@ ld_symbol_class_init (LdSymbolClass *klass)
 	object_class = G_OBJECT_CLASS (klass);
 	object_class->get_property = ld_symbol_get_property;
 	object_class->set_property = ld_symbol_set_property;
-	object_class->finalize = ld_symbol_finalize;
 
 /**
  * LdSymbol:name:
@@ -72,17 +64,23 @@ ld_symbol_class_init (LdSymbolClass *klass)
  */
 	pspec = g_param_spec_string ("name", "Name",
 		"The name of this symbol.",
-		"", G_PARAM_READWRITE);
+		"", G_PARAM_READABLE);
 	g_object_class_install_property (object_class, PROP_NAME, pspec);
 
-	g_type_class_add_private (klass, sizeof (LdSymbolPrivate));
+/**
+ * LdSymbol:human-name:
+ *
+ * The localized human name of this symbol.
+ */
+	pspec = g_param_spec_string ("human-name", "Human name",
+		"The localized human name of this symbol.",
+		"", G_PARAM_READABLE);
+	g_object_class_install_property (object_class, PROP_HUMAN_NAME, pspec);
 }
 
 static void
 ld_symbol_init (LdSymbol *self)
 {
-	self->priv = G_TYPE_INSTANCE_GET_PRIVATE
-		(self, LD_TYPE_SYMBOL, LdSymbolPrivate);
 }
 
 static void
@@ -97,6 +95,9 @@ ld_symbol_get_property (GObject *object, guint property_id,
 	case PROP_NAME:
 		g_value_set_string (value, ld_symbol_get_name (self));
 		break;
+	case PROP_HUMAN_NAME:
+		g_value_set_string (value, ld_symbol_get_human_name (self));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
 	}
@@ -106,50 +107,9 @@ static void
 ld_symbol_set_property (GObject *object, guint property_id,
 	const GValue *value, GParamSpec *pspec)
 {
-	LdSymbol *self;
-
-	self = LD_SYMBOL (object);
-	switch (property_id)
-	{
-	case PROP_NAME:
-		ld_symbol_set_name (self, g_value_get_string (value));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-	}
+	G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
 }
 
-static void
-ld_symbol_finalize (GObject *gobject)
-{
-	LdSymbol *self;
-
-	self = LD_SYMBOL (gobject);
-
-	if (self->priv->name)
-		g_free (self->priv->name);
-
-	/* Chain up to the parent class. */
-	G_OBJECT_CLASS (ld_symbol_parent_class)->finalize (gobject);
-}
-
-/**
- * ld_symbol_set_name:
- * @self: An #LdSymbol object.
- * @name: A new name for the symbol.
- *
- * Set the name of a symbol.
- */
-void
-ld_symbol_set_name (LdSymbol *self, const gchar *name)
-{
-	g_return_if_fail (LD_IS_SYMBOL (self));
-	g_return_if_fail (name != NULL);
-
-	if (self->priv->name)
-		g_free (self->priv->name);
-	self->priv->name = g_strdup (name);
-}
 
 /**
  * ld_symbol_get_name:
@@ -160,8 +120,51 @@ ld_symbol_set_name (LdSymbol *self, const gchar *name)
 const gchar *
 ld_symbol_get_name (LdSymbol *self)
 {
+	LdSymbolClass *klass;
+
 	g_return_if_fail (LD_IS_SYMBOL (self));
-	return self->priv->name;
+
+	klass = LD_SYMBOL_GET_CLASS (self);
+	g_return_val_if_fail (klass->get_name != NULL, NULL);
+	return klass->get_name (self);
+}
+
+/**
+ * ld_symbol_get_human_name:
+ * @self: An #LdSymbol object.
+ *
+ * Return value: The localised human name of the symbol.
+ */
+const gchar *
+ld_symbol_get_human_name (LdSymbol *self)
+{
+	LdSymbolClass *klass;
+
+	g_return_if_fail (LD_IS_SYMBOL (self));
+
+	klass = LD_SYMBOL_GET_CLASS (self);
+	g_return_val_if_fail (klass->get_human_name != NULL, NULL);
+	return klass->get_human_name (self);
+}
+
+/**
+ * ld_symbol_get_area:
+ * @self: A symbol object.
+ * @area: Where the area of the symbol will be returned.
+ *
+ * Get the area of the symbol.
+ */
+void
+ld_symbol_get_area (LdSymbol *self, LdSymbolArea *area)
+{
+	LdSymbolClass *klass;
+
+	g_return_if_fail (LD_IS_SYMBOL (self));
+	g_return_if_fail (area != NULL);
+
+	klass = LD_SYMBOL_GET_CLASS (self);
+	g_return_if_fail (klass->get_area != NULL);
+	klass->get_area (self, area);
 }
 
 /**
@@ -180,6 +183,6 @@ ld_symbol_draw (LdSymbol *self, cairo_t *cr)
 	g_return_if_fail (cr != NULL);
 
 	klass = LD_SYMBOL_GET_CLASS (self);
-	if (klass->draw)
-		klass->draw (self, cr);
+	g_return_if_fail (klass->draw != NULL);
+	klass->draw (self, cr);
 }

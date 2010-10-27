@@ -363,14 +363,6 @@ ld_lua_logdiag_register (lua_State *L)
 	lua_pop (L, 1);
 	g_return_val_if_fail (ud != NULL, 0);
 
-	/* TODO: Create a symbol using the given parameters:
-	 * 1. name
-	 * 2. names (table) -> use g_get_language_names ()
-	 * 3. area (table)
-	 * 4. terminals (table)
-	 * 5. render function
-	 */
-
 	/* Check and retrieve arguments. */
 	name = lua_tostring (L, 1);
 	if (!name)
@@ -378,12 +370,16 @@ ld_lua_logdiag_register (lua_State *L)
 	if (!lua_isfunction (L, 5))
 		luaL_error (L, "register: bad or missing argument #%d", 5);
 
-	/* Create a symbol object. */
+	/* TODO: Create a symbol using the given parameters:
+	 * 2. names (table) -> use g_get_language_names ()
+	 * 3. area (table)
+	 * 4. terminals (table)
+	 */
 	symbol = g_object_new (LD_TYPE_LUA_SYMBOL, NULL);
 	symbol->priv->lua = ud->self;
 	g_object_ref (ud->self);
 
-	ld_symbol_set_name (LD_SYMBOL (symbol), name);
+	symbol->priv->name = g_strdup (name);
 
 	/* Create an entry in the symbol table. */
 	lua_getfield (L, LUA_REGISTRYINDEX, LD_LUA_SYMBOLS_INDEX);

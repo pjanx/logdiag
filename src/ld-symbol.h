@@ -58,10 +58,6 @@ typedef struct _LdSymbolPrivate LdSymbolPrivate;
 typedef struct _LdSymbolClass LdSymbolClass;
 
 
-/**
- * LdSymbol:
- * @name: The name of this symbol.
- */
 struct _LdSymbol
 {
 /*< private >*/

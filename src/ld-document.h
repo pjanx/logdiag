@@ -39,12 +39,11 @@ struct _LdDocument
 {
 /*< private >*/
 	GObject parent_instance;
-
-/*< public >*/
 };
 
 struct _LdDocumentClass
 {
+/*< private >*/
 	GObjectClass parent_class;
 };
 

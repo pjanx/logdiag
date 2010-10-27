@@ -45,6 +45,7 @@ struct _LdWindowMain
 
 struct _LdWindowMainClass
 {
+/*< private >*/
 	GtkWindowClass parent_class;
 };
 

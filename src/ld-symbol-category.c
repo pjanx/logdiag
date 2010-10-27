@@ -161,7 +161,7 @@ ld_symbol_category_finalize (GObject *gobject)
 
 /**
  * ld_symbol_category_new:
- * @parent: The parent library for this category.
+ * @name: The name of this category.
  *
  * Create an instance.
  */

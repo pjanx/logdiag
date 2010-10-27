@@ -31,12 +31,6 @@ typedef struct _LdLibraryPrivate LdLibraryPrivate;
 typedef struct _LdLibraryClass LdLibraryClass;
 
 
-/**
- * LdLibrary:
- * @categories: Lists all the categories (#LdSymbolCategory).
- *
- * Object structure.
- */
 struct _LdLibrary
 {
 /*< private >*/

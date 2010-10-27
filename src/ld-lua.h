@@ -36,14 +36,12 @@ struct _LdLua
 /*< private >*/
 	GObject parent_instance;
 	LdLuaPrivate *priv;
-
-/*< public >*/
-	gchar *name;
 };
 
 /* TODO: A virtual superclass, so other engines can be used. */
 struct _LdLuaClass
 {
+/*< private >*/
 	GObjectClass parent_class;
 };
 

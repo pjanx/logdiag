@@ -46,12 +46,22 @@ struct _LdLuaClass
 };
 
 
+/**
+ * LdLuaLoadCallback:
+ * @symbol: The symbol that has been created.
+ * @user_data: User data passed to ld_lua_load_file().
+ *
+ * A callback function that is called when a symbol is created.
+ */
+typedef void (*LdLuaLoadCallback) (LdSymbol *symbol, gpointer user_data);
+
+
 GType ld_lua_get_type (void) G_GNUC_CONST;
 
 LdLua *ld_lua_new (void);
 gboolean ld_lua_check_file (LdLua *self, const gchar *filename);
-gboolean ld_lua_load_file_to_category (LdLua *self, const gchar *filename,
-	LdSymbolCategory *category);
+gboolean ld_lua_load_file (LdLua *self, const gchar *filename,
+	LdLuaLoadCallback callback, gpointer user_data);
 
 
 G_END_DECLS

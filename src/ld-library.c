@@ -43,19 +43,17 @@ G_DEFINE_TYPE (LdLibrary, ld_library, G_TYPE_OBJECT);
 static void
 ld_library_finalize (GObject *gobject);
 
-static LdSymbolCategory *
-load_category (LdLibrary *self, const char *path, const char *name);
+static LdSymbolCategory *load_category
+	(LdLibrary *self, const char *path, const char *name);
 
-static gboolean
-foreach_dir (const gchar *path,
+static gboolean foreach_dir (const gchar *path,
 	gboolean (*callback) (const gchar *, const gchar *, gpointer),
 	gpointer userdata, GError **error);
-static gboolean
-load_category_cb (const gchar *base,
+static gboolean load_category_cb (const gchar *base,
 	const gchar *filename, gpointer userdata);
-static gboolean
-ld_library_load_cb (const gchar *base,
-	const gchar *filename, gpointer userdata);
+static void load_category_symbol_cb (LdSymbol *symbol, gpointer user_data);
+static gboolean ld_library_load_cb
+	(const gchar *base, const gchar *filename, gpointer userdata);
 
 
 static void
@@ -227,10 +225,22 @@ load_category_cb (const gchar *base, const gchar *filename, gpointer userdata)
 	data = (LoadCategoryData *) userdata;
 
 	if (ld_lua_check_file (data->self->priv->lua, filename))
-		ld_lua_load_file_to_category
-			(data->self->priv->lua, filename, data->cat);
-
+		ld_lua_load_file (data->self->priv->lua, filename,
+			load_category_symbol_cb, data->cat);
 	return TRUE;
+}
+
+/*
+ * load_category_symbol_cb:
+ *
+ * Insert newly registered symbols into the category.
+ */
+static void
+load_category_symbol_cb (LdSymbol *symbol, gpointer user_data)
+{
+	/* TODO: Don't just add blindly, also check for name collisions. */
+	ld_symbol_category_insert_child
+		(LD_SYMBOL_CATEGORY (user_data), G_OBJECT (symbol), -1);
 }
 
 /*

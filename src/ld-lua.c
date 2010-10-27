@@ -16,7 +16,6 @@
 #include "config.h"
 
 #include "ld-symbol.h"
-#include "ld-symbol-category.h"
 #include "ld-library.h"
 
 #include "ld-lua.h"
@@ -62,14 +61,16 @@ static void *ld_lua_alloc (void *ud, void *ptr, size_t osize, size_t nsize);
 /*
  * LdLuaData:
  * @self: A reference to self.
- * @category: A reference to parent category of the currently processed file.
+ * @load_callback: A callback for newly registered symbols.
+ * @load_user_data: User data to be passed to the callback.
  *
  * Full user data to be stored in Lua registry.
  */
 typedef struct
 {
 	LdLua *self;
-	LdSymbolCategory *category;
+	LdLuaLoadCallback load_callback;
+	gpointer load_user_data;
 }
 LdLuaData;
 
@@ -164,7 +165,8 @@ ld_lua_init (LdLua *self)
 	/* Store user data to the registry. */
 	ud = lua_newuserdata (L, sizeof (LdLuaData));
 	ud->self = self;
-	ud->category = NULL;
+	ud->load_callback = NULL;
+	ud->load_user_data = NULL;
 
 	lua_setfield (L, LUA_REGISTRYINDEX, LD_LUA_DATA_INDEX);
 
@@ -224,25 +226,26 @@ ld_lua_check_file (LdLua *self, const gchar *filename)
 }
 
 /**
- * ld_lua_load_file_to_category:
+ * ld_lua_load_file:
  * @self: An #LdLua object.
  * @filename: The file to be loaded.
- * @category: An #LdSymbolCategory object.
+ * @callback: A callback for newly registered symbols.
+ * @user_data: User data to be passed to the callback.
  *
- * Loads a file and appends contained symbols into the category.
+ * Loads a file and creates #LdLuaSymbol objects for contained symbols.
  *
  * Returns: TRUE if no error has occured, FALSE otherwise.
  */
 gboolean
-ld_lua_load_file_to_category (LdLua *self, const gchar *filename,
-	LdSymbolCategory *category)
+ld_lua_load_file (LdLua *self, const gchar *filename,
+	LdLuaLoadCallback callback, gpointer user_data)
 {
 	gint retval;
 	LdLuaData *ud;
 
 	g_return_val_if_fail (LD_IS_LUA (self), FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
-	g_return_val_if_fail (LD_IS_SYMBOL_CATEGORY (category), FALSE);
+	g_return_val_if_fail (callback != NULL, FALSE);
 
 	/* XXX: If something from the following fails, Lua will call exit(). */
 	lua_getfield (self->priv->L, LUA_REGISTRYINDEX, LD_LUA_DATA_INDEX);
@@ -250,7 +253,8 @@ ld_lua_load_file_to_category (LdLua *self, const gchar *filename,
 	lua_pop (self->priv->L, 1);
 	g_return_val_if_fail (ud != NULL, FALSE);
 
-	ud->category = category;
+	ud->load_callback = callback;
+	ud->load_user_data = user_data;
 
 	retval = luaL_loadfile (self->priv->L, filename);
 	if (retval)
@@ -260,14 +264,16 @@ ld_lua_load_file_to_category (LdLua *self, const gchar *filename,
 	if (retval)
 		goto ld_lua_lftc_fail;
 
-	ud->category = NULL;
+	ud->load_callback = NULL;
+	ud->load_user_data = NULL;
 	return TRUE;
 
 ld_lua_lftc_fail:
 	g_warning ("Lua error: %s", lua_tostring (self->priv->L, -1));
 	lua_remove (self->priv->L, -1);
 
-	ud->category = NULL;
+	ud->load_callback = NULL;
+	ud->load_user_data = NULL;
 	return FALSE;
 }
 
@@ -409,9 +415,8 @@ ld_lua_logdiag_register (lua_State *L)
 
 	lua_settable (L, -3);
 
-	/* Insert the symbol into the category. */
-	/* TODO: Don't just add blindly, also check for name collisions. */
-	ld_symbol_category_insert_child (ud->category, G_OBJECT (symbol), -1);
+	/* The caller is responsible for referencing the symbol. */
+	ud->load_callback (LD_SYMBOL (symbol), ud->load_user_data);
 	g_object_unref (symbol);
 
 	return 0;

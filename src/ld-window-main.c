@@ -50,7 +50,7 @@ struct _LdWindowMainPrivate
 	guint statusbar_menu_context_id;
 };
 
-struct DocumentData
+struct _DocumentData
 {
 	LdDocument *document;
 	const gchar *file_name;
@@ -65,31 +65,21 @@ G_DEFINE_TYPE (LdWindowMain, ld_window_main, GTK_TYPE_WINDOW);
 
 /* ===== Local functions =================================================== */
 
-static void
-ld_window_main_finalize (GObject *gobject);
+static void ld_window_main_finalize (GObject *gobject);
 
-static void
-cb_load_category (gpointer data, gpointer user_data);
+static void load_toolbar (LdWindowMain *self);
+static void load_category_cb (gpointer data, gpointer user_data);
 
-static void
-load_toolbar (LdWindowMain *self);
 
-static void
-cb_ui_proxy_connected (GtkUIManager *ui, GtkAction *action,
+static void on_ui_proxy_connected (GtkUIManager *ui, GtkAction *action,
+	GtkWidget *proxy, LdWindowMain *window);
+static void on_ui_proxy_disconnected (GtkUIManager *ui, GtkAction *action,
 	GtkWidget *proxy, LdWindowMain *window);
 
-static void
-cb_ui_proxy_disconnected (GtkUIManager *ui, GtkAction *action,
-	GtkWidget *proxy, LdWindowMain *window);
+static void on_menu_item_selected (GtkWidget *item, LdWindowMain *window);
+static void on_menu_item_deselected (GtkItem *item, LdWindowMain *window);
 
-static void
-cb_menu_item_selected (GtkWidget *item, LdWindowMain *window);
-
-static void
-cb_menu_item_deselected (GtkItem *item, LdWindowMain *window);
-
-static void
-cb_show_about_dialog (GtkAction *action, LdWindowMain *window);
+static void show_about_dialog (GtkAction *action, LdWindowMain *window);
 
 
 /* ===== Local variables =================================================== */
@@ -109,7 +99,8 @@ static GtkActionEntry mw_actionEntries[] =
 		{"Export", NULL, Q_("_Export"), NULL,
 			Q_("Export the document"), NULL},
 		{"Quit", GTK_STOCK_QUIT, NULL, NULL,
-			Q_("Quit the application"), NULL},
+			Q_("Quit the application"),
+			G_CALLBACK (gtk_main_quit)},
 
 	{"EditMenu", NULL, Q_("_Edit")},
 /* These are not probably going to show up in the 1st version of this app:
@@ -125,7 +116,7 @@ static GtkActionEntry mw_actionEntries[] =
 	{"HelpMenu", NULL, Q_("_Help")},
 		{"About", GTK_STOCK_ABOUT, NULL, NULL,
 			Q_("Show a dialog about this application"),
-			G_CALLBACK(cb_show_about_dialog)}
+			G_CALLBACK (show_about_dialog)}
 };
 
 
@@ -171,13 +162,10 @@ ld_window_main_init (LdWindowMain *self)
 
 	priv->ui_manager = gtk_ui_manager_new ();
 
-	/* Reference:
-	 * http://git.gnome.org/browse/glade3/tree/src/glade-window.c : 2165
-	 */
 	g_signal_connect (priv->ui_manager, "connect-proxy",
-		G_CALLBACK (cb_ui_proxy_connected), self);
+		G_CALLBACK (on_ui_proxy_connected), self);
 	g_signal_connect (priv->ui_manager, "disconnect-proxy",
-		G_CALLBACK (cb_ui_proxy_disconnected), self);
+		G_CALLBACK (on_ui_proxy_disconnected), self);
 
 	/* Prepare our actions. */
 	action_group = gtk_action_group_new ("MainActions");
@@ -266,12 +254,12 @@ ld_window_main_finalize (GObject *gobject)
 }
 
 /*
- * cb_load_category:
+ * load_category_cb:
  *
- * A hashtable foreach callback for adding categories into the toolbar.
+ * A foreach callback for adding categories into the toolbar.
  */
 static void
-cb_load_category (gpointer data, gpointer user_data)
+load_category_cb (gpointer data, gpointer user_data)
 {
 	const gchar *name;
 	LdSymbolCategory *cat;
@@ -315,47 +303,47 @@ load_toolbar (LdWindowMain *self)
 		(GtkCallback) gtk_widget_destroy, NULL);
 
 	categories = (GSList *) ld_library_get_children (self->priv->library);
-	g_slist_foreach (categories, cb_load_category, self);
+	g_slist_foreach (categories, load_category_cb, self);
 }
 
 /*
- * cb_ui_proxy_connected:
+ * on_ui_proxy_connected:
  *
  * An item was connected to the manager.
  */
 static void
-cb_ui_proxy_connected (GtkUIManager *ui, GtkAction *action,
+on_ui_proxy_connected (GtkUIManager *ui, GtkAction *action,
 	GtkWidget *proxy, LdWindowMain *window)
 {
 	if (GTK_IS_MENU_ITEM (proxy))
 	{
 		g_signal_connect (proxy, "select",
-			G_CALLBACK (cb_menu_item_selected), window);
+			G_CALLBACK (on_menu_item_selected), window);
 		g_signal_connect (proxy, "deselect",
-			G_CALLBACK (cb_menu_item_deselected), window);
+			G_CALLBACK (on_menu_item_deselected), window);
 	}
 }
 
 /*
- * cb_ui_proxy_disconnected:
+ * on_ui_proxy_disconnected:
  *
  * An item was disconnected from the manager.
  */
 static void
-cb_ui_proxy_disconnected (GtkUIManager *ui, GtkAction *action,
+on_ui_proxy_disconnected (GtkUIManager *ui, GtkAction *action,
 	GtkWidget *proxy, LdWindowMain *window)
 {
 	if (GTK_IS_MENU_ITEM (proxy))
 	{
 		g_signal_handlers_disconnect_by_func
-			(proxy, G_CALLBACK (cb_menu_item_selected), window);
+			(proxy, G_CALLBACK (on_menu_item_selected), window);
 		g_signal_handlers_disconnect_by_func
-			(proxy, G_CALLBACK (cb_menu_item_deselected), window);
+			(proxy, G_CALLBACK (on_menu_item_deselected), window);
 	}
 }
 
 static void
-cb_menu_item_selected (GtkWidget *item, LdWindowMain *window)
+on_menu_item_selected (GtkWidget *item, LdWindowMain *window)
 {
 	GtkAction *action;
 	gchar *tooltip;
@@ -371,14 +359,14 @@ cb_menu_item_selected (GtkWidget *item, LdWindowMain *window)
 }
 
 static void
-cb_menu_item_deselected (GtkItem *item, LdWindowMain *window)
+on_menu_item_deselected (GtkItem *item, LdWindowMain *window)
 {
 	gtk_statusbar_pop (GTK_STATUSBAR (window->priv->statusbar),
 		window->priv->statusbar_menu_context_id);
 }
 
 static void
-cb_show_about_dialog (GtkAction *action, LdWindowMain *window)
+show_about_dialog (GtkAction *action, LdWindowMain *window)
 {
 	gtk_show_about_dialog (GTK_WINDOW (window),
 		"program-name", PROJECT_NAME,

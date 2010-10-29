@@ -33,7 +33,57 @@
  */
 
 
-/* Private members of the window. */
+typedef struct _SymbolMenuItem SymbolMenuItem;
+typedef struct _SymbolMenuData SymbolMenuData;
+typedef struct _DocumentData DocumentData;
+
+/*
+ * SymbolMenuItem:
+ *
+ * Data related to a symbol in an open symbol menu.
+ */
+struct _SymbolMenuItem
+{
+	LdSymbol *symbol;
+
+	gint width;
+	gdouble scale;
+};
+
+/*
+ * SymbolMenuData:
+ *
+ * Data related to the currently opened symbol menu.
+ */
+struct _SymbolMenuData
+{
+	gulong expose_handler;
+	gulong motion_notify_handler;
+	gulong button_release_handler;
+
+	GtkToggleButton *active_button;
+
+	SymbolMenuItem *items;
+	gint n_items;
+	gint active_item;
+
+	gint menu_width;
+	gint menu_height;
+	gint menu_y;
+};
+
+/*
+ * DocumentData:
+ *
+ * Data related to the current document.
+ */
+struct _DocumentData
+{
+	LdDocument *document;
+	const gchar *file_name;
+	/* Canvas viewport settings (for multitabbed) */
+};
+
 struct _LdWindowMainPrivate
 {
 	GtkUIManager *ui_manager;
@@ -48,13 +98,8 @@ struct _LdWindowMainPrivate
 
 	GtkWidget *statusbar;
 	guint statusbar_menu_context_id;
-};
 
-struct _DocumentData
-{
-	LdDocument *document;
-	const gchar *file_name;
-	/* Canvas viewport settings (for multitabbed) */
+	SymbolMenuData symbol_menu;
 };
 
 /* Define the type. */
@@ -70,6 +115,15 @@ static void ld_window_main_finalize (GObject *gobject);
 static void load_toolbar (LdWindowMain *self);
 static void load_category_cb (gpointer data, gpointer user_data);
 
+static void redraw_symbol_menu (LdWindowMain *self);
+static void on_category_toggle (GtkToggleButton *toggle_button,
+	gpointer user_data);
+static gboolean on_canvas_exposed (GtkWidget *widget,
+	GdkEventExpose *event, gpointer user_data);
+static gboolean on_canvas_motion_notify (GtkWidget *widget,
+	GdkEventMotion *event, gpointer user_data);
+static gboolean on_canvas_button_release (GtkWidget *widget,
+	GdkEventButton *event, gpointer user_data);
 
 static void on_ui_proxy_connected (GtkUIManager *ui, GtkAction *action,
 	GtkWidget *proxy, LdWindowMain *window);
@@ -215,6 +269,31 @@ ld_window_main_init (LdWindowMain *self)
 	/* Canvas. */
 	/* TODO: Put it into a GtkScrolledWindow. */
 	priv->canvas = ld_canvas_new ();
+
+	/* TODO: To be able to draw a symbol menu over the canvas, we may:
+	 *   1. Hook the expose-event and button-{press,release}-event signals.
+	 *   2. Create a hook mechanism in the LdCanvas object.
+	 *     + The cairo context would not have to be created twice.
+	 *     - More complex API.
+	 */
+	priv->symbol_menu.expose_handler = g_signal_connect (priv->canvas,
+		"expose-event", G_CALLBACK (on_canvas_exposed), self);
+	priv->symbol_menu.motion_notify_handler = g_signal_connect (priv->canvas,
+		"motion-notify-event", G_CALLBACK (on_canvas_motion_notify), self);
+	priv->symbol_menu.button_release_handler = g_signal_connect (priv->canvas,
+		"button-release-event", G_CALLBACK (on_canvas_button_release), self);
+	gtk_widget_add_events (GTK_WIDGET (priv->canvas),
+		GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK
+		| GDK_BUTTON_RELEASE_MASK | GDK_BUTTON_PRESS_MASK);
+
+	/* Don't render anything over the canvas yet. */
+	g_signal_handler_block (priv->canvas,
+		priv->symbol_menu.expose_handler);
+	g_signal_handler_block (priv->canvas,
+		priv->symbol_menu.motion_notify_handler);
+	g_signal_handler_block (priv->canvas,
+		priv->symbol_menu.button_release_handler);
+
 	gtk_box_pack_start (GTK_BOX (priv->hbox), GTK_WIDGET (priv->canvas),
 		TRUE, TRUE, 0);
 
@@ -254,41 +333,6 @@ ld_window_main_finalize (GObject *gobject)
 }
 
 /*
- * load_category_cb:
- *
- * A foreach callback for adding categories into the toolbar.
- */
-static void
-load_category_cb (gpointer data, gpointer user_data)
-{
-	const gchar *name;
-	LdSymbolCategory *cat;
-	LdWindowMain *self;
-	GdkPixbuf *pbuf;
-	GtkWidget *img;
-	GtkToolItem *item;
-
-	g_return_if_fail (LD_IS_WINDOW_MAIN (user_data));
-	self = user_data;
-
-	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (data));
-	cat = data;
-
-	name = ld_symbol_category_get_name (cat);
-
-	pbuf = gdk_pixbuf_new_from_file_at_size
-		(ld_symbol_category_get_image_path (cat), TOOLBAR_ICON_WIDTH, -1, NULL);
-	g_return_if_fail (pbuf != NULL);
-
-	img = gtk_image_new_from_pixbuf (pbuf);
-	g_object_unref (pbuf);
-
-	item = gtk_tool_button_new (img, name);
-	gtk_tool_item_set_tooltip_text (item, name);
-	gtk_toolbar_insert (GTK_TOOLBAR (self->priv->toolbar), item, 0);
-}
-
-/*
  * load_toolbar:
  *
  * Load symbols from the library into the toolbar.
@@ -304,6 +348,293 @@ load_toolbar (LdWindowMain *self)
 
 	categories = (GSList *) ld_library_get_children (self->priv->library);
 	g_slist_foreach (categories, load_category_cb, self);
+}
+
+/*
+ * load_category_cb:
+ *
+ * A foreach callback for adding categories into the toolbar.
+ */
+static void
+load_category_cb (gpointer data, gpointer user_data)
+{
+	LdWindowMain *self;
+	LdSymbolCategory *cat;
+	const gchar *name;
+	GdkPixbuf *pbuf;
+	GtkWidget *img;
+	GtkToolItem *item;
+	GtkWidget *button;
+
+	g_return_if_fail (LD_IS_WINDOW_MAIN (user_data));
+	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (data));
+
+	self = user_data;
+	cat = data;
+
+	name = ld_symbol_category_get_name (cat);
+
+	pbuf = gdk_pixbuf_new_from_file_at_size
+		(ld_symbol_category_get_image_path (cat), TOOLBAR_ICON_WIDTH, -1, NULL);
+	g_return_if_fail (pbuf != NULL);
+
+	img = gtk_image_new_from_pixbuf (pbuf);
+	g_object_unref (pbuf);
+
+	item = gtk_tool_item_new ();
+	button = gtk_toggle_button_new ();
+	gtk_container_add (GTK_CONTAINER (button), img);
+	gtk_container_add (GTK_CONTAINER (item), button);
+
+	/* Assign the category to the toggle button. */
+	g_object_ref (cat);
+	g_object_set_data_full (G_OBJECT (button),
+		"category", cat, (GDestroyNotify) g_object_unref);
+
+	/* Hook toggling of the button. */
+	g_signal_connect (button, "toggled", G_CALLBACK (on_category_toggle), self);
+
+	gtk_tool_item_set_tooltip_text (item, name);
+	gtk_toolbar_insert (GTK_TOOLBAR (self->priv->toolbar), item, 0);
+}
+
+/*
+ * redraw_symbol_menu:
+ *
+ * Make the area for symbol menu redraw itself.
+ */
+/* XXX: Ideally it should repaint just what's needed. */
+static void
+redraw_symbol_menu (LdWindowMain *self)
+{
+	SymbolMenuData *data;
+
+	g_return_if_fail (LD_IS_WINDOW_MAIN (self));
+	data = &self->priv->symbol_menu;
+
+	gtk_widget_queue_draw_area (GTK_WIDGET (self->priv->canvas),
+		0, data->menu_y - 1, data->menu_width + 2, data->menu_height + 2);
+}
+
+/*
+ * on_category_toggle:
+ *
+ * Show or hide a symbol menu.
+ */
+static void
+on_category_toggle (GtkToggleButton *toggle_button, gpointer user_data)
+{
+	LdWindowMain *self;
+	LdWindowMainPrivate *priv;
+	LdSymbolCategory *cat;
+	SymbolMenuData *data;
+
+	g_return_if_fail (LD_IS_WINDOW_MAIN (user_data));
+
+	cat = g_object_get_data (G_OBJECT (toggle_button), "category");
+	self = LD_WINDOW_MAIN (user_data);
+	priv = self->priv;
+	data = &priv->symbol_menu;
+
+	/* First untoggle any active button. */
+	if (data->active_button)
+		gtk_toggle_button_set_active (data->active_button, FALSE);
+
+	/* And toggle signal handlers that enable the user to add a symbol. */
+	if (data->active_button == toggle_button)
+	{
+		gint i;
+
+		g_signal_handler_block (priv->canvas,
+			priv->symbol_menu.expose_handler);
+		g_signal_handler_block (priv->canvas,
+			priv->symbol_menu.motion_notify_handler);
+		g_signal_handler_block (priv->canvas,
+			priv->symbol_menu.button_release_handler);
+
+		g_object_unref (data->active_button);
+		data->active_button = NULL;
+
+		/* Ashes to ashes, NULL to NULL. */
+		for (i = 0; i < data->n_items; i++)
+			g_object_unref (data->items[i].symbol);
+
+		g_free (data->items);
+		data->items = NULL;
+	}
+	else
+	{
+		const GSList *children, *symbol_iter;
+		SymbolMenuItem *item;
+		gint x, y, menu_width;
+
+		g_return_if_fail (gtk_widget_translate_coordinates (GTK_WIDGET
+			(toggle_button), GTK_WIDGET (priv->canvas), 0, 0, &x, &y));
+
+		data->menu_y = y;
+		data->menu_height = GTK_WIDGET (toggle_button)->allocation.height;
+
+		g_signal_handler_unblock (priv->canvas,
+			priv->symbol_menu.expose_handler);
+		g_signal_handler_unblock (priv->canvas,
+			priv->symbol_menu.motion_notify_handler);
+		g_signal_handler_unblock (priv->canvas,
+			priv->symbol_menu.button_release_handler);
+
+		data->active_button = toggle_button;
+		g_object_ref (data->active_button);
+
+		children = ld_symbol_category_get_children (cat);
+
+		data->n_items = g_slist_length ((GSList *) children);
+		data->items = g_new (SymbolMenuItem, data->n_items);
+		data->active_item = -1;
+
+		item = data->items;
+		menu_width = 0;
+		for (symbol_iter = children; symbol_iter;
+			symbol_iter = symbol_iter->next)
+		{
+			LdSymbolArea area;
+
+			item->symbol = LD_SYMBOL (symbol_iter->data);
+			g_object_ref (item->symbol);
+
+			ld_symbol_get_area (item->symbol, &area);
+
+			/* This is the height when the center of the symbol is
+			 * in the center of it's symbol menu item.
+			 */
+			item->scale = data->menu_height * 0.5
+				/ MAX (ABS (area.y1), ABS (area.y2)) / 2;
+			/* FIXME: The width is probably wrong (related to the center). */
+			item->width = item->scale * ABS (area.x2 - area.x1)
+				+ data->menu_height * 0.5;
+
+			menu_width += item++->width;
+		}
+		data->menu_width = menu_width;
+	}
+	redraw_symbol_menu (self);
+}
+
+/*
+ * on_canvas_exposed:
+ *
+ * Draw a symbol menu.
+ */
+static gboolean
+on_canvas_exposed (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
+{
+	cairo_t *cr;
+	LdWindowMain *self;
+	SymbolMenuData *data;
+	gint i, x;
+
+	cr = gdk_cairo_create (widget->window);
+	self = LD_WINDOW_MAIN (user_data);
+	data = &self->priv->symbol_menu;
+
+	/* Draw some border. */
+	cairo_set_line_width (cr, 1);
+
+	cairo_rectangle (cr, 0, data->menu_y, data->menu_width, data->menu_height);
+	cairo_set_source_rgb (cr, 1, 1, 1);
+	cairo_fill (cr);
+
+	/* Draw all symbols from that category. */
+	for (x = i = 0; i < data->n_items; i++)
+	{
+		SymbolMenuItem *item;
+
+		item = data->items + i;
+		cairo_save (cr);
+
+		cairo_rectangle (cr, x, data->menu_y, item->width, data->menu_height);
+		cairo_clip (cr);
+
+		if (i == data->active_item)
+		{
+			cairo_set_source_rgb (cr, 0.9, 0.9, 0.9);
+			cairo_paint (cr);
+		}
+
+		cairo_translate (cr, x + (gdouble) item->width / 2,
+			data->menu_y + (gdouble) data->menu_height / 2);
+		cairo_scale (cr, item->scale, item->scale);
+
+		cairo_set_source_rgb (cr, 0, 0, 0);
+		cairo_set_line_width (cr, 1 / item->scale);
+		ld_symbol_draw (item->symbol, cr);
+
+		cairo_restore (cr);
+		x += item->width;
+	}
+
+	cairo_rectangle (cr, 0, data->menu_y, data->menu_width, data->menu_height);
+	cairo_set_source_rgb (cr, 0, 0, 0);
+	cairo_stroke (cr);
+
+	cairo_destroy (cr);
+	return FALSE;
+}
+
+
+
+static gboolean
+on_canvas_motion_notify (GtkWidget *widget, GdkEventMotion *event,
+	gpointer user_data)
+{
+	LdWindowMain *self;
+	SymbolMenuData *data;
+	gint i, x;
+
+	self = LD_WINDOW_MAIN (user_data);
+	data = &self->priv->symbol_menu;
+
+	if (event->x < 0 || event->y < data->menu_y
+		|| event->y >= data->menu_y + data->menu_height)
+	{
+		data->active_item = -1;
+		redraw_symbol_menu (self);
+		return FALSE;
+	}
+
+	for (x = i = 0; i < data->n_items; i++)
+	{
+		x += data->items[i].width;
+		if (event->x < x)
+		{
+			data->active_item = i;
+			redraw_symbol_menu (self);
+			return FALSE;
+		}
+	}
+	data->active_item = -1;
+	redraw_symbol_menu (self);
+	return FALSE;
+}
+
+static gboolean
+on_canvas_button_release (GtkWidget *widget, GdkEventButton *event,
+	gpointer user_data)
+{
+	LdWindowMain *self;
+	SymbolMenuData *data;
+
+	self = LD_WINDOW_MAIN (user_data);
+	data = &self->priv->symbol_menu;
+
+	if (event->button != 1)
+		return FALSE;
+
+	/* TODO: Add the selected symbol into the document on the position. */
+
+	/* We've either chosen a symbol or canceled the menu, so hide it. */
+	if (data->active_button)
+		gtk_toggle_button_set_active (data->active_button, FALSE);
+
+	return FALSE;
 }
 
 /*

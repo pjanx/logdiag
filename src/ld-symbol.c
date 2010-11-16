@@ -73,6 +73,9 @@ ld_symbol_area_get_type (void)
  *
  * #LdSymbol represents a symbol in the #LdDocument that is in turn
  * drawn onto the #LdCanvas.
+ *
+ * All implementations of this abstract class are required to use
+ * cairo_save() and cairo_restore() when drawing to store the state.
  */
 
 G_DEFINE_ABSTRACT_TYPE (LdSymbol, ld_symbol, G_TYPE_OBJECT);

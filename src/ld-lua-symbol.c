@@ -121,6 +121,9 @@ ld_lua_symbol_draw (LdSymbol *symbol, cairo_t *cr)
 	g_return_if_fail (cr != NULL);
 
 	self = LD_LUA_SYMBOL (symbol);
+
+	cairo_save (cr);
 	ld_lua_private_draw (self->priv->lua, self, cr);
+	cairo_restore (cr);
 }
 

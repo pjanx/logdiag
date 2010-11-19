@@ -14,6 +14,8 @@
 
 #include "ld-marshal.h"
 #include "ld-document.h"
+#include "ld-symbol.h"
+#include "ld-library.h"
 #include "ld-canvas.h"
 
 
@@ -32,6 +34,7 @@
 struct _LdCanvasPrivate
 {
 	LdDocument *document;
+	LdLibrary *library;
 };
 
 G_DEFINE_TYPE (LdCanvas, ld_canvas, GTK_TYPE_DRAWING_AREA);
@@ -39,7 +42,8 @@ G_DEFINE_TYPE (LdCanvas, ld_canvas, GTK_TYPE_DRAWING_AREA);
 enum
 {
 	PROP_0,
-	PROP_DOCUMENT
+	PROP_DOCUMENT,
+	PROP_LIBRARY
 };
 
 static void
@@ -86,6 +90,16 @@ ld_canvas_class_init (LdCanvasClass *klass)
 		LD_TYPE_DOCUMENT, G_PARAM_READWRITE);
 	g_object_class_install_property (object_class, PROP_DOCUMENT, pspec);
 
+/**
+ * LdCanvas:library:
+ *
+ * The #LdLibrary that this canvas retrieves symbols from.
+ */
+	pspec = g_param_spec_object ("library", "Library",
+		"The library that this canvas retrieves symbols from.",
+		LD_TYPE_LIBRARY, G_PARAM_READWRITE);
+	g_object_class_install_property (object_class, PROP_DOCUMENT, pspec);
+
 	widget_class = GTK_WIDGET_CLASS (klass);
 
 /* TODO: Scrolling support; make the comment bellow a gtk-doc comment then. */
@@ -123,6 +137,11 @@ ld_canvas_finalize (GObject *gobject)
 
 	self = LD_CANVAS (gobject);
 
+	if (self->priv->document)
+		g_object_unref (self->priv->document);
+	if (self->priv->library)
+		g_object_unref (self->priv->library);
+
 	/* Chain up to the parent class. */
 	G_OBJECT_CLASS (ld_canvas_parent_class)->finalize (gobject);
 }
@@ -138,6 +157,9 @@ ld_canvas_get_property (GObject *object, guint property_id,
 	{
 	case PROP_DOCUMENT:
 		g_value_set_object (value, ld_canvas_get_document (self));
+		break;
+	case PROP_LIBRARY:
+		g_value_set_object (value, ld_canvas_get_library (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -155,6 +177,9 @@ ld_canvas_set_property (GObject *object, guint property_id,
 	{
 	case PROP_DOCUMENT:
 		ld_canvas_set_document (self, LD_DOCUMENT (g_value_get_object (value)));
+		break;
+	case PROP_LIBRARY:
+		ld_canvas_set_library (self, LD_LIBRARY (g_value_get_object (value)));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -182,7 +207,11 @@ ld_canvas_new (void)
 void
 ld_canvas_set_document (LdCanvas *self, LdDocument *document)
 {
+	if (self->priv->document)
+		g_object_unref (self->priv->document);
+
 	self->priv->document = document;
+	g_object_ref (document);
 }
 
 /**
@@ -196,6 +225,36 @@ LdDocument *
 ld_canvas_get_document (LdCanvas *self)
 {
 	return self->priv->document;
+}
+
+/**
+ * ld_canvas_set_library:
+ * @self: An #LdCanvas object.
+ * @library: The #LdLibrary to be assigned to the canvas.
+ *
+ * Assign an #LdLibrary object to the canvas.
+ */
+void
+ld_canvas_set_library (LdCanvas *self, LdLibrary *library)
+{
+	if (self->priv->library)
+		g_object_unref (self->priv->library);
+
+	self->priv->library = library;
+	g_object_ref (library);
+}
+
+/**
+ * ld_canvas_get_library:
+ * @self: An #LdCanvas object.
+ *
+ * Get the #LdLibrary object assigned to this canvas.
+ * The reference count on the library is not incremented.
+ */
+LdLibrary *
+ld_canvas_get_library (LdCanvas *self)
+{
+	return self->priv->library;
 }
 
 static gboolean

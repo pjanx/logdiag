@@ -61,6 +61,9 @@ LdCanvas *ld_canvas_new (void);
 void ld_canvas_set_document (LdCanvas *self, LdDocument *document);
 LdDocument *ld_canvas_get_document (LdCanvas *self);
 
+void ld_canvas_set_library (LdCanvas *self, LdLibrary *library);
+LdLibrary *ld_canvas_get_library (LdCanvas *self);
+
 /* TODO: The rest of the interface. */
 
 

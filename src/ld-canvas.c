@@ -13,6 +13,7 @@
 #include "config.h"
 
 #include "ld-marshal.h"
+#include "ld-document-object.h"
 #include "ld-document.h"
 #include "ld-symbol.h"
 #include "ld-library.h"

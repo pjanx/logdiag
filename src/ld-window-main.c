@@ -18,7 +18,10 @@
 #include "ld-symbol-category.h"
 #include "ld-library.h"
 
+#include "ld-document-object.h"
+#include "ld-document-symbol.h"
 #include "ld-document.h"
+
 #include "ld-canvas.h"
 
 

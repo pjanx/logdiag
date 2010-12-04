@@ -87,6 +87,8 @@ set (logdiag_SOURCES
 	src/ld-marshal.c
 	src/ld-window-main.c
 	src/ld-document.c
+	src/ld-document-object.c
+	src/ld-document-symbol.c
 	src/ld-canvas.c
 	src/ld-library.c
 	src/ld-symbol-category.c
@@ -98,6 +100,8 @@ set (logdiag_HEADERS
 	src/ld-marshal.h
 	src/ld-window-main.h
 	src/ld-document.h
+	src/ld-document-object.h
+	src/ld-document-symbol.h
 	src/ld-canvas.h
 	src/ld-library.h
 	src/ld-symbol-category.h

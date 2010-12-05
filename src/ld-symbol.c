@@ -88,15 +88,11 @@ enum
 	PROP_AREA
 };
 
-static void
-ld_symbol_get_property (GObject *object, guint property_id,
+static void ld_symbol_get_property (GObject *object, guint property_id,
 	GValue *value, GParamSpec *pspec);
 
-static void
-ld_symbol_set_property (GObject *object, guint property_id,
+static void ld_symbol_set_property (GObject *object, guint property_id,
 	const GValue *value, GParamSpec *pspec);
-
-static void ld_symbol_finalize (GObject *gobject);
 
 
 static void
@@ -192,7 +188,7 @@ ld_symbol_get_name (LdSymbol *self)
 {
 	LdSymbolClass *klass;
 
-	g_return_if_fail (LD_IS_SYMBOL (self));
+	g_return_val_if_fail (LD_IS_SYMBOL (self), NULL);
 
 	klass = LD_SYMBOL_GET_CLASS (self);
 	g_return_val_if_fail (klass->get_name != NULL, NULL);
@@ -210,7 +206,7 @@ ld_symbol_get_human_name (LdSymbol *self)
 {
 	LdSymbolClass *klass;
 
-	g_return_if_fail (LD_IS_SYMBOL (self));
+	g_return_val_if_fail (LD_IS_SYMBOL (self), NULL);
 
 	klass = LD_SYMBOL_GET_CLASS (self);
 	g_return_val_if_fail (klass->get_human_name != NULL, NULL);

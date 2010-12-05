@@ -327,6 +327,7 @@ ld_lua_private_draw_cb (lua_State *L)
 	/* Call the function do draw the symbol. */
 	push_cairo_object (L, data->cr);
 	lua_pcall (L, 1, 0, 0);
+	return 0;
 }
 
 /**
@@ -418,7 +419,6 @@ static int
 process_registration (lua_State *L)
 {
 	LdLuaSymbol *symbol;
-	const gchar *name;
 	gchar *human_name;
 
 	int i, type, types[] =
@@ -439,7 +439,7 @@ process_registration (lua_State *L)
 
 	human_name = get_translation (L, 2);
 	if (!human_name)
-		human_name = g_strdup (name);
+		human_name = g_strdup (symbol->priv->name);
 	symbol->priv->human_name = human_name;
 
 	if (!read_symbol_area (L, 3, &symbol->priv->area))

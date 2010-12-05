@@ -19,6 +19,7 @@
 #include "ld-lua.h"
 #include "ld-lua-symbol.h"
 
+#include "ld-lua-private.h"
 #include "ld-lua-symbol-private.h"
 
 

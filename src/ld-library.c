@@ -8,6 +8,8 @@
  *
  */
 
+#include <string.h>
+
 #include <gtk/gtk.h>
 
 #include "config.h"
@@ -71,7 +73,7 @@ ld_library_class_init (LdLibraryClass *klass)
  * Contents of the library have changed.
  */
 	klass->changed_signal = g_signal_new
-		("changed", G_TYPE_FROM_CLASS (object_class),
+		("changed", G_TYPE_FROM_CLASS (klass),
 		G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_NO_HOOKS,
 		0, NULL, NULL, g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
 
@@ -423,8 +425,11 @@ ld_library_remove_child (LdLibrary *self, GObject *child)
 	g_return_if_fail (LD_IS_LIBRARY (self));
 	g_return_if_fail (G_IS_OBJECT (child));
 
-	g_object_unref (child);
-	self->priv->children = g_slist_remove (self->priv->children, child);
+	if (g_slist_find (self->priv->children, child))
+	{
+		g_object_unref (child);
+		self->priv->children = g_slist_remove (self->priv->children, child);
+	}
 }
 
 /**

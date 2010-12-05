@@ -55,6 +55,9 @@ endif (WIN32)
 # Lua
 find_package (Lua51 REQUIRED)
 
+# json-glib
+find_package (JsonGlib REQUIRED)
+
 
 # Localization
 find_package (Gettext)
@@ -146,9 +149,9 @@ glib_genmarshal (${CMAKE_CURRENT_SOURCE_DIR}/src/ld-marshal
 	g_cclosure_user_marshal)
 
 # Build the executable
-include_directories (${GTK2_INCLUDE_DIRS} ${LUA_INCLUDE_DIR})
+include_directories (${GTK2_INCLUDE_DIRS} ${JSON_GLIB_INCLUDE_DIRS} ${LUA_INCLUDE_DIR})
 add_executable (logdiag ${logdiag_SOURCES} ${logdiag_HEADERS})
-target_link_libraries (logdiag ${GTK2_LIBRARIES} ${LUA_LIBRARIES})
+target_link_libraries (logdiag ${GTK2_LIBRARIES} ${JSON_GLIB_LIBRARIES} ${LUA_LIBRARIES})
 
 # Installation
 install (TARGETS logdiag DESTINATION bin)

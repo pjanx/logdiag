@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include <gtk/gtk.h>
+#include <json-glib/json-glib.h>
 
 #include "config.h"
 

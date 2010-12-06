@@ -48,10 +48,17 @@ struct _LdCanvasClass
 /*< private >*/
 	GtkDrawingAreaClass parent_class;
 
-/*
-	void (*set_scroll_adjustments) (GtkAdjustment *x, GtkAdjustment *y);
-*/
+	void (*set_scroll_adjustments) (LdCanvas *self,
+		GtkAdjustment *horizontal, GtkAdjustment *vertical);
 };
+
+
+/**
+ * LD_CANVAS_BASE_UNIT:
+ *
+ * The length of the base unit in milimetres.
+ */
+#define LD_CANVAS_BASE_UNIT_LENGTH 2.5
 
 
 GType ld_canvas_get_type (void) G_GNUC_CONST;
@@ -60,9 +67,13 @@ LdCanvas *ld_canvas_new (void);
 
 void ld_canvas_set_document (LdCanvas *self, LdDocument *document);
 LdDocument *ld_canvas_get_document (LdCanvas *self);
-
 void ld_canvas_set_library (LdCanvas *self, LdLibrary *library);
 LdLibrary *ld_canvas_get_library (LdCanvas *self);
+
+void ld_canvas_translate_canvas_coordinates (LdCanvas *self,
+	gdouble *x, gdouble *y);
+void ld_canvas_translate_document_coordinates (LdCanvas *self,
+	gdouble *x, gdouble *y);
 
 /* TODO: The rest of the interface. */
 

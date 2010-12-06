@@ -97,6 +97,8 @@ struct _LdWindowMainPrivate
 	GtkWidget *toolbar;
 
 	LdLibrary *library;
+
+	GtkWidget *canvas_window;
 	LdCanvas *canvas;
 
 	GtkWidget *statusbar;
@@ -270,10 +272,9 @@ ld_window_main_init (LdWindowMain *self)
 	/* TODO in the future: GtkHPaned */
 
 	/* Canvas. */
-	/* TODO: Put it into a GtkScrolledWindow. */
 	priv->canvas = ld_canvas_new ();
 
-	/* TODO: To be able to draw a symbol menu over the canvas, we may:
+	/* XXX: To be able to draw a symbol menu over the canvas, we may:
 	 *   1. Hook the expose-event and button-{press,release}-event signals.
 	 *   2. Create a hook mechanism in the LdCanvas object.
 	 *     + The cairo context would not have to be created twice.
@@ -297,7 +298,10 @@ ld_window_main_init (LdWindowMain *self)
 	g_signal_handler_block (priv->canvas,
 		priv->symbol_menu.button_release_handler);
 
-	gtk_box_pack_start (GTK_BOX (priv->hbox), GTK_WIDGET (priv->canvas),
+	priv->canvas_window = gtk_scrolled_window_new (NULL, NULL);
+	gtk_container_add (GTK_CONTAINER (priv->canvas_window),
+		GTK_WIDGET (priv->canvas));
+	gtk_box_pack_start (GTK_BOX (priv->hbox), GTK_WIDGET (priv->canvas_window),
 		TRUE, TRUE, 0);
 
 	priv->statusbar = gtk_statusbar_new ();

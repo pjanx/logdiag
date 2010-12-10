@@ -15,6 +15,7 @@
 
 #include "ld-marshal.h"
 #include "ld-document-object.h"
+#include "ld-document-symbol.h"
 #include "ld-document.h"
 #include "ld-symbol.h"
 #include "ld-library.h"
@@ -31,6 +32,9 @@
 
 /* Milimetres per inch. */
 #define MM_PER_INCH 25.4
+
+/* Tolerance on all sides of symbols for strokes. */
+#define SYMBOL_AREA_TOLERANCE 0.5
 
 /*
  * LdCanvasPrivate:
@@ -101,6 +105,8 @@ static gboolean on_expose_event (GtkWidget *widget, GdkEventExpose *event,
 	gpointer user_data);
 static void draw_grid (GtkWidget *widget, DrawData *data);
 static void draw_document (GtkWidget *widget, DrawData *data);
+static void draw_document_cb (gpointer link_data, DrawData *data);
+static void draw_symbol (LdDocumentSymbol *document_symbol, DrawData *data);
 
 
 static void
@@ -572,6 +578,90 @@ draw_grid (GtkWidget *widget, DrawData *data)
 static void
 draw_document (GtkWidget *widget, DrawData *data)
 {
-	/* TODO: Draw symbols from the document. */
+	GSList *objects;
+
+	if (!data->self->priv->document)
+		return;
+
+	cairo_save (data->cr);
+
+	cairo_set_source_rgb (data->cr, 0, 0, 0);
+	cairo_set_line_width (data->cr, 1 / data->scale);
+
+	/* Draw objects from the document. */
+	objects = ld_document_get_objects (data->self->priv->document);
+	g_slist_foreach (objects, (GFunc) draw_document_cb, data);
+
+	cairo_restore (data->cr);
 }
 
+static void
+draw_document_cb (gpointer link_data, DrawData *data)
+{
+	g_return_if_fail (link_data != NULL);
+	g_return_if_fail (data != NULL);
+
+	if (LD_IS_DOCUMENT_SYMBOL (link_data))
+		draw_symbol (LD_DOCUMENT_SYMBOL (link_data), data);
+}
+
+static void
+draw_symbol (LdDocumentSymbol *document_symbol, DrawData *data)
+{
+	LdSymbol *symbol;
+	LdSymbolArea area;
+	gdouble x, y;
+
+	if (!data->self->priv->library)
+		return;
+	symbol = ld_library_find_symbol (data->self->priv->library,
+		ld_document_symbol_get_class (document_symbol));
+
+	/* TODO: Resolve this better; draw a cross or whatever. */
+	if (!symbol)
+	{
+		g_warning ("Cannot find symbol %s in the library.",
+			ld_document_symbol_get_class (document_symbol));
+		return;
+	}
+
+	x = ld_document_object_get_x (LD_DOCUMENT_OBJECT (document_symbol));
+	y = ld_document_object_get_y (LD_DOCUMENT_OBJECT (document_symbol));
+	ld_canvas_translate_document_coordinates (data->self, &x, &y);
+
+	/* TODO: Rotate the space for other orientations. */
+	cairo_save (data->cr);
+	cairo_translate (data->cr, x, y);
+	cairo_scale (data->cr, data->scale, data->scale);
+
+	/* Only draw the symbol if it intersects the exposed area. */
+	ld_symbol_get_area (symbol, &area);
+
+	x = area.x - SYMBOL_AREA_TOLERANCE;
+	y = area.y - SYMBOL_AREA_TOLERANCE;
+	cairo_user_to_device (data->cr, &x, &y);
+
+	if    (x > data->exposed_rect.x + data->exposed_rect.width
+		|| y > data->exposed_rect.y + data->exposed_rect.height)
+		goto draw_symbol_end;
+
+	x = area.x + area.width  + SYMBOL_AREA_TOLERANCE;
+	y = area.y + area.height + SYMBOL_AREA_TOLERANCE;
+	cairo_user_to_device (data->cr, &x, &y);
+
+	if    (x < data->exposed_rect.x
+		|| y < data->exposed_rect.y)
+		goto draw_symbol_end;
+
+	cairo_rectangle (data->cr,
+		area.x - SYMBOL_AREA_TOLERANCE,
+		area.y - SYMBOL_AREA_TOLERANCE,
+		area.width  + 2 * SYMBOL_AREA_TOLERANCE,
+		area.height + 2 * SYMBOL_AREA_TOLERANCE);
+	cairo_clip (data->cr);
+
+	ld_symbol_draw (symbol, data->cr);
+
+draw_symbol_end:
+	cairo_restore (data->cr);
+}

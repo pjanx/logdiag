@@ -20,18 +20,18 @@ typedef struct _LdSymbolArea LdSymbolArea;
 
 /**
  * LdSymbolArea:
- * @x1: Left-top X coordinate.
- * @y1: Left-top Y coordinate.
- * @x2: Right-bottom X coordinate.
- * @y2: Right-bottom Y coordinate.
+ * @x: Left-top X coordinate.
+ * @y: Left-top Y coordinate.
+ * @width: Width of the area, must be positive.
+ * @height: Height of the area, must be positive.
  *
  * Defines the area of the symbol relative to the center of the symbol,
  * which is at the (0, 0) coordinates.
  */
 struct _LdSymbolArea
 {
-	gdouble x1, y1;
-	gdouble x2, y2;
+	gdouble x, y;
+	gdouble width, height;
 };
 
 

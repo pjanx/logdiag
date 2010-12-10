@@ -501,28 +501,35 @@ get_translation (lua_State *L, int index)
 static gboolean
 read_symbol_area (lua_State *L, int index, LdSymbolArea *area)
 {
+	lua_Number x1, x2, y1, y2;
+
 	if (lua_objlen (L, index) != 4)
 		return FALSE;
 
 	lua_rawgeti (L, index, 1);
 	if (!lua_isnumber (L, -1))
 		return FALSE;
-	area->x1 = lua_tonumber (L, -1);
+	x1 = lua_tonumber (L, -1);
 
 	lua_rawgeti (L, index, 2);
 	if (!lua_isnumber (L, -1))
 		return FALSE;
-	area->y1 = lua_tonumber (L, -1);
+	y1 = lua_tonumber (L, -1);
 
 	lua_rawgeti (L, index, 3);
 	if (!lua_isnumber (L, -1))
 		return FALSE;
-	area->x2 = lua_tonumber (L, -1);
+	x2 = lua_tonumber (L, -1);
 
 	lua_rawgeti (L, index, 4);
 	if (!lua_isnumber (L, -1))
 		return FALSE;
-	area->y2 = lua_tonumber (L, -1);
+	y2 = lua_tonumber (L, -1);
+
+	area->x = MIN (x1, x2);
+	area->y = MIN (y1, y2);
+	area->width = ABS (x2 - x1);
+	area->height = ABS (y2 - y1);
 
 	return TRUE;
 }

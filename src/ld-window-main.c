@@ -509,9 +509,9 @@ on_category_toggle (GtkToggleButton *toggle_button, gpointer user_data)
 			 * in the center of it's symbol menu item.
 			 */
 			item->scale = data->menu_height * 0.5
-				/ MAX (ABS (area.y1), ABS (area.y2)) / 2;
+				/ MAX (ABS (area.y), ABS (area.y + area.height)) / 2;
 			/* FIXME: The width is probably wrong (related to the center). */
-			item->width = item->scale * ABS (area.x2 - area.x1)
+			item->width = item->scale * area.width
 				+ data->menu_height * 0.5;
 
 			menu_width += item++->width;

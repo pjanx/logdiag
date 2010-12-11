@@ -95,6 +95,7 @@ struct _LdWindowMainPrivate
 	GtkWidget *hbox;
 	GtkWidget *menu;
 	GtkWidget *toolbar;
+	GtkWidget *library_toolbar;
 
 	LdLibrary *library;
 
@@ -110,14 +111,14 @@ struct _LdWindowMainPrivate
 /* Define the type. */
 G_DEFINE_TYPE (LdWindowMain, ld_window_main, GTK_TYPE_WINDOW);
 
-#define TOOLBAR_ICON_WIDTH 32
+#define LIBRARY_TOOLBAR_ICON_WIDTH 32
 
 
 /* ===== Local functions =================================================== */
 
 static void ld_window_main_finalize (GObject *gobject);
 
-static void load_toolbar (LdWindowMain *self);
+static void load_library_toolbar (LdWindowMain *self);
 static void load_category_cb (gpointer data, gpointer user_data);
 
 static void redraw_symbol_menu (LdWindowMain *self);
@@ -248,26 +249,32 @@ ld_window_main_init (LdWindowMain *self)
 	priv->menu = gtk_ui_manager_get_widget (priv->ui_manager, "/MenuBar");
 	gtk_box_pack_start (GTK_BOX (priv->vbox), priv->menu, FALSE, FALSE, 0);
 
+	/* Add the main toolbar. */
+	priv->toolbar = gtk_ui_manager_get_widget (priv->ui_manager,
+		"/MainToolbar");
+	gtk_box_pack_start (GTK_BOX (priv->vbox), priv->toolbar, FALSE, FALSE, 0);
+
 	priv->hbox = gtk_hbox_new(FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (priv->vbox), priv->hbox, TRUE, TRUE, 0);
 
-	/* Add the symbol toolbar. */
-	priv->toolbar = gtk_toolbar_new ();
+	/* Add the library toolbar. */
+	priv->library_toolbar = gtk_toolbar_new ();
 	/* NOTE: For GTK 2.16+, s/toolbar/orientable/ */
 	gtk_toolbar_set_orientation
-		(GTK_TOOLBAR (priv->toolbar), GTK_ORIENTATION_VERTICAL);
+		(GTK_TOOLBAR (priv->library_toolbar), GTK_ORIENTATION_VERTICAL);
 	gtk_toolbar_set_icon_size
-		(GTK_TOOLBAR (priv->toolbar), GTK_ICON_SIZE_LARGE_TOOLBAR);
+		(GTK_TOOLBAR (priv->library_toolbar), GTK_ICON_SIZE_LARGE_TOOLBAR);
 	gtk_toolbar_set_style
-		(GTK_TOOLBAR (priv->toolbar), GTK_TOOLBAR_ICONS);
+		(GTK_TOOLBAR (priv->library_toolbar), GTK_TOOLBAR_ICONS);
 
-	gtk_box_pack_start (GTK_BOX (priv->hbox), priv->toolbar, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (priv->hbox), priv->library_toolbar,
+		FALSE, FALSE, 0);
 
 	/* Symbol library. */
 	priv->library = ld_library_new ();
 	ld_library_load (priv->library, PROJECT_SHARE_DIR "library");
 
-	load_toolbar (self);
+	load_library_toolbar (self);
 
 	/* TODO in the future: GtkHPaned */
 
@@ -340,17 +347,17 @@ ld_window_main_finalize (GObject *gobject)
 }
 
 /*
- * load_toolbar:
+ * load_library_toolbar:
  *
- * Load symbols from the library into the toolbar.
+ * Load symbols from the library into the library toolbar.
  */
 static void
-load_toolbar (LdWindowMain *self)
+load_library_toolbar (LdWindowMain *self)
 {
 	GSList *categories;
 
 	/* Clear the toolbar first, if there was already something in it. */
-	gtk_container_foreach (GTK_CONTAINER (self->priv->toolbar),
+	gtk_container_foreach (GTK_CONTAINER (self->priv->library_toolbar),
 		(GtkCallback) gtk_widget_destroy, NULL);
 
 	categories = (GSList *) ld_library_get_children (self->priv->library);
@@ -360,7 +367,7 @@ load_toolbar (LdWindowMain *self)
 /*
  * load_category_cb:
  *
- * A foreach callback for adding categories into the toolbar.
+ * A foreach callback for adding categories into the library toolbar.
  */
 static void
 load_category_cb (gpointer data, gpointer user_data)
@@ -381,8 +388,8 @@ load_category_cb (gpointer data, gpointer user_data)
 
 	human_name = ld_symbol_category_get_human_name (cat);
 
-	pbuf = gdk_pixbuf_new_from_file_at_size
-		(ld_symbol_category_get_image_path (cat), TOOLBAR_ICON_WIDTH, -1, NULL);
+	pbuf = gdk_pixbuf_new_from_file_at_size	(ld_symbol_category_get_image_path
+		(cat), LIBRARY_TOOLBAR_ICON_WIDTH, -1, NULL);
 	g_return_if_fail (pbuf != NULL);
 
 	img = gtk_image_new_from_pixbuf (pbuf);
@@ -402,7 +409,7 @@ load_category_cb (gpointer data, gpointer user_data)
 	g_signal_connect (button, "toggled", G_CALLBACK (on_category_toggle), self);
 
 	gtk_tool_item_set_tooltip_text (item, human_name);
-	gtk_toolbar_insert (GTK_TOOLBAR (self->priv->toolbar), item, 0);
+	gtk_toolbar_insert (GTK_TOOLBAR (self->priv->library_toolbar), item, 0);
 }
 
 /*

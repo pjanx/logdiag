@@ -24,5 +24,11 @@
 			<menuitem action="About" />
 		</menu>
 	</menubar>
+	<toolbar action="MainToolbar">
+		<toolitem action="New" />
+		<toolitem action="Open" />
+		<toolitem action="Save" />
+		<separator />
+	</toolbar>
 </ui>
 

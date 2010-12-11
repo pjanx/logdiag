@@ -48,7 +48,10 @@ struct _LdDocumentClass
 /*< private >*/
 	GObjectClass parent_class;
 
+	/* FIXME: Add a selection_changed signal? */
 	guint changed_signal;
+
+	void (*changed) (LdDocument *self);
 };
 
 
@@ -60,6 +63,9 @@ gboolean ld_document_load_from_file (LdDocument *self,
 	const gchar *filename, GError *error);
 gboolean ld_document_save_to_file (LdDocument *self,
 	const gchar *filename, GError *error);
+
+gboolean ld_document_get_modified (LdDocument *self);
+void ld_document_set_modified (LdDocument *self, gboolean value);
 
 GSList *ld_document_get_objects (LdDocument *self);
 void ld_document_insert_object (LdDocument *self,

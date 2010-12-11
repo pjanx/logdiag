@@ -27,12 +27,15 @@
 
 /*
  * LdDocumentPrivate:
+ * @modified: Whether the document has been modified.
  * @objects: All the objects in the document.
  * @selection: All currently selected objects.
  * @connections: Connections between objects.
  */
 struct _LdDocumentPrivate
 {
+	gboolean modified;
+
 	GSList *objects;
 	GSList *selection;
 	GSList *connections;
@@ -40,17 +43,46 @@ struct _LdDocumentPrivate
 
 G_DEFINE_TYPE (LdDocument, ld_document, G_TYPE_OBJECT);
 
-static void
-ld_document_finalize (GObject *gobject);
+enum
+{
+	PROP_0,
+	PROP_MODIFIED
+};
+
+static void ld_document_get_property (GObject *object, guint property_id,
+	GValue *value, GParamSpec *pspec);
+static void ld_document_set_property (GObject *object, guint property_id,
+	const GValue *value, GParamSpec *pspec);
+static void ld_document_dispose (GObject *gobject);
+static void ld_document_finalize (GObject *gobject);
+
+static void ld_document_real_changed (LdDocument *self);
+static void ld_document_clear_internal (LdDocument *self);
 
 
 static void
 ld_document_class_init (LdDocumentClass *klass)
 {
 	GObjectClass *object_class;
+	GParamSpec *pspec;
 
 	object_class = G_OBJECT_CLASS (klass);
+	object_class->get_property = ld_document_get_property;
+	object_class->set_property = ld_document_set_property;
+	object_class->dispose = ld_document_dispose;
 	object_class->finalize = ld_document_finalize;
+
+	klass->changed = ld_document_real_changed;
+
+/**
+ * LdDocument:modified:
+ *
+ * Whether the document has been modified.
+ */
+	pspec = g_param_spec_boolean ("modified", "Modified",
+		"Whether the document has been modified.",
+		FALSE, G_PARAM_READWRITE);
+	g_object_class_install_property (object_class, PROP_MODIFIED, pspec);
 
 /**
  * LdDocument::changed:
@@ -61,7 +93,8 @@ ld_document_class_init (LdDocumentClass *klass)
 	klass->changed_signal = g_signal_new
 		("changed", G_TYPE_FROM_CLASS (klass),
 		G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_NO_HOOKS,
-		0, NULL, NULL, g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+		G_STRUCT_OFFSET (LdDocumentClass, changed), NULL, NULL,
+		g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
 
 	g_type_class_add_private (klass, sizeof (LdDocumentPrivate));
 }
@@ -74,16 +107,66 @@ ld_document_init (LdDocument *self)
 }
 
 static void
-ld_document_finalize (GObject *gobject)
+ld_document_get_property (GObject *object, guint property_id,
+	GValue *value, GParamSpec *pspec)
+{
+	LdDocument *self;
+
+	self = LD_DOCUMENT (object);
+	switch (property_id)
+	{
+	case PROP_MODIFIED:
+		g_value_set_boolean (value, ld_document_get_modified (self));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+	}
+}
+
+static void
+ld_document_set_property (GObject *object, guint property_id,
+	const GValue *value, GParamSpec *pspec)
+{
+	LdDocument *self;
+
+	self = LD_DOCUMENT (object);
+	switch (property_id)
+	{
+	case PROP_MODIFIED:
+		ld_document_set_modified (self, g_value_get_boolean (value));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+	}
+}
+
+static void
+ld_document_dispose (GObject *gobject)
 {
 	LdDocument *self;
 
 	self = LD_DOCUMENT (gobject);
-	ld_document_clear (self);
+	ld_document_clear_internal (self);
 
+	/* Chain up to the parent class. */
+	G_OBJECT_CLASS (ld_document_parent_class)->dispose (gobject);
+}
+
+static void
+ld_document_finalize (GObject *gobject)
+{
 	/* Chain up to the parent class. */
 	G_OBJECT_CLASS (ld_document_parent_class)->finalize (gobject);
 }
+
+static void
+ld_document_real_changed (LdDocument *self)
+{
+	g_return_if_fail (LD_IS_DOCUMENT (self));
+
+	ld_document_set_modified (self, TRUE);
+}
+
 
 /**
  * ld_document_new:
@@ -107,6 +190,21 @@ ld_document_clear (LdDocument *self)
 {
 	g_return_if_fail (LD_IS_DOCUMENT (self));
 
+	ld_document_clear_internal (self);
+
+	g_signal_emit (self,
+		LD_DOCUMENT_GET_CLASS (self)->changed_signal, 0);
+}
+
+/*
+ * ld_document_clear_internal:
+ * @self: An #LdDocument object.
+ *
+ * Do the same what ld_document_clear() does but don't emit signals.
+ */
+static void
+ld_document_clear_internal (LdDocument *self)
+{
 	g_slist_free (self->priv->connections);
 	self->priv->connections = NULL;
 
@@ -117,9 +215,6 @@ ld_document_clear (LdDocument *self)
 	g_slist_foreach (self->priv->objects, (GFunc) g_object_unref, NULL);
 	g_slist_free (self->priv->objects);
 	self->priv->objects = NULL;
-
-	g_signal_emit (self,
-		LD_DOCUMENT_GET_CLASS (self)->changed_signal, 0);
 }
 
 /**
@@ -163,6 +258,33 @@ ld_document_save_to_file (LdDocument *self,
 }
 
 /**
+ * ld_document_get_modified:
+ * @self: An #LdDocument object.
+ *
+ * Return value: The modification status of document.
+ */
+gboolean
+ld_document_get_modified (LdDocument *self)
+{
+	g_return_val_if_fail (LD_IS_DOCUMENT (self), FALSE);
+	return self->priv->modified;
+}
+
+/**
+ * ld_document_set_modified:
+ * @self: An #LdDocument object.
+ * @value: Whether the document has been modified.
+ *
+ * Set the modification status of document.
+ */
+void
+ld_document_set_modified (LdDocument *self, gboolean value)
+{
+	g_return_if_fail (LD_IS_DOCUMENT (self));
+	self->priv->modified = value;
+}
+
+/**
  * ld_document_get_objects:
  * @self: An #LdDocument object.
  *
@@ -196,9 +318,10 @@ ld_document_insert_object (LdDocument *self, LdDocumentObject *object, gint pos)
 		self->priv->objects =
 			g_slist_insert (self->priv->objects, object, pos);
 		g_object_ref (object);
+
+		g_signal_emit (self,
+			LD_DOCUMENT_GET_CLASS (self)->changed_signal, 0);
 	}
-	g_signal_emit (self,
-		LD_DOCUMENT_GET_CLASS (self)->changed_signal, 0);
 }
 
 /**
@@ -220,9 +343,10 @@ ld_document_remove_object (LdDocument *self, LdDocumentObject *object)
 
 		self->priv->objects = g_slist_remove (self->priv->objects, object);
 		g_object_unref (object);
+
+		g_signal_emit (self,
+			LD_DOCUMENT_GET_CLASS (self)->changed_signal, 0);
 	}
-	g_signal_emit (self,
-		LD_DOCUMENT_GET_CLASS (self)->changed_signal, 0);
 }
 
 /**
@@ -260,9 +384,10 @@ ld_document_selection_add (LdDocument *self, LdDocumentObject *object, gint pos)
 		self->priv->selection =
 			g_slist_insert (self->priv->selection, object, pos);
 		g_object_ref (object);
+
+		g_signal_emit (self,
+			LD_DOCUMENT_GET_CLASS (self)->changed_signal, 0);
 	}
-	g_signal_emit (self,
-		LD_DOCUMENT_GET_CLASS (self)->changed_signal, 0);
 }
 
 /**
@@ -282,7 +407,8 @@ ld_document_selection_remove (LdDocument *self, LdDocumentObject *object)
 	{
 		self->priv->selection = g_slist_remove (self->priv->selection, object);
 		g_object_unref (object);
+
+		g_signal_emit (self,
+			LD_DOCUMENT_GET_CLASS (self)->changed_signal, 0);
 	}
-	g_signal_emit (self,
-		LD_DOCUMENT_GET_CLASS (self)->changed_signal, 0);
 }

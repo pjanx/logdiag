@@ -249,9 +249,30 @@ load_category_cb (const gchar *base, const gchar *filename, gpointer userdata)
 static void
 load_category_symbol_cb (LdSymbol *symbol, gpointer user_data)
 {
-	/* TODO: Don't just add blindly, also check for name collisions. */
-	ld_symbol_category_insert_child
-		(LD_SYMBOL_CATEGORY (user_data), G_OBJECT (symbol), -1);
+	const gchar *name;
+	LdSymbolCategory *cat;
+	const GSList *children, *iter;
+
+	g_return_if_fail (LD_IS_SYMBOL (symbol));
+	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (user_data));
+
+	cat = LD_SYMBOL_CATEGORY (user_data);
+	name = ld_symbol_get_name (symbol);
+
+	/* Check for name collisions with other symbols. */
+	children = ld_symbol_category_get_children (cat);
+	for (iter = children; iter; iter = iter->next)
+	{
+		if (!LD_IS_SYMBOL (iter->data))
+			continue;
+		if (!strcmp (name, ld_symbol_get_name (LD_SYMBOL (iter->data))))
+		{
+			g_warning ("Attempted to insert multiple '%s' symbols into"
+				" category '%s'.", name, ld_symbol_category_get_name (cat));
+			return;
+		}
+	}
+	ld_symbol_category_insert_child (cat, G_OBJECT (symbol), -1);
 }
 
 /*

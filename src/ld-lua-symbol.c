@@ -35,10 +35,10 @@ G_DEFINE_TYPE (LdLuaSymbol, ld_lua_symbol, LD_TYPE_SYMBOL);
 
 static void ld_lua_symbol_finalize (GObject *gobject);
 
-static const gchar *ld_lua_symbol_get_name (LdSymbol *symbol);
-static const gchar *ld_lua_symbol_get_human_name (LdSymbol *symbol);
-static void ld_lua_symbol_get_area (LdSymbol *symbol, LdSymbolArea *area);
-static void ld_lua_symbol_draw (LdSymbol *symbol, cairo_t *cr);
+static const gchar *ld_lua_symbol_real_get_name (LdSymbol *symbol);
+static const gchar *ld_lua_symbol_real_get_human_name (LdSymbol *symbol);
+static void ld_lua_symbol_real_get_area (LdSymbol *symbol, LdSymbolArea *area);
+static void ld_lua_symbol_real_draw (LdSymbol *symbol, cairo_t *cr);
 
 
 static void
@@ -49,10 +49,10 @@ ld_lua_symbol_class_init (LdLuaSymbolClass *klass)
 	object_class = G_OBJECT_CLASS (klass);
 	object_class->finalize = ld_lua_symbol_finalize;
 
-	klass->parent_class.get_name = ld_lua_symbol_get_name;
-	klass->parent_class.get_human_name = ld_lua_symbol_get_human_name;
-	klass->parent_class.get_area = ld_lua_symbol_get_area;
-	klass->parent_class.draw = ld_lua_symbol_draw;
+	klass->parent_class.get_name = ld_lua_symbol_real_get_name;
+	klass->parent_class.get_human_name = ld_lua_symbol_real_get_human_name;
+	klass->parent_class.get_area = ld_lua_symbol_real_get_area;
+	klass->parent_class.draw = ld_lua_symbol_real_draw;
 
 	g_type_class_add_private (klass, sizeof (LdLuaSymbolPrivate));
 }
@@ -87,22 +87,22 @@ ld_lua_symbol_finalize (GObject *gobject)
 }
 
 
-const gchar *
-ld_lua_symbol_get_name (LdSymbol *symbol)
+static const gchar *
+ld_lua_symbol_real_get_name (LdSymbol *symbol)
 {
 	g_return_val_if_fail (LD_IS_LUA_SYMBOL (symbol), NULL);
 	return LD_LUA_SYMBOL (symbol)->priv->name;
 }
 
-const gchar *
-ld_lua_symbol_get_human_name (LdSymbol *symbol)
+static const gchar *
+ld_lua_symbol_real_get_human_name (LdSymbol *symbol)
 {
 	g_return_val_if_fail (LD_IS_LUA_SYMBOL (symbol), NULL);
 	return LD_LUA_SYMBOL (symbol)->priv->human_name;
 }
 
-void
-ld_lua_symbol_get_area (LdSymbol *symbol, LdSymbolArea *area)
+static void
+ld_lua_symbol_real_get_area (LdSymbol *symbol, LdSymbolArea *area)
 {
 	LdLuaSymbol *self;
 
@@ -114,7 +114,7 @@ ld_lua_symbol_get_area (LdSymbol *symbol, LdSymbolArea *area)
 }
 
 static void
-ld_lua_symbol_draw (LdSymbol *symbol, cairo_t *cr)
+ld_lua_symbol_real_draw (LdSymbol *symbol, cairo_t *cr)
 {
 	LdLuaSymbol *self;
 

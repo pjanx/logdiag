@@ -60,9 +60,9 @@ GType ld_document_get_type (void) G_GNUC_CONST;
 LdDocument *ld_document_new (void);
 void ld_document_clear (LdDocument *self);
 gboolean ld_document_load_from_file (LdDocument *self,
-	const gchar *filename, GError *error);
+	const gchar *filename, GError **error);
 gboolean ld_document_save_to_file (LdDocument *self,
-	const gchar *filename, GError *error);
+	const gchar *filename, GError **error);
 
 gboolean ld_document_get_modified (LdDocument *self);
 void ld_document_set_modified (LdDocument *self, gboolean value);

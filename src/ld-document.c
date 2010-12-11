@@ -229,12 +229,29 @@ ld_document_clear_internal (LdDocument *self)
  */
 gboolean
 ld_document_load_from_file (LdDocument *self,
-	const gchar *filename, GError *error)
+	const gchar *filename, GError **error)
 {
-	g_return_val_if_fail (LD_IS_DOCUMENT (self), FALSE);
+	JsonParser *parser;
+	GError *json_error;
 
-	/* TODO */
-	return FALSE;
+	g_return_val_if_fail (LD_IS_DOCUMENT (self), FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+
+	/* TODO: Implement loading for real. This is just a stub. */
+	parser = json_parser_new ();
+
+	json_error = NULL;
+	json_parser_load_from_file (parser, filename, &json_error);
+	if (json_error)
+	{
+		g_propagate_error (error, json_error);
+		g_object_unref (parser);
+		return FALSE;
+	}
+
+	ld_document_clear (self);
+	g_object_unref (parser);
+	return TRUE;
 }
 
 /**
@@ -249,12 +266,34 @@ ld_document_load_from_file (LdDocument *self,
  */
 gboolean
 ld_document_save_to_file (LdDocument *self,
-	const gchar *filename, GError *error)
+	const gchar *filename, GError **error)
 {
-	g_return_val_if_fail (LD_IS_DOCUMENT (self), FALSE);
+	JsonGenerator *generator;
+	JsonNode *root;
+	GError *json_error;
 
-	/* TODO */
-	return FALSE;
+	g_return_val_if_fail (LD_IS_DOCUMENT (self), FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+
+	/* TODO: Implement saving for real. This is just a stub. */
+	generator = json_generator_new ();
+	g_object_set (generator, "pretty", TRUE, NULL);
+
+	/* XXX: json-glib dislikes empty objects. */
+	root = json_node_new (JSON_NODE_OBJECT);
+	json_generator_set_root (generator, root);
+	json_node_free (root);
+
+	json_error = NULL;
+	json_generator_to_file (generator, filename, &json_error);
+	if (json_error)
+	{
+		g_propagate_error (error, json_error);
+		g_object_unref (generator);
+		return FALSE;
+	}
+	g_object_unref (generator);
+	return TRUE;
 }
 
 /**

@@ -54,10 +54,14 @@ struct _LdSymbolCategoryClass
 
 GType ld_symbol_category_get_type (void) G_GNUC_CONST;
 
-LdSymbolCategory *ld_symbol_category_new (const gchar *name);
+LdSymbolCategory *ld_symbol_category_new (const gchar *name,
+	const gchar *human_name);
 
 void ld_symbol_category_set_name (LdSymbolCategory *self, const gchar *name);
 const gchar *ld_symbol_category_get_name (LdSymbolCategory *self);
+void ld_symbol_category_set_human_name (LdSymbolCategory *self,
+	const gchar *human_name);
+const gchar *ld_symbol_category_get_human_name (LdSymbolCategory *self);
 void ld_symbol_category_set_image_path (LdSymbolCategory *self,
 	const gchar *image_path);
 const gchar *ld_symbol_category_get_image_path (LdSymbolCategory *self);

@@ -34,6 +34,7 @@
 struct _LdSymbolCategoryPrivate
 {
 	gchar *name;
+	gchar *human_name;
 	gchar *image_path;
 	GSList *children;
 };
@@ -44,6 +45,7 @@ enum
 {
 	PROP_0,
 	PROP_NAME,
+	PROP_HUMAN_NAME,
 	PROP_IMAGE_PATH
 };
 
@@ -81,6 +83,16 @@ ld_symbol_category_class_init (LdSymbolCategoryClass *klass)
 	g_object_class_install_property (object_class, PROP_NAME, pspec);
 
 /**
+ * LdSymbolCategory:human-name:
+ *
+ * The localized human name of this symbol category.
+ */
+	pspec = g_param_spec_string ("human-name", "Human name",
+		"The localized human name of this symbol category.",
+		"", G_PARAM_READWRITE);
+	g_object_class_install_property (object_class, PROP_NAME, pspec);
+
+/**
  * LdSymbolCategory:image-path:
  *
  * Path to an image file representing this category.
@@ -112,6 +124,9 @@ ld_symbol_category_get_property (GObject *object, guint property_id,
 	case PROP_NAME:
 		g_value_set_string (value, ld_symbol_category_get_name (self));
 		break;
+	case PROP_HUMAN_NAME:
+		g_value_set_string (value, ld_symbol_category_get_human_name (self));
+		break;
 	case PROP_IMAGE_PATH:
 		g_value_set_string (value, ld_symbol_category_get_image_path (self));
 		break;
@@ -132,6 +147,9 @@ ld_symbol_category_set_property (GObject *object, guint property_id,
 	case PROP_NAME:
 		ld_symbol_category_set_name (self, g_value_get_string (value));
 		break;
+	case PROP_HUMAN_NAME:
+		ld_symbol_category_set_human_name (self, g_value_get_string (value));
+		break;
 	case PROP_IMAGE_PATH:
 		ld_symbol_category_set_image_path (self, g_value_get_string (value));
 		break;
@@ -149,6 +167,8 @@ ld_symbol_category_finalize (GObject *gobject)
 
 	if (self->priv->name)
 		g_free (self->priv->name);
+	if (self->priv->human_name)
+		g_free (self->priv->human_name);
 	if (self->priv->image_path)
 		g_free (self->priv->image_path);
 
@@ -161,17 +181,22 @@ ld_symbol_category_finalize (GObject *gobject)
 
 /**
  * ld_symbol_category_new:
- * @name: The name of this category.
+ * @name: The name of the new category.
+ * @human_name: The localized human name of the new category.
  *
  * Create an instance.
  */
 LdSymbolCategory *
-ld_symbol_category_new (const gchar *name)
+ld_symbol_category_new (const gchar *name, const gchar *human_name)
 {
 	LdSymbolCategory *cat;
 
+	g_return_val_if_fail (name != NULL, NULL);
+	g_return_val_if_fail (human_name != NULL, NULL);
+
 	cat = g_object_new (LD_TYPE_SYMBOL_CATEGORY, NULL);
 	cat->priv->name = g_strdup (name);
+	cat->priv->human_name = g_strdup (human_name);
 
 	return cat;
 }
@@ -203,6 +228,36 @@ ld_symbol_category_get_name (LdSymbolCategory *self)
 {
 	g_return_val_if_fail (LD_IS_SYMBOL_CATEGORY (self), NULL);
 	return self->priv->name;
+}
+
+/**
+ * ld_symbol_category_set_human_name:
+ * @self: An #LdSymbolCategory object.
+ * @name: The new localized human name for this category.
+ */
+void
+ld_symbol_category_set_human_name (LdSymbolCategory *self,
+	const gchar *human_name)
+{
+	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (self));
+	g_return_if_fail (human_name != NULL);
+
+	if (self->priv->human_name)
+		g_free (self->priv->human_name);
+	self->priv->human_name = g_strdup (human_name);
+}
+
+/**
+ * ld_symbol_category_get_human_name:
+ * @self: An #LdSymbolCategory object.
+ *
+ * Return the localized human name of this category.
+ */
+const gchar *
+ld_symbol_category_get_human_name (LdSymbolCategory *self)
+{
+	g_return_val_if_fail (LD_IS_SYMBOL_CATEGORY (self), NULL);
+	return self->priv->human_name;
 }
 
 /**

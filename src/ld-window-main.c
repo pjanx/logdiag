@@ -367,7 +367,7 @@ load_category_cb (gpointer data, gpointer user_data)
 {
 	LdWindowMain *self;
 	LdSymbolCategory *cat;
-	const gchar *name;
+	const gchar *human_name;
 	GdkPixbuf *pbuf;
 	GtkWidget *img;
 	GtkToolItem *item;
@@ -379,7 +379,7 @@ load_category_cb (gpointer data, gpointer user_data)
 	self = user_data;
 	cat = data;
 
-	name = ld_symbol_category_get_name (cat);
+	human_name = ld_symbol_category_get_human_name (cat);
 
 	pbuf = gdk_pixbuf_new_from_file_at_size
 		(ld_symbol_category_get_image_path (cat), TOOLBAR_ICON_WIDTH, -1, NULL);
@@ -401,7 +401,7 @@ load_category_cb (gpointer data, gpointer user_data)
 	/* Hook toggling of the button. */
 	g_signal_connect (button, "toggled", G_CALLBACK (on_category_toggle), self);
 
-	gtk_tool_item_set_tooltip_text (item, name);
+	gtk_tool_item_set_tooltip_text (item, human_name);
 	gtk_toolbar_insert (GTK_TOOLBAR (self->priv->toolbar), item, 0);
 }
 

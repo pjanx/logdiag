@@ -195,7 +195,7 @@ load_category (LdLibrary *self, const char *path, const char *name)
 
 	/* TODO: Search for category.json and read the category name from it. */
 
-	cat = ld_symbol_category_new (name);
+	cat = ld_symbol_category_new (name, name);
 	ld_symbol_category_set_image_path (cat, icon_file);
 
 	data.self = self;

@@ -48,13 +48,15 @@ ld_library_finalize (GObject *gobject);
 
 static LdSymbolCategory *load_category
 	(LdLibrary *self, const char *path, const char *name);
+static gboolean load_category_cb (const gchar *base,
+	const gchar *filename, gpointer userdata);
+static void load_category_symbol_cb (LdSymbol *symbol, gpointer user_data);
+
+static gchar *read_human_name_from_file (const gchar *filename);
 
 static gboolean foreach_dir (const gchar *path,
 	gboolean (*callback) (const gchar *, const gchar *, gpointer),
 	gpointer userdata, GError **error);
-static gboolean load_category_cb (const gchar *base,
-	const gchar *filename, gpointer userdata);
-static void load_category_symbol_cb (LdSymbol *symbol, gpointer user_data);
 static gboolean ld_library_load_cb
 	(const gchar *base, const gchar *filename, gpointer userdata);
 
@@ -176,7 +178,8 @@ static LdSymbolCategory *
 load_category (LdLibrary *self, const char *path, const char *name)
 {
 	LdSymbolCategory *cat;
-	gchar *icon_file;
+	gchar *icon_file, *category_file;
+	gchar *human_name;
 	LoadCategoryData data;
 
 	g_return_val_if_fail (LD_IS_LIBRARY (self), NULL);
@@ -193,15 +196,20 @@ load_category (LdLibrary *self, const char *path, const char *name)
 		goto load_category_fail_2;
 	}
 
-	/* TODO: Search for category.json and read the category name from it. */
+	category_file = g_build_filename (path, "category.json", NULL);
+	human_name = read_human_name_from_file (category_file);
+	if (!human_name)
+		human_name = g_strdup (name);
 
-	cat = ld_symbol_category_new (name, name);
+	cat = ld_symbol_category_new (name, human_name);
 	ld_symbol_category_set_image_path (cat, icon_file);
 
 	data.self = self;
 	data.cat = cat;
 	foreach_dir (path, load_category_cb, &data, NULL);
 
+	g_free (human_name);
+	g_free (category_file);
 	g_free (icon_file);
 	return cat;
 
@@ -244,6 +252,64 @@ load_category_symbol_cb (LdSymbol *symbol, gpointer user_data)
 	/* TODO: Don't just add blindly, also check for name collisions. */
 	ld_symbol_category_insert_child
 		(LD_SYMBOL_CATEGORY (user_data), G_OBJECT (symbol), -1);
+}
+
+/*
+ * read_human_name_from_file:
+ * @filename: Where the JSON file is located.
+ *
+ * Read the human name of the processed category.
+ */
+static gchar *
+read_human_name_from_file (const gchar *filename)
+{
+	const gchar *const *lang;
+	JsonParser *parser;
+	JsonNode *root;
+	JsonObject *object;
+	GError *error;
+
+	g_return_val_if_fail (filename != NULL, NULL);
+
+	parser = json_parser_new ();
+	error = NULL;
+	if (!json_parser_load_from_file (parser, filename, &error))
+	{
+		g_warning ("%s", error->message);
+		g_error_free (error);
+		goto read_human_name_from_file_end;
+	}
+
+	root = json_parser_get_root (parser);
+	if (!JSON_NODE_HOLDS_OBJECT (root))
+	{
+		g_warning ("Failed to parse '%s': %s", filename,
+			"The root node is not an object.");
+		goto read_human_name_from_file_end;
+	}
+
+	object = json_node_get_object (root);
+	for (lang = g_get_language_names (); *lang; lang++)
+	{
+		const gchar *member;
+
+		if (!json_object_has_member (object, *lang))
+			continue;
+		member = json_object_get_string_member (object, *lang);
+
+		if (member != NULL)
+		{
+			gchar *result;
+
+			result = g_strdup (member);
+			g_object_unref (parser);
+			return result;
+		}
+	}
+
+read_human_name_from_file_end:
+	g_object_unref (parser);
+	return NULL;
 }
 
 /*

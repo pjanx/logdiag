@@ -93,7 +93,7 @@ static void ld_canvas_finalize (GObject *gobject);
 
 static void on_adjustment_value_changed
 	(GtkAdjustment *adjustment, LdCanvas *self);
-static void ld_canvas_set_scroll_adjustments
+static void ld_canvas_real_set_scroll_adjustments
 	(LdCanvas *self, GtkAdjustment *horizontal, GtkAdjustment *vertical);
 
 static gdouble ld_canvas_get_base_unit_in_px (GtkWidget *self);
@@ -123,6 +123,8 @@ ld_canvas_class_init (LdCanvasClass *klass)
 	object_class->set_property = ld_canvas_set_property;
 	object_class->finalize = ld_canvas_finalize;
 
+	klass->set_scroll_adjustments = ld_canvas_real_set_scroll_adjustments;
+
 /**
  * LdCanvas:document:
  *
@@ -142,8 +144,6 @@ ld_canvas_class_init (LdCanvasClass *klass)
 		"The library that this canvas retrieves symbols from.",
 		LD_TYPE_LIBRARY, G_PARAM_READWRITE);
 	g_object_class_install_property (object_class, PROP_DOCUMENT, pspec);
-
-	klass->set_scroll_adjustments = ld_canvas_set_scroll_adjustments;
 
 /**
  * LdCanvas::set-scroll-adjustments:
@@ -186,7 +186,7 @@ ld_canvas_finalize (GObject *gobject)
 
 	self = LD_CANVAS (gobject);
 
-	ld_canvas_set_scroll_adjustments (self, NULL, NULL);
+	ld_canvas_real_set_scroll_adjustments (self, NULL, NULL);
 
 	if (self->priv->document)
 		g_object_unref (self->priv->document);
@@ -238,7 +238,7 @@ ld_canvas_set_property (GObject *object, guint property_id,
 }
 
 static void
-ld_canvas_set_scroll_adjustments (LdCanvas *self,
+ld_canvas_real_set_scroll_adjustments (LdCanvas *self,
 	GtkAdjustment *horizontal, GtkAdjustment *vertical)
 {
 	/* TODO: Infinite canvas. */

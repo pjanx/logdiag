@@ -24,7 +24,7 @@
 			<menuitem action="About" />
 		</menu>
 	</menubar>
-	<toolbar action="MainToolbar">
+	<toolbar action="Toolbar">
 		<toolitem action="New" />
 		<toolitem action="Open" />
 		<toolitem action="Save" />

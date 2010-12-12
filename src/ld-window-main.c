@@ -32,13 +32,12 @@
  * #LdWindowMain is the main window of the application.
  */
 /* NOTE: The main window should not maybe be included in either
- * the documentation or the static library.
+ *       the documentation or the static library.
  */
 
 
 typedef struct _SymbolMenuItem SymbolMenuItem;
 typedef struct _SymbolMenuData SymbolMenuData;
-typedef struct _DocumentData DocumentData;
 
 /*
  * SymbolMenuItem:
@@ -73,18 +72,6 @@ struct _SymbolMenuData
 	gint menu_width;
 	gint menu_height;
 	gint menu_y;
-};
-
-/*
- * DocumentData:
- *
- * Data related to the current document.
- */
-struct _DocumentData
-{
-	LdDocument *document;
-	const gchar *file_name;
-	/* Canvas viewport settings (for multitabbed) */
 };
 
 struct _LdWindowMainPrivate
@@ -139,13 +126,13 @@ static void on_ui_proxy_disconnected (GtkUIManager *ui, GtkAction *action,
 static void on_menu_item_selected (GtkWidget *item, LdWindowMain *window);
 static void on_menu_item_deselected (GtkItem *item, LdWindowMain *window);
 
-static void show_about_dialog (GtkAction *action, LdWindowMain *window);
+static void on_action_about (GtkAction *action, LdWindowMain *self);
 
 
 /* ===== Local variables =================================================== */
 
 /* Actions for menus, toolbars, accelerators. */
-static GtkActionEntry mw_actionEntries[] =
+static GtkActionEntry wm_action_entries[] =
 {
 	{"FileMenu", NULL, Q_("_File")},
 		{"New", GTK_STOCK_NEW, NULL, NULL,
@@ -163,20 +150,23 @@ static GtkActionEntry mw_actionEntries[] =
 			G_CALLBACK (gtk_main_quit)},
 
 	{"EditMenu", NULL, Q_("_Edit")},
-/* These are not probably going to show up in the 1st version of this app:
+		/* XXX: Don't implement these yet: */
+/*
 		{"Cut", GTK_STOCK_CUT, NULL, NULL, NULL, NULL},
 		{"Copy", GTK_STOCK_COPY, NULL, NULL, NULL, NULL},
 		{"Paste", GTK_STOCK_PASTE, NULL, NULL, NULL, NULL},
-*/
+ */
 		{"Delete", GTK_STOCK_DELETE, NULL, NULL,
 			Q_("Delete the contents of the selection"), NULL},
 		{"SelectAll", GTK_STOCK_SELECT_ALL, NULL, NULL,
 			Q_("Select all objects in the document"), NULL},
 
+	/* TODO: View menu (zooming). */
+
 	{"HelpMenu", NULL, Q_("_Help")},
 		{"About", GTK_STOCK_ABOUT, NULL, NULL,
 			Q_("Show a dialog about this application"),
-			G_CALLBACK (show_about_dialog)}
+			G_CALLBACK (on_action_about)}
 };
 
 
@@ -216,10 +206,7 @@ ld_window_main_init (LdWindowMain *self)
 	self->priv = priv = G_TYPE_INSTANCE_GET_PRIVATE
 		(self, LD_TYPE_WINDOW_MAIN, LdWindowMainPrivate);
 
-	priv->vbox = gtk_vbox_new (FALSE, 0);
-	gtk_container_add (GTK_CONTAINER (self), priv->vbox);
-
-
+	/* Construct menu and toolbar. */
 	priv->ui_manager = gtk_ui_manager_new ();
 
 	g_signal_connect (priv->ui_manager, "connect-proxy",
@@ -227,10 +214,9 @@ ld_window_main_init (LdWindowMain *self)
 	g_signal_connect (priv->ui_manager, "disconnect-proxy",
 		G_CALLBACK (on_ui_proxy_disconnected), self);
 
-	/* Prepare our actions. */
 	action_group = gtk_action_group_new ("MainActions");
-	gtk_action_group_add_actions (action_group,
-		mw_actionEntries, G_N_ELEMENTS (mw_actionEntries), self);
+	gtk_action_group_add_actions (action_group, wm_action_entries,
+		G_N_ELEMENTS (wm_action_entries), self);
 	gtk_ui_manager_insert_action_group (priv->ui_manager, action_group, 0);
 
 	error = NULL;
@@ -242,45 +228,48 @@ ld_window_main_init (LdWindowMain *self)
 		g_error_free (error);
 	}
 
-	/* Load keyboard accelerators into the window. */
-	gtk_window_add_accel_group
-		(GTK_WINDOW (self), gtk_ui_manager_get_accel_group (priv->ui_manager));
-
 	priv->menu = gtk_ui_manager_get_widget (priv->ui_manager, "/MenuBar");
-	gtk_box_pack_start (GTK_BOX (priv->vbox), priv->menu, FALSE, FALSE, 0);
+	priv->toolbar = gtk_ui_manager_get_widget (priv->ui_manager, "/Toolbar");
 
-	/* Add the main toolbar. */
-	priv->toolbar = gtk_ui_manager_get_widget (priv->ui_manager,
-		"/MainToolbar");
-	gtk_box_pack_start (GTK_BOX (priv->vbox), priv->toolbar, FALSE, FALSE, 0);
-
-	priv->hbox = gtk_hbox_new(FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (priv->vbox), priv->hbox, TRUE, TRUE, 0);
-
-	/* Add the library toolbar. */
+	/* Create the remaining widgets. */
 	priv->library_toolbar = gtk_toolbar_new ();
-	/* NOTE: For GTK 2.16+, s/toolbar/orientable/ */
-	gtk_toolbar_set_orientation
-		(GTK_TOOLBAR (priv->library_toolbar), GTK_ORIENTATION_VERTICAL);
-	gtk_toolbar_set_icon_size
-		(GTK_TOOLBAR (priv->library_toolbar), GTK_ICON_SIZE_LARGE_TOOLBAR);
-	gtk_toolbar_set_style
-		(GTK_TOOLBAR (priv->library_toolbar), GTK_TOOLBAR_ICONS);
+	/* XXX: For GTK 2.16+, s/toolbar/orientable/ */
+	gtk_toolbar_set_orientation (GTK_TOOLBAR (priv->library_toolbar),
+		GTK_ORIENTATION_VERTICAL);
 
+	priv->canvas = ld_canvas_new ();
+	priv->canvas_window = gtk_scrolled_window_new (NULL, NULL);
+	gtk_container_add (GTK_CONTAINER (priv->canvas_window),
+		GTK_WIDGET (priv->canvas));
+
+	priv->statusbar = gtk_statusbar_new ();
+	priv->statusbar_menu_context_id = gtk_statusbar_get_context_id
+		(GTK_STATUSBAR (priv->statusbar), "menu");
+
+	/* Pack all widgets into the window. */
+	priv->hbox = gtk_hbox_new (FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (priv->hbox), priv->library_toolbar,
 		FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (priv->hbox), priv->canvas_window,
+		TRUE, TRUE, 0);
 
-	/* Symbol library. */
-	priv->library = ld_library_new ();
-	ld_library_load (priv->library, PROJECT_SHARE_DIR "library");
+	priv->vbox = gtk_vbox_new (FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (priv->vbox), priv->menu, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (priv->vbox), priv->toolbar, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (priv->vbox), priv->hbox, TRUE, TRUE, 0);
+	gtk_box_pack_end (GTK_BOX (priv->vbox), priv->statusbar, FALSE, FALSE, 0);
 
-	load_library_toolbar (self);
+	gtk_container_add (GTK_CONTAINER (self), priv->vbox);
 
-	/* TODO in the future: GtkHPaned */
+	/* Configure the window. */
+	g_signal_connect (self, "destroy", G_CALLBACK (gtk_main_quit), NULL);
 
-	/* Canvas. */
-	priv->canvas = ld_canvas_new ();
+	gtk_window_add_accel_group (GTK_WINDOW (self),
+		gtk_ui_manager_get_accel_group (priv->ui_manager));
+	gtk_window_set_default_size (GTK_WINDOW (self), 500, 400);
+	gtk_window_set_position (GTK_WINDOW (self), GTK_WIN_POS_CENTER);
 
+	/* Hook canvas signals. */
 	/* XXX: To be able to draw a symbol menu over the canvas, we may:
 	 *   1. Hook the expose-event and button-{press,release}-event signals.
 	 *   2. Create a hook mechanism in the LdCanvas object.
@@ -293,11 +282,8 @@ ld_window_main_init (LdWindowMain *self)
 		"motion-notify-event", G_CALLBACK (on_canvas_motion_notify), self);
 	priv->symbol_menu.button_release_handler = g_signal_connect (priv->canvas,
 		"button-release-event", G_CALLBACK (on_canvas_button_release), self);
-	gtk_widget_add_events (GTK_WIDGET (priv->canvas),
-		GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK
-		| GDK_BUTTON_RELEASE_MASK | GDK_BUTTON_PRESS_MASK);
 
-	/* Don't render anything over the canvas yet. */
+	/* Don't process the signals yet. */
 	g_signal_handler_block (priv->canvas,
 		priv->symbol_menu.expose_handler);
 	g_signal_handler_block (priv->canvas,
@@ -305,22 +291,17 @@ ld_window_main_init (LdWindowMain *self)
 	g_signal_handler_block (priv->canvas,
 		priv->symbol_menu.button_release_handler);
 
-	priv->canvas_window = gtk_scrolled_window_new (NULL, NULL);
-	gtk_container_add (GTK_CONTAINER (priv->canvas_window),
-		GTK_WIDGET (priv->canvas));
-	gtk_box_pack_start (GTK_BOX (priv->hbox), GTK_WIDGET (priv->canvas_window),
-		TRUE, TRUE, 0);
 
-	priv->statusbar = gtk_statusbar_new ();
-	priv->statusbar_menu_context_id = gtk_statusbar_get_context_id
-		(GTK_STATUSBAR (priv->statusbar), "menu");
-	gtk_box_pack_end (GTK_BOX (priv->vbox), priv->statusbar, FALSE, FALSE, 0);
 
-	/* Proceed to showing the window. */
-	g_signal_connect (self, "destroy", G_CALLBACK (gtk_main_quit), NULL);
+	/* Initialize the backend. */
+	priv->library = ld_library_new ();
+	ld_library_load (priv->library, PROJECT_SHARE_DIR "library");
 
-	gtk_window_set_default_size (GTK_WINDOW (self), 500, 400);
-	gtk_window_set_position (GTK_WINDOW (self), GTK_WIN_POS_CENTER);
+	ld_canvas_set_library (priv->canvas, priv->library);
+
+	load_library_toolbar (self);
+
+	/* Realize the window. */
 	gtk_widget_show_all (GTK_WIDGET (self));
 }
 
@@ -417,7 +398,6 @@ load_category_cb (gpointer data, gpointer user_data)
  *
  * Make the area for symbol menu redraw itself.
  */
-/* XXX: Ideally it should repaint just what's needed. */
 static void
 redraw_symbol_menu (LdWindowMain *self)
 {
@@ -619,6 +599,7 @@ on_canvas_motion_notify (GtkWidget *widget, GdkEventMotion *event,
 		x += data->items[i].width;
 		if (event->x < x)
 		{
+			/* TODO: Show the human name of this symbol in status bar. */
 			data->active_item = i;
 			redraw_symbol_menu (self);
 			return FALSE;
@@ -711,9 +692,9 @@ on_menu_item_deselected (GtkItem *item, LdWindowMain *window)
 }
 
 static void
-show_about_dialog (GtkAction *action, LdWindowMain *window)
+on_action_about (GtkAction *action, LdWindowMain *self)
 {
-	gtk_show_about_dialog (GTK_WINDOW (window),
+	gtk_show_about_dialog (GTK_WINDOW (self),
 		"program-name", PROJECT_NAME,
 		"version", PROJECT_VERSION,
 		"copyright", "Copyright Přemysl Janouch 2010",

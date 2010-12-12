@@ -177,6 +177,10 @@ ld_canvas_init (LdCanvas *self)
 		G_CALLBACK (on_expose_event), NULL);
 	g_signal_connect (self, "size-allocate",
 		G_CALLBACK (on_size_allocate), NULL);
+
+	gtk_widget_add_events (GTK_WIDGET (self),
+		GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK
+		| GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK);
 }
 
 static void

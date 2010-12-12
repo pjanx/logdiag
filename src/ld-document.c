@@ -92,7 +92,7 @@ ld_document_class_init (LdDocumentClass *klass)
  */
 	klass->changed_signal = g_signal_new
 		("changed", G_TYPE_FROM_CLASS (klass),
-		G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_NO_HOOKS,
+		G_SIGNAL_RUN_LAST,
 		G_STRUCT_OFFSET (LdDocumentClass, changed), NULL, NULL,
 		g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
 

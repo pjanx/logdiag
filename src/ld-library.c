@@ -77,8 +77,8 @@ ld_library_class_init (LdLibraryClass *klass)
  */
 	klass->changed_signal = g_signal_new
 		("changed", G_TYPE_FROM_CLASS (klass),
-		G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_NO_HOOKS,
-		0, NULL, NULL, g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+		G_SIGNAL_RUN_LAST, 0, NULL, NULL,
+		g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
 
 	g_type_class_add_private (klass, sizeof (LdLibraryPrivate));
 }

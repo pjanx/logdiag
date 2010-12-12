@@ -90,7 +90,7 @@ ld_symbol_category_class_init (LdSymbolCategoryClass *klass)
 	pspec = g_param_spec_string ("human-name", "Human name",
 		"The localized human name of this symbol category.",
 		"", G_PARAM_READWRITE);
-	g_object_class_install_property (object_class, PROP_NAME, pspec);
+	g_object_class_install_property (object_class, PROP_HUMAN_NAME, pspec);
 
 /**
  * LdSymbolCategory:image-path:
@@ -215,6 +215,8 @@ ld_symbol_category_set_name (LdSymbolCategory *self, const gchar *name)
 	if (self->priv->name)
 		g_free (self->priv->name);
 	self->priv->name = g_strdup (name);
+
+	g_object_notify (G_OBJECT (self), "name");
 }
 
 /**
@@ -245,6 +247,8 @@ ld_symbol_category_set_human_name (LdSymbolCategory *self,
 	if (self->priv->human_name)
 		g_free (self->priv->human_name);
 	self->priv->human_name = g_strdup (human_name);
+
+	g_object_notify (G_OBJECT (self), "human-name");
 }
 
 /**
@@ -274,6 +278,8 @@ ld_symbol_category_set_image_path (LdSymbolCategory *self,
 	if (self->priv->image_path)
 		g_free (self->priv->image_path);
 	self->priv->image_path = g_strdup (image_path);
+
+	g_object_notify (G_OBJECT (self), "image-path");
 }
 
 /**

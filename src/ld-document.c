@@ -321,6 +321,8 @@ ld_document_set_modified (LdDocument *self, gboolean value)
 {
 	g_return_if_fail (LD_IS_DOCUMENT (self));
 	self->priv->modified = value;
+
+	g_object_notify (G_OBJECT (self), "modified");
 }
 
 /**

@@ -389,6 +389,8 @@ ld_canvas_set_document (LdCanvas *self, LdDocument *document)
 
 	self->priv->document = document;
 	g_object_ref (document);
+
+	g_object_notify (G_OBJECT (self), "document");
 }
 
 /**
@@ -419,6 +421,8 @@ ld_canvas_set_library (LdCanvas *self, LdLibrary *library)
 
 	self->priv->library = library;
 	g_object_ref (library);
+
+	g_object_notify (G_OBJECT (self), "library");
 }
 
 /**

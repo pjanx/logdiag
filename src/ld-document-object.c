@@ -157,8 +157,9 @@ ld_document_object_get_y (LdDocumentObject *self)
 }
 
 /**
- * ld_document_object_get_x:
+ * ld_document_object_set_x:
  * @self: An #LdDocumentObject object.
+ * @x: The new X coordinate.
  *
  * Set the X coordinate of the object.
  */
@@ -167,11 +168,14 @@ ld_document_object_set_x (LdDocumentObject *self, gdouble x)
 {
 	g_return_if_fail (LD_IS_DOCUMENT_OBJECT (self));
 	self->priv->x = x;
+
+	g_object_notify (G_OBJECT (self), "x");
 }
 
 /**
- * ld_document_object_get_x:
+ * ld_document_object_set_y:
  * @self: An #LdDocumentObject object.
+ * @y: The new Y coordinate.
  *
  * Set the Y coordinate of the object.
  */
@@ -180,4 +184,6 @@ ld_document_object_set_y (LdDocumentObject *self, gdouble y)
 {
 	g_return_if_fail (LD_IS_DOCUMENT_OBJECT (self));
 	self->priv->y = y;
+
+	g_object_notify (G_OBJECT (self), "y");
 }

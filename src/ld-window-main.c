@@ -35,7 +35,6 @@
  *       the documentation or the static library.
  */
 
-
 typedef struct _SymbolMenuItem SymbolMenuItem;
 typedef struct _SymbolMenuData SymbolMenuData;
 
@@ -77,6 +76,7 @@ struct _SymbolMenuData
 struct _LdWindowMainPrivate
 {
 	GtkUIManager *ui_manager;
+	GtkActionGroup *action_group;
 
 	GtkWidget *vbox;
 	GtkWidget *hbox;
@@ -85,6 +85,9 @@ struct _LdWindowMainPrivate
 	GtkWidget *library_toolbar;
 
 	LdLibrary *library;
+
+	LdDocument *document;
+	gchar *filename;
 
 	GtkWidget *canvas_window;
 	LdCanvas *canvas;
@@ -126,6 +129,30 @@ static void on_ui_proxy_disconnected (GtkUIManager *ui, GtkAction *action,
 static void on_menu_item_selected (GtkWidget *item, LdWindowMain *window);
 static void on_menu_item_deselected (GtkItem *item, LdWindowMain *window);
 
+static gboolean on_delete (LdWindowMain *self, GdkEvent *event,
+	gpointer user_data);
+static void update_title (LdWindowMain *self);
+static void action_set_sensitive (LdWindowMain *self, const gchar *name,
+	gboolean sensitive);
+
+static gchar *diagram_get_name (LdWindowMain *self);
+static void diagram_set_filename (LdWindowMain *self, gchar *filename);
+static void diagram_new (LdWindowMain *self);
+static void diagram_save (LdWindowMain *self);
+
+static GtkFileFilter *diagram_get_file_filter (void);
+static void diagram_show_open_dialog (LdWindowMain *self);
+static void diagram_show_save_as_dialog (LdWindowMain *self);
+
+static gboolean may_close_diagram (LdWindowMain *self,
+	const gchar *dialog_message);
+static gboolean may_quit (LdWindowMain *self);
+
+static void on_action_new (GtkAction *action, LdWindowMain *self);
+static void on_action_open (GtkAction *action, LdWindowMain *self);
+static void on_action_save (GtkAction *action, LdWindowMain *self);
+static void on_action_save_as (GtkAction *action, LdWindowMain *self);
+static void on_action_quit (GtkAction *action, LdWindowMain *self);
 static void on_action_about (GtkAction *action, LdWindowMain *self);
 
 
@@ -134,42 +161,50 @@ static void on_action_about (GtkAction *action, LdWindowMain *self);
 /* Actions for menus, toolbars, accelerators. */
 static GtkActionEntry wm_action_entries[] =
 {
-	{"FileMenu", NULL, Q_("_File")},
-		{"New", GTK_STOCK_NEW, NULL, NULL,
-			Q_("Create a new document"), NULL},
-		{"Open", GTK_STOCK_OPEN, NULL, NULL,
-			Q_("Open a document"), NULL},
-		{"Save", GTK_STOCK_SAVE, NULL, NULL,
-			Q_("Save the current document"), NULL},
-		{"SaveAs", GTK_STOCK_SAVE_AS, NULL, NULL,
-			Q_("Save the current document with another name"), NULL},
+	{"FileMenu", NULL, Q_("_File"), NULL, NULL, NULL},
+		{"New", GTK_STOCK_NEW, Q_("_New"), "<Ctrl>N",
+			Q_("Create a new diagram"),
+			G_CALLBACK (on_action_new)},
+		{"Open", GTK_STOCK_OPEN, Q_("_Open..."), "<Ctrl>O",
+			Q_("Open a diagram"),
+			G_CALLBACK (on_action_open)},
+		{"Save", GTK_STOCK_SAVE, Q_("_Save"), "<Ctrl>S",
+			Q_("Save the current diagram"),
+			G_CALLBACK (on_action_save)},
+		{"SaveAs", GTK_STOCK_SAVE_AS, Q_("Save _As..."), "<Shift><Ctrl>S",
+			Q_("Save the current diagram with another name"),
+			G_CALLBACK (on_action_save_as)},
 		{"Export", NULL, Q_("_Export"), NULL,
-			Q_("Export the document"), NULL},
-		{"Quit", GTK_STOCK_QUIT, NULL, NULL,
+			Q_("Export the diagram"),
+			NULL},
+		{"Quit", GTK_STOCK_QUIT, Q_("_Quit"), "<Ctrl>Q",
 			Q_("Quit the application"),
-			G_CALLBACK (gtk_main_quit)},
+			G_CALLBACK (on_action_quit)},
 
-	{"EditMenu", NULL, Q_("_Edit")},
+	{"EditMenu", NULL, Q_("_Edit"), NULL, NULL, NULL},
 		/* XXX: Don't implement these yet: */
 /*
-		{"Cut", GTK_STOCK_CUT, NULL, NULL, NULL, NULL},
-		{"Copy", GTK_STOCK_COPY, NULL, NULL, NULL, NULL},
-		{"Paste", GTK_STOCK_PASTE, NULL, NULL, NULL, NULL},
+		{"Cut", GTK_STOCK_CUT, Q_("Cu_t"), "<Ctrl>X", NULL, NULL},
+		{"Copy", GTK_STOCK_COPY, Q_("_Copy"), "<Ctrl>C", NULL, NULL},
+		{"Paste", GTK_STOCK_PASTE, Q_("_Paste"), "<Ctrl>V", NULL, NULL},
  */
-		{"Delete", GTK_STOCK_DELETE, NULL, NULL,
-			Q_("Delete the contents of the selection"), NULL},
-		{"SelectAll", GTK_STOCK_SELECT_ALL, NULL, NULL,
-			Q_("Select all objects in the document"), NULL},
+		{"Delete", GTK_STOCK_DELETE, Q_("_Delete"), "Delete",
+			Q_("Delete the contents of the selection"),
+			NULL},
+		{"SelectAll", GTK_STOCK_SELECT_ALL, Q_("Select _All"), "<Ctrl>A",
+			Q_("Select all objects in the diagram"),
+			NULL},
 
 	/* TODO: View menu (zooming). */
 
-	{"HelpMenu", NULL, Q_("_Help")},
-		{"About", GTK_STOCK_ABOUT, NULL, NULL,
+	{"HelpMenu", NULL, Q_("_Help"), NULL, NULL, NULL},
+		{"About", GTK_STOCK_ABOUT, Q_("_About"), NULL,
 			Q_("Show a dialog about this application"),
 			G_CALLBACK (on_action_about)}
 };
 
 
+/* ===== Generic widget methods ============================================ */
 
 /**
  * ld_window_main_new:
@@ -200,7 +235,6 @@ static void
 ld_window_main_init (LdWindowMain *self)
 {
 	LdWindowMainPrivate *priv;
-	GtkActionGroup *action_group;
 	GError *error;
 
 	self->priv = priv = G_TYPE_INSTANCE_GET_PRIVATE
@@ -214,10 +248,11 @@ ld_window_main_init (LdWindowMain *self)
 	g_signal_connect (priv->ui_manager, "disconnect-proxy",
 		G_CALLBACK (on_ui_proxy_disconnected), self);
 
-	action_group = gtk_action_group_new ("MainActions");
-	gtk_action_group_add_actions (action_group, wm_action_entries,
+	priv->action_group = gtk_action_group_new ("MainActions");
+	gtk_action_group_add_actions (priv->action_group, wm_action_entries,
 		G_N_ELEMENTS (wm_action_entries), self);
-	gtk_ui_manager_insert_action_group (priv->ui_manager, action_group, 0);
+	gtk_ui_manager_insert_action_group (priv->ui_manager,
+		priv->action_group, 0);
 
 	error = NULL;
 	gtk_ui_manager_add_ui_from_file
@@ -263,6 +298,7 @@ ld_window_main_init (LdWindowMain *self)
 
 	/* Configure the window. */
 	g_signal_connect (self, "destroy", G_CALLBACK (gtk_main_quit), NULL);
+	g_signal_connect (self, "delete-event", G_CALLBACK (on_delete), NULL);
 
 	gtk_window_add_accel_group (GTK_WINDOW (self),
 		gtk_ui_manager_get_accel_group (priv->ui_manager));
@@ -291,15 +327,25 @@ ld_window_main_init (LdWindowMain *self)
 	g_signal_handler_block (priv->canvas,
 		priv->symbol_menu.button_release_handler);
 
-
-
 	/* Initialize the backend. */
+	priv->document = ld_document_new ();
+
+	g_signal_connect_data (priv->document, "changed",
+		G_CALLBACK (update_title), self,
+		NULL, G_CONNECT_AFTER | G_CONNECT_SWAPPED);
+
 	priv->library = ld_library_new ();
 	ld_library_load (priv->library, PROJECT_SHARE_DIR "library");
 
+	ld_canvas_set_document (priv->canvas, priv->document);
 	ld_canvas_set_library (priv->canvas, priv->library);
 
 	load_library_toolbar (self);
+	diagram_set_filename (self, NULL);
+
+	action_set_sensitive (self, "Export", FALSE);
+	action_set_sensitive (self, "Delete", FALSE);
+	action_set_sensitive (self, "SelectAll", FALSE);
 
 	/* Realize the window. */
 	gtk_widget_show_all (GTK_WIDGET (self));
@@ -321,11 +367,73 @@ ld_window_main_finalize (GObject *gobject)
 	 * and gtk_object_destroy () should be used for it.
 	 */
 	g_object_unref (self->priv->library);
+	g_object_unref (self->priv->document);
 	g_object_unref (self->priv->ui_manager);
+	g_object_unref (self->priv->action_group);
+
+	if (self->priv->filename)
+		g_free (self->priv->filename);
 
 	/* Chain up to the parent class. */
 	G_OBJECT_CLASS (ld_window_main_parent_class)->finalize (gobject);
 }
+
+/*
+ * on_delete:
+ *
+ * Handle requests to close the window.
+ */
+static gboolean
+on_delete (LdWindowMain *self, GdkEvent *event, gpointer user_data)
+{
+	return !may_quit (self);
+}
+
+/*
+ * update_title:
+ *
+ * Update the title of the window.
+ */
+static void
+update_title (LdWindowMain *self)
+{
+	gchar *title;
+	gchar *name;
+
+	g_return_if_fail (LD_IS_WINDOW_MAIN (self));
+
+	name = diagram_get_name (self);
+	title = g_strdup_printf ("%s%s - %s",
+		ld_document_get_modified (self->priv->document) ? "*" : "",
+		name, PROJECT_NAME);
+	gtk_window_set_title (GTK_WINDOW (self), title);
+
+	g_free (title);
+	g_free (name);
+}
+
+/*
+ * action_set_sensitive:
+ * @sensitive: The sensitivity state.
+ *
+ * Set sensitivity of an action.
+ */
+static void
+action_set_sensitive (LdWindowMain *self, const gchar *name, gboolean sensitive)
+{
+	GtkAction *action;
+
+	g_return_if_fail (LD_IS_WINDOW_MAIN (self));
+	g_return_if_fail (name != NULL);
+
+	action = gtk_action_group_get_action (self->priv->action_group, name);
+	g_return_if_fail (action != NULL);
+
+	gtk_action_set_sensitive (action, sensitive);
+}
+
+
+/* ===== Library toolbar and symbol menu =================================== */
 
 /*
  * load_library_toolbar:
@@ -336,6 +444,8 @@ static void
 load_library_toolbar (LdWindowMain *self)
 {
 	GSList *categories;
+
+	g_return_if_fail (LD_IS_WINDOW_MAIN (self));
 
 	/* Clear the toolbar first, if there was already something in it. */
 	gtk_container_foreach (GTK_CONTAINER (self->priv->library_toolbar),
@@ -422,8 +532,6 @@ on_category_toggle (GtkToggleButton *toggle_button, gpointer user_data)
 	LdWindowMainPrivate *priv;
 	LdSymbolCategory *cat;
 	SymbolMenuData *data;
-
-	g_return_if_fail (LD_IS_WINDOW_MAIN (user_data));
 
 	cat = g_object_get_data (G_OBJECT (toggle_button), "category");
 	self = LD_WINDOW_MAIN (user_data);
@@ -512,11 +620,6 @@ on_category_toggle (GtkToggleButton *toggle_button, gpointer user_data)
 	redraw_symbol_menu (self);
 }
 
-/*
- * on_canvas_exposed:
- *
- * Draw a symbol menu.
- */
 static gboolean
 on_canvas_exposed (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 {
@@ -572,8 +675,6 @@ on_canvas_exposed (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 	cairo_destroy (cr);
 	return FALSE;
 }
-
-
 
 static gboolean
 on_canvas_motion_notify (GtkWidget *widget, GdkEventMotion *event,
@@ -632,11 +733,9 @@ on_canvas_button_release (GtkWidget *widget, GdkEventButton *event,
 	return FALSE;
 }
 
-/*
- * on_ui_proxy_connected:
- *
- * An item was connected to the manager.
- */
+
+/* ===== Menu items processing ============================================= */
+
 static void
 on_ui_proxy_connected (GtkUIManager *ui, GtkAction *action,
 	GtkWidget *proxy, LdWindowMain *window)
@@ -650,11 +749,6 @@ on_ui_proxy_connected (GtkUIManager *ui, GtkAction *action,
 	}
 }
 
-/*
- * on_ui_proxy_disconnected:
- *
- * An item was disconnected from the manager.
- */
 static void
 on_ui_proxy_disconnected (GtkUIManager *ui, GtkAction *action,
 	GtkWidget *proxy, LdWindowMain *window)
@@ -689,6 +783,325 @@ on_menu_item_deselected (GtkItem *item, LdWindowMain *window)
 {
 	gtk_statusbar_pop (GTK_STATUSBAR (window->priv->statusbar),
 		window->priv->statusbar_menu_context_id);
+}
+
+
+/* ===== Diagram handling ================================================== */
+
+/*
+ * diagram_get_name:
+ *
+ * Get the name of the currently opened diagram.
+ */
+static gchar *
+diagram_get_name (LdWindowMain *self)
+{
+	g_return_val_if_fail (LD_IS_WINDOW_MAIN (self), NULL);
+
+	if (self->priv->filename)
+		return g_path_get_basename (self->priv->filename);
+	else
+		return g_strdup (_("Unsaved Diagram"));
+}
+
+/*
+ * diagram_set_filename:
+ * @filename: The new filename. May be NULL for a new, yet unsaved, file.
+ *
+ * Set the filename corresponding to the currently opened document.
+ * The function takes ownership of the string.
+ */
+static void
+diagram_set_filename (LdWindowMain *self, gchar *filename)
+{
+	g_return_if_fail (LD_IS_WINDOW_MAIN (self));
+
+	if (self->priv->filename)
+		g_free (self->priv->filename);
+	self->priv->filename = filename;
+
+	update_title (self);
+}
+
+/*
+ * diagram_new:
+ *
+ * Create a new diagram.
+ */
+static void
+diagram_new (LdWindowMain *self)
+{
+	g_return_if_fail (LD_IS_WINDOW_MAIN (self));
+
+	if (!may_close_diagram (self, "Save the changes to diagram \"%s\" before"
+		" closing it and creating a new one?"))
+		return;
+
+	/* TODO: Reset canvas view to the center. */
+	ld_document_clear (self->priv->document);
+	ld_document_set_modified (self->priv->document, FALSE);
+
+	diagram_set_filename (self, NULL);
+}
+
+/*
+ * diagram_save:
+ *
+ * Save the current diagram.
+ */
+static void
+diagram_save (LdWindowMain *self)
+{
+	GError *error;
+
+	g_return_if_fail (LD_IS_WINDOW_MAIN (self));
+
+	if (!self->priv->filename)
+	{
+		diagram_show_save_as_dialog (self);
+		return;
+	}
+
+	error = NULL;
+	ld_document_save_to_file (self->priv->document,
+		self->priv->filename, &error);
+	if (error)
+	{
+		GtkWidget *message_dialog;
+
+		g_warning ("Saving failed: %s", error->message);
+		g_error_free (error);
+
+		message_dialog = gtk_message_dialog_new (GTK_WINDOW (self),
+			GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+			"Failed to save the diagram");
+		gtk_message_dialog_format_secondary_text
+			(GTK_MESSAGE_DIALOG (message_dialog),
+			"Try again or save it under another name.");
+		gtk_dialog_run (GTK_DIALOG (message_dialog));
+		gtk_widget_destroy (message_dialog);
+	}
+	else
+	{
+		ld_document_set_modified (self->priv->document, FALSE);
+		update_title (self);
+	}
+}
+
+/*
+ * diagram_get_file_filter:
+ *
+ * Return value: A new #GtkFileFilter object for diagrams.
+ */
+static GtkFileFilter *
+diagram_get_file_filter (void)
+{
+	GtkFileFilter *filter;
+
+	filter = gtk_file_filter_new ();
+	gtk_file_filter_set_name (filter, "Logdiag Diagrams");
+	gtk_file_filter_add_pattern (filter, "*.ldd");
+	return filter;
+}
+
+/*
+ * diagram_show_open_dialog:
+ *
+ * Show a dialog for opening a diagram.
+ */
+static void
+diagram_show_open_dialog (LdWindowMain *self)
+{
+	GtkWidget *dialog;
+
+	g_return_if_fail (LD_IS_WINDOW_MAIN (self));
+
+	if (!may_close_diagram (self, "Save the changes to diagram \"%s\" before"
+		" closing it and opening another one?"))
+		return;
+
+	dialog = gtk_file_chooser_dialog_new ("Open...", GTK_WINDOW (self),
+		GTK_FILE_CHOOSER_ACTION_OPEN,
+		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+		GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+		NULL);
+	gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog),
+		diagram_get_file_filter ());
+
+	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
+	{
+		gchar *filename;
+		GError *error;
+
+		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+
+		error = NULL;
+		ld_document_load_from_file (self->priv->document, filename, &error);
+		if (error)
+		{
+			GtkWidget *message_dialog;
+
+			g_warning ("Loading failed: %s", error->message);
+			g_error_free (error);
+
+			message_dialog = gtk_message_dialog_new (GTK_WINDOW (self),
+				GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+				"Failed to open the file");
+			gtk_message_dialog_format_secondary_text
+				(GTK_MESSAGE_DIALOG (message_dialog),
+				"The file is probably corrupted.");
+			gtk_dialog_run (GTK_DIALOG (message_dialog));
+			gtk_widget_destroy (message_dialog);
+		}
+		else
+		{
+			ld_document_set_modified (self->priv->document, FALSE);
+			diagram_set_filename (self, filename);
+		}
+	}
+	gtk_widget_destroy (dialog);
+}
+
+/*
+ * diagram_show_save_as_dialog:
+ *
+ * Show a dialog for saving the diagram.
+ */
+static void
+diagram_show_save_as_dialog (LdWindowMain *self)
+{
+	GtkWidget *dialog;
+
+	g_return_if_fail (LD_IS_WINDOW_MAIN (self));
+
+	dialog = gtk_file_chooser_dialog_new ("Save As...", GTK_WINDOW (self),
+		GTK_FILE_CHOOSER_ACTION_SAVE,
+		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+		GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+		NULL);
+	g_object_set (dialog, "do-overwrite-confirmation", TRUE, NULL);
+	gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog),
+		diagram_get_file_filter ());
+
+	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
+	{
+		diagram_set_filename (self, gtk_file_chooser_get_filename
+			(GTK_FILE_CHOOSER (dialog)));
+		diagram_save (self);
+	}
+	gtk_widget_destroy (dialog);
+}
+
+/*
+ * may_close_diagram:
+ * @dialog_message: The dialog message to display to the user if the diagram
+ *                  has been modified.
+ *
+ * When no changes have been made to the current diagram, the function
+ * lets the caller proceed. Otherwise the user is asked for further actions.
+ * If he chooses to save the diagram, the function will handle this action.
+ *
+ * Return value: FALSE if the current action should be cancelled.
+ *               TRUE if the caller may proceed.
+ */
+static gboolean
+may_close_diagram (LdWindowMain *self, const gchar *dialog_message)
+{
+	GtkWidget *message_dialog;
+	gchar *name;
+	gint result;
+
+	g_return_val_if_fail (LD_IS_WINDOW_MAIN (self), TRUE);
+	g_return_val_if_fail (dialog_message != NULL, TRUE);
+
+	if (!ld_document_get_modified (self->priv->document))
+		return TRUE;
+
+	name = diagram_get_name (self);
+
+	/* TODO: Show the time since the diagram was last saved.
+	 *       (Record the event with g_get_current_time().)
+	 */
+	message_dialog = gtk_message_dialog_new (GTK_WINDOW (self),
+		GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_NONE,
+		dialog_message, name);
+	gtk_message_dialog_format_secondary_text
+		(GTK_MESSAGE_DIALOG (message_dialog),
+		"If you don't save, changes will be permanently lost.");
+	gtk_dialog_add_buttons (GTK_DIALOG (message_dialog),
+		"Close _without Saving", GTK_RESPONSE_NO,
+		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+		GTK_STOCK_SAVE, GTK_RESPONSE_YES,
+		NULL);
+
+	result = gtk_dialog_run (GTK_DIALOG (message_dialog));
+	gtk_widget_destroy (message_dialog);
+	g_free (name);
+
+	switch (result)
+	{
+	case GTK_RESPONSE_NO:
+		return TRUE;
+	case GTK_RESPONSE_YES:
+		diagram_save (self);
+		return TRUE;
+	case GTK_RESPONSE_CANCEL:
+	case GTK_RESPONSE_DELETE_EVENT:
+		return FALSE;
+	default:
+		g_assert_not_reached ();
+	}
+}
+
+/*
+ * may_quit:
+ *
+ * A variant on may_close_diagram() for the occasion of closing
+ * the whole application.
+ *
+ * Return value: TRUE if the application may quit, FALSE otherwise.
+ */
+static gboolean
+may_quit (LdWindowMain *self)
+{
+	g_return_val_if_fail (LD_IS_WINDOW_MAIN (self), TRUE);
+
+	return may_close_diagram (self,
+		"Save the changes to diagram \"%s\" before closing?");
+}
+
+
+/* ===== User interface actions ============================================ */
+
+static void
+on_action_new (GtkAction *action, LdWindowMain *self)
+{
+	diagram_new (self);
+}
+
+static void
+on_action_open (GtkAction *action, LdWindowMain *self)
+{
+	diagram_show_open_dialog (self);
+}
+
+static void
+on_action_save (GtkAction *action, LdWindowMain *self)
+{
+	diagram_save (self);
+}
+
+static void
+on_action_save_as (GtkAction *action, LdWindowMain *self)
+{
+	diagram_show_save_as_dialog (self);
+}
+
+static void
+on_action_quit (GtkAction *action, LdWindowMain *self)
+{
+	if (may_quit (self))
+		gtk_widget_destroy (GTK_WIDGET (self));
 }
 
 static void

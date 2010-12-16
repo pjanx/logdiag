@@ -223,6 +223,8 @@ gboolean
 ld_lua_check_file (LdLua *self, const gchar *filename)
 {
 	g_return_val_if_fail (LD_IS_LUA (self), FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+
 	return g_str_has_suffix (filename, ".lua")
 		&& g_file_test (filename, G_FILE_TEST_IS_REGULAR);
 }
@@ -297,6 +299,7 @@ ld_lua_private_draw (LdLua *self, LdLuaSymbol *symbol, cairo_t *cr)
 
 	g_return_if_fail (LD_IS_LUA (self));
 	g_return_if_fail (LD_IS_LUA_SYMBOL (symbol));
+	g_return_if_fail (cr != NULL);
 
 	data.symbol = symbol;
 	data.cr = cr;

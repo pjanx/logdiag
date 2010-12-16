@@ -49,16 +49,11 @@ enum
 	PROP_IMAGE_PATH
 };
 
-static void
-ld_symbol_category_get_property (GObject *object, guint property_id,
+static void ld_symbol_category_get_property (GObject *object, guint property_id,
 	GValue *value, GParamSpec *pspec);
-
-static void
-ld_symbol_category_set_property (GObject *object, guint property_id,
+static void ld_symbol_category_set_property (GObject *object, guint property_id,
 	const GValue *value, GParamSpec *pspec);
-
-static void
-ld_symbol_category_finalize (GObject *gobject);
+static void ld_symbol_category_finalize (GObject *gobject);
 
 
 static void
@@ -179,6 +174,7 @@ ld_symbol_category_finalize (GObject *gobject)
 	G_OBJECT_CLASS (ld_symbol_category_parent_class)->finalize (gobject);
 }
 
+
 /**
  * ld_symbol_category_new:
  * @name: The name of the new category.
@@ -235,7 +231,7 @@ ld_symbol_category_get_name (LdSymbolCategory *self)
 /**
  * ld_symbol_category_set_human_name:
  * @self: An #LdSymbolCategory object.
- * @name: The new localized human name for this category.
+ * @human_name: The new localized human name for this category.
  */
 void
 ld_symbol_category_set_human_name (LdSymbolCategory *self,

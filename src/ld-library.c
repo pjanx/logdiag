@@ -43,11 +43,10 @@ struct _LdLibraryPrivate
 
 G_DEFINE_TYPE (LdLibrary, ld_library, G_TYPE_OBJECT);
 
-static void
-ld_library_finalize (GObject *gobject);
+static void ld_library_finalize (GObject *gobject);
 
-static LdSymbolCategory *load_category
-	(LdLibrary *self, const char *path, const char *name);
+static LdSymbolCategory *load_category (LdLibrary *self,
+	const gchar *path, const gchar *name);
 static gboolean load_category_cb (const gchar *base,
 	const gchar *filename, gpointer userdata);
 static void load_category_symbol_cb (LdSymbol *symbol, gpointer user_data);
@@ -175,7 +174,7 @@ LoadCategoryData;
  * Loads a category into the library.
  */
 static LdSymbolCategory *
-load_category (LdLibrary *self, const char *path, const char *name)
+load_category (LdLibrary *self, const gchar *path, const gchar *name)
 {
 	LdSymbolCategory *cat;
 	gchar *icon_file, *category_file;
@@ -353,16 +352,16 @@ LibraryLoadData;
  * Load the contents of a directory into the library.
  */
 gboolean
-ld_library_load (LdLibrary *self, const char *path)
+ld_library_load (LdLibrary *self, const gchar *directory)
 {
 	LibraryLoadData data;
 
 	g_return_val_if_fail (LD_IS_LIBRARY (self), FALSE);
-	g_return_val_if_fail (path != NULL, FALSE);
+	g_return_val_if_fail (directory != NULL, FALSE);
 
 	data.self = self;
 	data.changed = FALSE;
-	foreach_dir (path, ld_library_load_cb, &data, NULL);
+	foreach_dir (directory, ld_library_load_cb, &data, NULL);
 
 	if (data.changed)
 		g_signal_emit (self, LD_LIBRARY_GET_CLASS (self)->changed_signal, 0);
@@ -379,7 +378,6 @@ static gboolean
 ld_library_load_cb (const gchar *base, const gchar *filename, gpointer userdata)
 {
 	LdSymbolCategory *cat;
-	gchar *categ_path;
 	LibraryLoadData *data;
 
 	g_return_val_if_fail (base != NULL, FALSE);

@@ -384,6 +384,9 @@ ld_canvas_new (void)
 void
 ld_canvas_set_document (LdCanvas *self, LdDocument *document)
 {
+	g_return_if_fail (LD_IS_CANVAS (self));
+	g_return_if_fail (LD_IS_DOCUMENT (document));
+
 	if (self->priv->document)
 		g_object_unref (self->priv->document);
 
@@ -403,6 +406,7 @@ ld_canvas_set_document (LdCanvas *self, LdDocument *document)
 LdDocument *
 ld_canvas_get_document (LdCanvas *self)
 {
+	g_return_val_if_fail (LD_IS_CANVAS (self), NULL);
 	return self->priv->document;
 }
 
@@ -416,6 +420,9 @@ ld_canvas_get_document (LdCanvas *self)
 void
 ld_canvas_set_library (LdCanvas *self, LdLibrary *library)
 {
+	g_return_if_fail (LD_IS_CANVAS (self));
+	g_return_if_fail (LD_IS_LIBRARY (library));
+
 	if (self->priv->library)
 		g_object_unref (self->priv->library);
 
@@ -435,6 +442,7 @@ ld_canvas_set_library (LdCanvas *self, LdLibrary *library)
 LdLibrary *
 ld_canvas_get_library (LdCanvas *self)
 {
+	g_return_val_if_fail (LD_IS_CANVAS (self), NULL);
 	return self->priv->library;
 }
 

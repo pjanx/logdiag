@@ -15,7 +15,8 @@
 #include "ld-window-main.h"
 
 
-int main (int argc, char *argv[])
+int
+main (int argc, char *argv[])
 {
 	GtkWidget *wnd;
 

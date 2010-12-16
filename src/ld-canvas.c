@@ -14,9 +14,9 @@
 #include "config.h"
 
 #include "ld-marshal.h"
-#include "ld-document-object.h"
-#include "ld-document-symbol.h"
-#include "ld-document.h"
+#include "ld-diagram-object.h"
+#include "ld-diagram-symbol.h"
+#include "ld-diagram.h"
 #include "ld-symbol.h"
 #include "ld-library.h"
 #include "ld-canvas.h"
@@ -25,9 +25,9 @@
 /**
  * SECTION:ld-canvas
  * @short_description: A canvas.
- * @see_also: #LdDocument
+ * @see_also: #LdDiagram
  *
- * #LdCanvas is used for displaying #LdDocument objects.
+ * #LdCanvas is used for displaying #LdDiagram objects.
  */
 
 /* Milimetres per inch. */
@@ -38,7 +38,7 @@
 
 /*
  * LdCanvasPrivate:
- * @document: A document object assigned to this canvas as a model.
+ * @diagram: A diagram object assigned to this canvas as a model.
  * @library: A library object assigned to this canvas as a model.
  * @adjustment_h: An adjustment object for the horizontal axis, if any.
  * @adjustment_v: An adjustment object for the vertical axis, if any.
@@ -48,7 +48,7 @@
  */
 struct _LdCanvasPrivate
 {
-	LdDocument *document;
+	LdDiagram *diagram;
 	LdLibrary *library;
 
 	GtkAdjustment *adjustment_h;
@@ -64,7 +64,7 @@ G_DEFINE_TYPE (LdCanvas, ld_canvas, GTK_TYPE_DRAWING_AREA);
 enum
 {
 	PROP_0,
-	PROP_DOCUMENT,
+	PROP_DIAGRAM,
 	PROP_LIBRARY
 };
 
@@ -75,7 +75,7 @@ typedef struct _DrawData DrawData;
  * @self: Our #LdCanvas.
  * @cr: A cairo context to draw on.
  * @exposed_rect: The area that is to be redrawn.
- * @scale: Computed size of one document unit in pixels.
+ * @scale: Computed size of one diagram unit in pixels.
  */
 struct _DrawData
 {
@@ -104,9 +104,9 @@ static void on_size_allocate (GtkWidget *widget, GtkAllocation *allocation,
 static gboolean on_expose_event (GtkWidget *widget, GdkEventExpose *event,
 	gpointer user_data);
 static void draw_grid (GtkWidget *widget, DrawData *data);
-static void draw_document (GtkWidget *widget, DrawData *data);
-static void draw_document_cb (gpointer link_data, DrawData *data);
-static void draw_symbol (LdDocumentSymbol *document_symbol, DrawData *data);
+static void draw_diagram (GtkWidget *widget, DrawData *data);
+static void draw_diagram_cb (gpointer link_data, DrawData *data);
+static void draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data);
 
 
 static void
@@ -126,14 +126,14 @@ ld_canvas_class_init (LdCanvasClass *klass)
 	klass->set_scroll_adjustments = ld_canvas_real_set_scroll_adjustments;
 
 /**
- * LdCanvas:document:
+ * LdCanvas:diagram:
  *
- * The underlying #LdDocument object of this canvas.
+ * The underlying #LdDiagram object of this canvas.
  */
-	pspec = g_param_spec_object ("document", "Document",
-		"The underlying document object of this canvas.",
-		LD_TYPE_DOCUMENT, G_PARAM_READWRITE);
-	g_object_class_install_property (object_class, PROP_DOCUMENT, pspec);
+	pspec = g_param_spec_object ("diagram", "Diagram",
+		"The underlying diagram object of this canvas.",
+		LD_TYPE_DIAGRAM, G_PARAM_READWRITE);
+	g_object_class_install_property (object_class, PROP_DIAGRAM, pspec);
 
 /**
  * LdCanvas:library:
@@ -143,7 +143,7 @@ ld_canvas_class_init (LdCanvasClass *klass)
 	pspec = g_param_spec_object ("library", "Library",
 		"The library that this canvas retrieves symbols from.",
 		LD_TYPE_LIBRARY, G_PARAM_READWRITE);
-	g_object_class_install_property (object_class, PROP_DOCUMENT, pspec);
+	g_object_class_install_property (object_class, PROP_DIAGRAM, pspec);
 
 /**
  * LdCanvas::set-scroll-adjustments:
@@ -192,8 +192,8 @@ ld_canvas_finalize (GObject *gobject)
 
 	ld_canvas_real_set_scroll_adjustments (self, NULL, NULL);
 
-	if (self->priv->document)
-		g_object_unref (self->priv->document);
+	if (self->priv->diagram)
+		g_object_unref (self->priv->diagram);
 	if (self->priv->library)
 		g_object_unref (self->priv->library);
 
@@ -210,8 +210,8 @@ ld_canvas_get_property (GObject *object, guint property_id,
 	self = LD_CANVAS (object);
 	switch (property_id)
 	{
-	case PROP_DOCUMENT:
-		g_value_set_object (value, ld_canvas_get_document (self));
+	case PROP_DIAGRAM:
+		g_value_set_object (value, ld_canvas_get_diagram (self));
 		break;
 	case PROP_LIBRARY:
 		g_value_set_object (value, ld_canvas_get_library (self));
@@ -230,8 +230,8 @@ ld_canvas_set_property (GObject *object, guint property_id,
 	self = LD_CANVAS (object);
 	switch (property_id)
 	{
-	case PROP_DOCUMENT:
-		ld_canvas_set_document (self, LD_DOCUMENT (g_value_get_object (value)));
+	case PROP_DIAGRAM:
+		ld_canvas_set_diagram (self, LD_DIAGRAM (g_value_get_object (value)));
 		break;
 	case PROP_LIBRARY:
 		ld_canvas_set_library (self, LD_LIBRARY (g_value_get_object (value)));
@@ -375,39 +375,39 @@ ld_canvas_new (void)
 }
 
 /**
- * ld_canvas_set_document:
+ * ld_canvas_set_diagram:
  * @self: An #LdCanvas object.
- * @document: The #LdDocument to be assigned to the canvas.
+ * @diagram: The #LdDiagram to be assigned to the canvas.
  *
- * Assign an #LdDocument object to the canvas.
+ * Assign an #LdDiagram object to the canvas.
  */
 void
-ld_canvas_set_document (LdCanvas *self, LdDocument *document)
+ld_canvas_set_diagram (LdCanvas *self, LdDiagram *diagram)
 {
 	g_return_if_fail (LD_IS_CANVAS (self));
-	g_return_if_fail (LD_IS_DOCUMENT (document));
+	g_return_if_fail (LD_IS_DIAGRAM (diagram));
 
-	if (self->priv->document)
-		g_object_unref (self->priv->document);
+	if (self->priv->diagram)
+		g_object_unref (self->priv->diagram);
 
-	self->priv->document = document;
-	g_object_ref (document);
+	self->priv->diagram = diagram;
+	g_object_ref (diagram);
 
-	g_object_notify (G_OBJECT (self), "document");
+	g_object_notify (G_OBJECT (self), "diagram");
 }
 
 /**
- * ld_canvas_get_document:
+ * ld_canvas_get_diagram:
  * @self: An #LdCanvas object.
  *
- * Get the #LdDocument object assigned to this canvas.
- * The reference count on the document is not incremented.
+ * Get the #LdDiagram object assigned to this canvas.
+ * The reference count on the diagram is not incremented.
  */
-LdDocument *
-ld_canvas_get_document (LdCanvas *self)
+LdDiagram *
+ld_canvas_get_diagram (LdCanvas *self)
 {
 	g_return_val_if_fail (LD_IS_CANVAS (self), NULL);
-	return self->priv->document;
+	return self->priv->diagram;
 }
 
 /**
@@ -484,7 +484,7 @@ ld_canvas_get_scale_in_px (LdCanvas *self)
  * @y: The Y coordinate to be translated.
  *
  * Translate coordinates located inside the canvas window
- * into document coordinates.
+ * into diagram coordinates.
  */
 void
 ld_canvas_translate_canvas_coordinates (LdCanvas *self, gdouble *x, gdouble *y)
@@ -497,7 +497,7 @@ ld_canvas_translate_canvas_coordinates (LdCanvas *self, gdouble *x, gdouble *y)
 	widget = GTK_WIDGET (self);
 	scale = ld_canvas_get_scale_in_px (self);
 
-	/* We know document coordinates of the center of the canvas, so we may
+	/* We know diagram coordinates of the center of the canvas, so we may
 	 * translate the given X and Y coordinates to this center and then scale
 	 * them by dividing them by the length of the base unit in pixels
 	 * times zoom of the canvas.
@@ -507,15 +507,15 @@ ld_canvas_translate_canvas_coordinates (LdCanvas *self, gdouble *x, gdouble *y)
 }
 
 /**
- * ld_canvas_translate_document_coordinates:
+ * ld_canvas_translate_diagram_coordinates:
  * @self: An #LdCanvas object.
  * @x: The X coordinate to be translated.
  * @y: The Y coordinate to be translated.
  *
- * Translate document coordinates into canvas coordinates.
+ * Translate diagram coordinates into canvas coordinates.
  */
 void
-ld_canvas_translate_document_coordinates (LdCanvas *self,
+ld_canvas_translate_diagram_coordinates (LdCanvas *self,
 	gdouble *x, gdouble *y)
 {
 	GtkWidget *widget;
@@ -553,7 +553,7 @@ on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 	cairo_paint (data.cr);
 
 	draw_grid (widget, &data);
-	draw_document (widget, &data);
+	draw_diagram (widget, &data);
 
 	cairo_destroy (data.cr);
 	return FALSE;
@@ -575,7 +575,7 @@ draw_grid (GtkWidget *widget, DrawData *data)
 	ld_canvas_translate_canvas_coordinates (data->self, &x_top, &y_top);
 	x_top = ceil (x_top);
 	y_top = ceil (y_top);
-	ld_canvas_translate_document_coordinates (data->self, &x_top, &y_top);
+	ld_canvas_translate_diagram_coordinates (data->self, &x_top, &y_top);
 
 	/* Iterate over all the points. */
 	for     (x = x_top; x <= data->exposed_rect.x + data->exposed_rect.width;
@@ -592,11 +592,11 @@ draw_grid (GtkWidget *widget, DrawData *data)
 }
 
 static void
-draw_document (GtkWidget *widget, DrawData *data)
+draw_diagram (GtkWidget *widget, DrawData *data)
 {
 	GSList *objects;
 
-	if (!data->self->priv->document)
+	if (!data->self->priv->diagram)
 		return;
 
 	cairo_save (data->cr);
@@ -604,25 +604,25 @@ draw_document (GtkWidget *widget, DrawData *data)
 	cairo_set_source_rgb (data->cr, 0, 0, 0);
 	cairo_set_line_width (data->cr, 1 / data->scale);
 
-	/* Draw objects from the document. */
-	objects = ld_document_get_objects (data->self->priv->document);
-	g_slist_foreach (objects, (GFunc) draw_document_cb, data);
+	/* Draw objects from the diagram. */
+	objects = ld_diagram_get_objects (data->self->priv->diagram);
+	g_slist_foreach (objects, (GFunc) draw_diagram_cb, data);
 
 	cairo_restore (data->cr);
 }
 
 static void
-draw_document_cb (gpointer link_data, DrawData *data)
+draw_diagram_cb (gpointer link_data, DrawData *data)
 {
 	g_return_if_fail (link_data != NULL);
 	g_return_if_fail (data != NULL);
 
-	if (LD_IS_DOCUMENT_SYMBOL (link_data))
-		draw_symbol (LD_DOCUMENT_SYMBOL (link_data), data);
+	if (LD_IS_DIAGRAM_SYMBOL (link_data))
+		draw_symbol (LD_DIAGRAM_SYMBOL (link_data), data);
 }
 
 static void
-draw_symbol (LdDocumentSymbol *document_symbol, DrawData *data)
+draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data)
 {
 	LdSymbol *symbol;
 	LdSymbolArea area;
@@ -631,19 +631,19 @@ draw_symbol (LdDocumentSymbol *document_symbol, DrawData *data)
 	if (!data->self->priv->library)
 		return;
 	symbol = ld_library_find_symbol (data->self->priv->library,
-		ld_document_symbol_get_class (document_symbol));
+		ld_diagram_symbol_get_class (diagram_symbol));
 
 	/* TODO: Resolve this better; draw a cross or whatever. */
 	if (!symbol)
 	{
 		g_warning ("Cannot find symbol %s in the library.",
-			ld_document_symbol_get_class (document_symbol));
+			ld_diagram_symbol_get_class (diagram_symbol));
 		return;
 	}
 
-	x = ld_document_object_get_x (LD_DOCUMENT_OBJECT (document_symbol));
-	y = ld_document_object_get_y (LD_DOCUMENT_OBJECT (document_symbol));
-	ld_canvas_translate_document_coordinates (data->self, &x, &y);
+	x = ld_diagram_object_get_x (LD_DIAGRAM_OBJECT (diagram_symbol));
+	y = ld_diagram_object_get_y (LD_DIAGRAM_OBJECT (diagram_symbol));
+	ld_canvas_translate_diagram_coordinates (data->self, &x, &y);
 
 	/* TODO: Rotate the space for other orientations. */
 	cairo_save (data->cr);

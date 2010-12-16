@@ -89,9 +89,9 @@ set (logdiag_SOURCES
 	src/logdiag.c
 	src/ld-marshal.c
 	src/ld-window-main.c
-	src/ld-document.c
-	src/ld-document-object.c
-	src/ld-document-symbol.c
+	src/ld-diagram.c
+	src/ld-diagram-object.c
+	src/ld-diagram-symbol.c
 	src/ld-canvas.c
 	src/ld-library.c
 	src/ld-symbol-category.c
@@ -102,9 +102,9 @@ set (logdiag_HEADERS
 	${CMAKE_CURRENT_BINARY_DIR}/config.h
 	src/ld-marshal.h
 	src/ld-window-main.h
-	src/ld-document.h
-	src/ld-document-object.h
-	src/ld-document-symbol.h
+	src/ld-diagram.h
+	src/ld-diagram-object.h
+	src/ld-diagram-symbol.h
 	src/ld-canvas.h
 	src/ld-library.h
 	src/ld-symbol-category.h

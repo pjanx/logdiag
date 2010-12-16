@@ -69,9 +69,9 @@ ld_symbol_area_get_type (void)
 /**
  * SECTION:ld-symbol
  * @short_description: A symbol.
- * @see_also: #LdDocument, #LdCanvas
+ * @see_also: #LdDiagram, #LdCanvas
  *
- * #LdSymbol represents a symbol in the #LdDocument that is in turn
+ * #LdSymbol represents a symbol in the #LdDiagram that is in turn
  * drawn onto the #LdCanvas.
  *
  * All implementations of this abstract class are required to use

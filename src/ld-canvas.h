@@ -65,14 +65,14 @@ GType ld_canvas_get_type (void) G_GNUC_CONST;
 
 LdCanvas *ld_canvas_new (void);
 
-void ld_canvas_set_document (LdCanvas *self, LdDocument *document);
-LdDocument *ld_canvas_get_document (LdCanvas *self);
+void ld_canvas_set_diagram (LdCanvas *self, LdDiagram *diagram);
+LdDiagram *ld_canvas_get_diagram (LdCanvas *self);
 void ld_canvas_set_library (LdCanvas *self, LdLibrary *library);
 LdLibrary *ld_canvas_get_library (LdCanvas *self);
 
 void ld_canvas_translate_canvas_coordinates (LdCanvas *self,
 	gdouble *x, gdouble *y);
-void ld_canvas_translate_document_coordinates (LdCanvas *self,
+void ld_canvas_translate_diagram_coordinates (LdCanvas *self,
 	gdouble *x, gdouble *y);
 
 /* TODO: The rest of the interface. */

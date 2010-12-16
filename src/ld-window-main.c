@@ -18,9 +18,9 @@
 #include "ld-symbol-category.h"
 #include "ld-library.h"
 
-#include "ld-document-object.h"
-#include "ld-document-symbol.h"
-#include "ld-document.h"
+#include "ld-diagram-object.h"
+#include "ld-diagram-symbol.h"
+#include "ld-diagram.h"
 
 #include "ld-canvas.h"
 
@@ -86,7 +86,7 @@ struct _LdWindowMainPrivate
 
 	LdLibrary *library;
 
-	LdDocument *document;
+	LdDiagram *diagram;
 	gchar *filename;
 
 	GtkWidget *canvas_window;
@@ -328,16 +328,16 @@ ld_window_main_init (LdWindowMain *self)
 		priv->symbol_menu.button_release_handler);
 
 	/* Initialize the backend. */
-	priv->document = ld_document_new ();
+	priv->diagram = ld_diagram_new ();
 
-	g_signal_connect_data (priv->document, "changed",
+	g_signal_connect_data (priv->diagram, "changed",
 		G_CALLBACK (update_title), self,
 		NULL, G_CONNECT_AFTER | G_CONNECT_SWAPPED);
 
 	priv->library = ld_library_new ();
 	ld_library_load (priv->library, PROJECT_SHARE_DIR "library");
 
-	ld_canvas_set_document (priv->canvas, priv->document);
+	ld_canvas_set_diagram (priv->canvas, priv->diagram);
 	ld_canvas_set_library (priv->canvas, priv->library);
 
 	load_library_toolbar (self);
@@ -367,7 +367,7 @@ ld_window_main_finalize (GObject *gobject)
 	 * and gtk_object_destroy () should be used for it.
 	 */
 	g_object_unref (self->priv->library);
-	g_object_unref (self->priv->document);
+	g_object_unref (self->priv->diagram);
 	g_object_unref (self->priv->ui_manager);
 	g_object_unref (self->priv->action_group);
 
@@ -404,7 +404,7 @@ update_title (LdWindowMain *self)
 
 	name = diagram_get_name (self);
 	title = g_strdup_printf ("%s%s - %s",
-		ld_document_get_modified (self->priv->document) ? "*" : "",
+		ld_diagram_get_modified (self->priv->diagram) ? "*" : "",
 		name, PROJECT_NAME);
 	gtk_window_set_title (GTK_WINDOW (self), title);
 
@@ -808,7 +808,7 @@ diagram_get_name (LdWindowMain *self)
  * diagram_set_filename:
  * @filename: The new filename. May be NULL for a new, yet unsaved, file.
  *
- * Set the filename corresponding to the currently opened document.
+ * Set the filename corresponding to the currently opened diagram.
  * The function takes ownership of the string.
  */
 static void
@@ -838,8 +838,8 @@ diagram_new (LdWindowMain *self)
 		return;
 
 	/* TODO: Reset canvas view to the center. */
-	ld_document_clear (self->priv->document);
-	ld_document_set_modified (self->priv->document, FALSE);
+	ld_diagram_clear (self->priv->diagram);
+	ld_diagram_set_modified (self->priv->diagram, FALSE);
 
 	diagram_set_filename (self, NULL);
 }
@@ -863,7 +863,7 @@ diagram_save (LdWindowMain *self)
 	}
 
 	error = NULL;
-	ld_document_save_to_file (self->priv->document,
+	ld_diagram_save_to_file (self->priv->diagram,
 		self->priv->filename, &error);
 	if (error)
 	{
@@ -883,7 +883,7 @@ diagram_save (LdWindowMain *self)
 	}
 	else
 	{
-		ld_document_set_modified (self->priv->document, FALSE);
+		ld_diagram_set_modified (self->priv->diagram, FALSE);
 		update_title (self);
 	}
 }
@@ -936,7 +936,7 @@ diagram_show_open_dialog (LdWindowMain *self)
 		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
 
 		error = NULL;
-		ld_document_load_from_file (self->priv->document, filename, &error);
+		ld_diagram_load_from_file (self->priv->diagram, filename, &error);
 		if (error)
 		{
 			GtkWidget *message_dialog;
@@ -955,7 +955,7 @@ diagram_show_open_dialog (LdWindowMain *self)
 		}
 		else
 		{
-			ld_document_set_modified (self->priv->document, FALSE);
+			ld_diagram_set_modified (self->priv->diagram, FALSE);
 			diagram_set_filename (self, filename);
 		}
 	}
@@ -1014,7 +1014,7 @@ may_close_diagram (LdWindowMain *self, const gchar *dialog_message)
 	g_return_val_if_fail (LD_IS_WINDOW_MAIN (self), TRUE);
 	g_return_val_if_fail (dialog_message != NULL, TRUE);
 
-	if (!ld_document_get_modified (self->priv->document))
+	if (!ld_diagram_get_modified (self->priv->diagram))
 		return TRUE;
 
 	name = diagram_get_name (self);

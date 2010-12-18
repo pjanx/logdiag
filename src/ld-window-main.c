@@ -60,6 +60,7 @@ struct _SymbolMenuData
 {
 	gulong expose_handler;
 	gulong motion_notify_handler;
+	gulong button_press_handler;
 	gulong button_release_handler;
 
 	GtkToggleButton *active_button;
@@ -118,6 +119,8 @@ static gboolean on_canvas_exposed (GtkWidget *widget,
 	GdkEventExpose *event, gpointer user_data);
 static gboolean on_canvas_motion_notify (GtkWidget *widget,
 	GdkEventMotion *event, gpointer user_data);
+static gboolean on_canvas_button_press (GtkWidget *widget,
+	GdkEventButton *event, gpointer user_data);
 static gboolean on_canvas_button_release (GtkWidget *widget,
 	GdkEventButton *event, gpointer user_data);
 
@@ -316,6 +319,8 @@ ld_window_main_init (LdWindowMain *self)
 		"expose-event", G_CALLBACK (on_canvas_exposed), self);
 	priv->symbol_menu.motion_notify_handler = g_signal_connect (priv->canvas,
 		"motion-notify-event", G_CALLBACK (on_canvas_motion_notify), self);
+	priv->symbol_menu.button_press_handler = g_signal_connect (priv->canvas,
+		"button-press-event", G_CALLBACK (on_canvas_button_press), self);
 	priv->symbol_menu.button_release_handler = g_signal_connect (priv->canvas,
 		"button-release-event", G_CALLBACK (on_canvas_button_release), self);
 
@@ -324,6 +329,8 @@ ld_window_main_init (LdWindowMain *self)
 		priv->symbol_menu.expose_handler);
 	g_signal_handler_block (priv->canvas,
 		priv->symbol_menu.motion_notify_handler);
+	g_signal_handler_block (priv->canvas,
+		priv->symbol_menu.button_press_handler);
 	g_signal_handler_block (priv->canvas,
 		priv->symbol_menu.button_release_handler);
 
@@ -552,6 +559,8 @@ on_category_toggle (GtkToggleButton *toggle_button, gpointer user_data)
 		g_signal_handler_block (priv->canvas,
 			priv->symbol_menu.motion_notify_handler);
 		g_signal_handler_block (priv->canvas,
+			priv->symbol_menu.button_press_handler);
+		g_signal_handler_block (priv->canvas,
 			priv->symbol_menu.button_release_handler);
 
 		g_object_unref (data->active_button);
@@ -563,6 +572,8 @@ on_category_toggle (GtkToggleButton *toggle_button, gpointer user_data)
 
 		g_free (data->items);
 		data->items = NULL;
+
+		gtk_grab_remove (GTK_WIDGET (self->priv->canvas));
 	}
 	else
 	{
@@ -580,6 +591,8 @@ on_category_toggle (GtkToggleButton *toggle_button, gpointer user_data)
 			priv->symbol_menu.expose_handler);
 		g_signal_handler_unblock (priv->canvas,
 			priv->symbol_menu.motion_notify_handler);
+		g_signal_handler_unblock (priv->canvas,
+			priv->symbol_menu.button_press_handler);
 		g_signal_handler_unblock (priv->canvas,
 			priv->symbol_menu.button_release_handler);
 
@@ -616,6 +629,8 @@ on_category_toggle (GtkToggleButton *toggle_button, gpointer user_data)
 			menu_width += item++->width;
 		}
 		data->menu_width = menu_width;
+
+		gtk_grab_add (GTK_WIDGET (self->priv->canvas));
 	}
 	redraw_symbol_menu (self);
 }
@@ -687,7 +702,8 @@ on_canvas_motion_notify (GtkWidget *widget, GdkEventMotion *event,
 	self = LD_WINDOW_MAIN (user_data);
 	data = &self->priv->symbol_menu;
 
-	if (event->x < 0 || event->y < data->menu_y
+	if (widget->window != event->window
+		|| event->x < 0 || event->y < data->menu_y
 		|| event->y >= data->menu_y + data->menu_height)
 	{
 		data->active_item = -1;
@@ -708,6 +724,27 @@ on_canvas_motion_notify (GtkWidget *widget, GdkEventMotion *event,
 	}
 	data->active_item = -1;
 	redraw_symbol_menu (self);
+	return FALSE;
+}
+
+static gboolean
+on_canvas_button_press (GtkWidget *widget, GdkEventButton *event,
+	gpointer user_data)
+{
+	LdWindowMain *self;
+	SymbolMenuData *data;
+
+	self = LD_WINDOW_MAIN (user_data);
+	data = &self->priv->symbol_menu;
+
+	/* The event occured elsewhere, cancel the menu and put the event
+	 * back into the queue.
+	 */
+	if (widget->window != event->window && data->active_button)
+	{
+		gtk_toggle_button_set_active (data->active_button, FALSE);
+		gdk_event_put ((GdkEvent *) event);
+	}
 	return FALSE;
 }
 

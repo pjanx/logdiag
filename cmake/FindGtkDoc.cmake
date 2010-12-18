@@ -104,15 +104,8 @@ find_program (GTK_DOC_MKDB_EXECUTABLE "gtkdoc-mkdb")
 find_program (GTK_DOC_MKHTML_EXECUTABLE "gtkdoc-mkhtml")
 find_program (GTK_DOC_FIXXREF_EXECUTABLE "gtkdoc-fixxref")
 
-set (GTK_DOC_FOUND TRUE)
-if (NOT GTK_DOC_SCAN_EXECUTABLE)
-	set (GTK_DOC_FOUND FALSE)
-endif (NOT GTK_DOC_SCAN_EXECUTABLE)
-
-if (GtkDoc_FIND_REQUIRED AND NOT GTK_DOC_FOUND)
-	message (FATAL_ERROR "gtk-doc NOT found")
-endif (GtkDoc_FIND_REQUIRED AND NOT GTK_DOC_FOUND)
-
+include (FindPackageHandleStandardArgs)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS (GTK_DOC DEFAULT_MSG GTK_DOC_SCAN_EXECUTABLE)
 
 include (ProcessArguments)
 

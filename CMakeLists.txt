@@ -52,12 +52,10 @@ if (WIN32)
         set (HAVE_THREADSAFE_STRTOK true)
 endif (WIN32)
 
-# Lua
+
+# Dependencies
 find_package (Lua51 REQUIRED)
-
-# json-glib
 find_package (JsonGlib REQUIRED)
-
 
 # Localization
 find_package (Gettext)
@@ -77,12 +75,8 @@ endif (GETTEXT_FOUND)
 #set (GTK_DOC_ENABLE_HTML ON CACHE BOOL
 #	"Build documentation in HTML format")
 
-find_package (GtkDoc REQUIRED)
+find_package (GtkDoc)
 set (project_DOC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/docs/reference")
-GTK_DOC_RUN (WORKING_DIR ${project_DOC_DIR}
-	SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src
-	XML ${project_DOC_DIR}/xml --sgml-mode
-	HTML ${project_DOC_DIR}/html)
 
 # Project source files
 set (logdiag_SOURCES
@@ -153,11 +147,22 @@ include_directories (${GTK2_INCLUDE_DIRS} ${JSON_GLIB_INCLUDE_DIRS} ${LUA_INCLUD
 add_executable (logdiag ${logdiag_SOURCES} ${logdiag_HEADERS})
 target_link_libraries (logdiag ${GTK2_LIBRARIES} ${JSON_GLIB_LIBRARIES} ${LUA_LIBRARIES})
 
+# Generate documentation
+if (GTK_DOC_FOUND)
+	GTK_DOC_RUN (WORKING_DIR ${project_DOC_DIR}
+		SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src
+		XML ${project_DOC_DIR}/xml --sgml-mode
+		HTML ${project_DOC_DIR}/html)
+endif (GTK_DOC_FOUND)
+
 # Installation
 install (TARGETS logdiag DESTINATION bin)
-install (FILES share/logdiag.desktop DESTINATION share/applications)
-install (DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/docs/html/"
-	DESTINATION usr/gtk-doc/${CMAKE_PROJECT_NAME})
+
+if (NOT WIN32)
+	install (FILES share/logdiag.desktop DESTINATION share/applications)
+	install (DIRECTORY "${project_DOC_DIR}/html/"
+		DESTINATION usr/gtk-doc/${CMAKE_PROJECT_NAME})
+endif (NOT WIN32)
 
 # CPack
 set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Electric diagram designer.")

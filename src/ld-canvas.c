@@ -27,7 +27,7 @@
  * @short_description: A canvas.
  * @see_also: #LdDiagram
  *
- * #LdCanvas is used for displaying #LdDiagram objects.
+ * #LdCanvas displays and enables the user to manipulate with an #LdDiagram.
  */
 
 /* Milimetres per inch. */
@@ -478,7 +478,7 @@ ld_canvas_get_scale_in_px (LdCanvas *self)
 }
 
 /**
- * ld_canvas_translate_canvas_coordinates:
+ * ld_canvas_widget_to_diagram_coords:
  * @self: An #LdCanvas object.
  * @x: The X coordinate to be translated.
  * @y: The Y coordinate to be translated.
@@ -487,27 +487,28 @@ ld_canvas_get_scale_in_px (LdCanvas *self)
  * into diagram coordinates.
  */
 void
-ld_canvas_translate_canvas_coordinates (LdCanvas *self, gdouble *x, gdouble *y)
+ld_canvas_widget_to_diagram_coords (LdCanvas *self, gdouble *x, gdouble *y)
 {
 	GtkWidget *widget;
 	gdouble scale;
 
 	g_return_if_fail (LD_IS_CANVAS (self));
+	g_return_if_fail (x != NULL);
+	g_return_if_fail (y != NULL);
 
 	widget = GTK_WIDGET (self);
 	scale = ld_canvas_get_scale_in_px (self);
 
 	/* We know diagram coordinates of the center of the canvas, so we may
 	 * translate the given X and Y coordinates to this center and then scale
-	 * them by dividing them by the length of the base unit in pixels
-	 * times zoom of the canvas.
+	 * them by dividing them by the current scale.
 	 */
 	*x = self->priv->x + (*x - (widget->allocation.width  * 0.5)) / scale;
 	*y = self->priv->y + (*y - (widget->allocation.height * 0.5)) / scale;
 }
 
 /**
- * ld_canvas_translate_diagram_coordinates:
+ * ld_canvas_diagram_to_widget_coords:
  * @self: An #LdCanvas object.
  * @x: The X coordinate to be translated.
  * @y: The Y coordinate to be translated.
@@ -515,18 +516,20 @@ ld_canvas_translate_canvas_coordinates (LdCanvas *self, gdouble *x, gdouble *y)
  * Translate diagram coordinates into canvas coordinates.
  */
 void
-ld_canvas_translate_diagram_coordinates (LdCanvas *self,
+ld_canvas_diagram_to_widget_coords (LdCanvas *self,
 	gdouble *x, gdouble *y)
 {
 	GtkWidget *widget;
 	gdouble scale;
 
 	g_return_if_fail (LD_IS_CANVAS (self));
+	g_return_if_fail (x != NULL);
+	g_return_if_fail (y != NULL);
 
 	widget = GTK_WIDGET (self);
 	scale = ld_canvas_get_scale_in_px (self);
 
-	/* Just the reversal of ld_canvas_translate_canvas_coordinates(). */
+	/* Just the reversal of ld_canvas_widget_to_diagram_coords(). */
 	*x = scale * (*x - self->priv->x) + 0.5 * widget->allocation.width;
 	*y = scale * (*y - self->priv->y) + 0.5 * widget->allocation.height;
 }
@@ -544,8 +547,7 @@ on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 	data.exposed_rect.width = event->area.width;
 	data.exposed_rect.height = event->area.height;
 
-	cairo_rectangle (data.cr, data.exposed_rect.x, data.exposed_rect.y,
-		data.exposed_rect.width, data.exposed_rect.height);
+	gdk_cairo_rectangle (data.cr, &event->area);
 	cairo_clip (data.cr);
 
 	/* Paint the background white. */
@@ -562,27 +564,27 @@ on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 static void
 draw_grid (GtkWidget *widget, DrawData *data)
 {
-	gdouble x_top, y_top;
+	gdouble x_init, y_init;
 	gdouble x, y;
 
 	cairo_set_source_rgb (data->cr, 0.5, 0.5, 0.5);
 	cairo_set_line_width (data->cr, 1);
 	cairo_set_line_cap (data->cr, CAIRO_LINE_CAP_ROUND);
 
-	/* Get coordinates of the most top-left grid point. */
-	x_top = data->exposed_rect.x;
-	y_top = data->exposed_rect.y;
-	ld_canvas_translate_canvas_coordinates (data->self, &x_top, &y_top);
-	x_top = ceil (x_top);
-	y_top = ceil (y_top);
-	ld_canvas_translate_diagram_coordinates (data->self, &x_top, &y_top);
+	/* Get coordinates of the top-left point. */
+	x_init = data->exposed_rect.x;
+	y_init = data->exposed_rect.y;
+	ld_canvas_widget_to_diagram_coords (data->self, &x_init, &y_init);
+	x_init = ceil (x_init);
+	y_init = ceil (y_init);
+	ld_canvas_diagram_to_widget_coords (data->self, &x_init, &y_init);
 
 	/* Iterate over all the points. */
-	for     (x = x_top; x <= data->exposed_rect.x + data->exposed_rect.width;
-	         x += data->scale)
+	for     (x = x_init; x <= data->exposed_rect.x + data->exposed_rect.width;
+			 x += data->scale)
 	{
-		for (y = y_top; y <= data->exposed_rect.y + data->exposed_rect.height;
-		     y += data->scale)
+		for (y = y_init; y <= data->exposed_rect.y + data->exposed_rect.height;
+			 y += data->scale)
 		{
 			cairo_move_to (data->cr, x, y);
 			cairo_line_to (data->cr, x, y);
@@ -643,7 +645,7 @@ draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data)
 
 	x = ld_diagram_object_get_x (LD_DIAGRAM_OBJECT (diagram_symbol));
 	y = ld_diagram_object_get_y (LD_DIAGRAM_OBJECT (diagram_symbol));
-	ld_canvas_translate_diagram_coordinates (data->self, &x, &y);
+	ld_canvas_diagram_to_widget_coords (data->self, &x, &y);
 
 	/* TODO: Rotate the space for other orientations. */
 	cairo_save (data->cr);

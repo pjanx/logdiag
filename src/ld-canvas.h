@@ -70,9 +70,9 @@ LdDiagram *ld_canvas_get_diagram (LdCanvas *self);
 void ld_canvas_set_library (LdCanvas *self, LdLibrary *library);
 LdLibrary *ld_canvas_get_library (LdCanvas *self);
 
-void ld_canvas_translate_canvas_coordinates (LdCanvas *self,
+void ld_canvas_widget_to_diagram_coords (LdCanvas *self,
 	gdouble *x, gdouble *y);
-void ld_canvas_translate_diagram_coordinates (LdCanvas *self,
+void ld_canvas_diagram_to_widget_coords (LdCanvas *self,
 	gdouble *x, gdouble *y);
 
 /* TODO: The rest of the interface. */

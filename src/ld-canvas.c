@@ -36,6 +36,9 @@
 /* Tolerance on all sides of symbols for strokes. */
 #define SYMBOL_AREA_TOLERANCE 0.5
 
+/* The default screen resolution in DPI units. */
+#define DEFAULT_SCREEN_RESOLUTION 96
+
 /*
  * LdCanvasPrivate:
  * @diagram: A diagram object assigned to this canvas as a model.
@@ -455,11 +458,16 @@ ld_canvas_get_library (LdCanvas *self)
 static gdouble
 ld_canvas_get_base_unit_in_px (GtkWidget *self)
 {
+	gdouble resolution;
+
 	g_return_val_if_fail (GTK_IS_WIDGET (self), 1);
 
+	resolution = gdk_screen_get_resolution (gtk_widget_get_screen (self));
+	if (resolution == -1)
+		resolution = DEFAULT_SCREEN_RESOLUTION;
+
 	/* XXX: It might look better if the unit was rounded to a whole number. */
-	return gdk_screen_get_resolution (gtk_widget_get_screen (self))
-		/ MM_PER_INCH * LD_CANVAS_BASE_UNIT_LENGTH;
+	return resolution / MM_PER_INCH * LD_CANVAS_BASE_UNIT_LENGTH;
 }
 
 /*

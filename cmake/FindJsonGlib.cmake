@@ -38,7 +38,7 @@ find_path (JSON_GLIB_INCLUDE_DIR_GOBJECT glib-object.h
 
 find_path (JSON_GLIB_INCLUDE_DIR_GLIBCONFIG glibconfig.h
 	PATHS /usr/lib
-	PATH_SUFFIXES glib-2.0/include)
+	PATH_SUFFIXES glib-2.0 glib-2.0/include)
 
 find_library (JSON_GLIB_LIBRARIES json-glib-1.0)
 

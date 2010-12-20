@@ -123,7 +123,16 @@ function (glib_genmarshal base prefix)
 		set (command_base ${GLIB_GENMARSHAL_EXECUTABLE}
 			--prefix ${prefix} "${base_name}.list")
 
-		# NOTE: VERBATIM may cause problems, so it is not used here
+		# On Windows, the final makefile may contain:
+		#   cd e:\abc && ...
+		# That won't actually change the directory. We have to do:
+		#   cd e:\abc && e: && ...
+		if (WIN32 AND "${base_path}" MATCHES "^.:[/\\\\]")
+			string (SUBSTRING "${base_path}" 0 2 base_drive)
+			set (command_base "${base_drive}" && "${command_base}")
+		endif (WIN32 AND "${base_path}" MATCHES "^.:[/\\\\]")
+
+		# NOTE: VERBATIM would cause problems, so it is not used here
 		add_custom_command (OUTPUT ${base}.c
 			COMMAND ${command_base} --body   > "${base_name}.c"
 			DEPENDS "${base}.list"

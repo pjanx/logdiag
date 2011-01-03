@@ -34,7 +34,7 @@
 #define MM_PER_INCH 25.4
 
 /* Tolerance on all sides of symbols for strokes. */
-#define SYMBOL_AREA_TOLERANCE 0.5
+#define SYMBOL_AREA_CLIP_TOLERANCE 0.5
 
 /* The default screen resolution in DPI units. */
 #define DEFAULT_SCREEN_RESOLUTION 96
@@ -94,21 +94,27 @@ static void ld_canvas_set_property (GObject *object, guint property_id,
 	const GValue *value, GParamSpec *pspec);
 static void ld_canvas_finalize (GObject *gobject);
 
-static void on_adjustment_value_changed
-	(GtkAdjustment *adjustment, LdCanvas *self);
 static void ld_canvas_real_set_scroll_adjustments
 	(LdCanvas *self, GtkAdjustment *horizontal, GtkAdjustment *vertical);
+static void on_adjustment_value_changed
+	(GtkAdjustment *adjustment, LdCanvas *self);
+static void on_size_allocate (GtkWidget *widget, GtkAllocation *allocation,
+	gpointer user_data);
 
 static gdouble ld_canvas_get_base_unit_in_px (GtkWidget *self);
 static gdouble ld_canvas_get_scale_in_px (LdCanvas *self);
 
-static void on_size_allocate (GtkWidget *widget, GtkAllocation *allocation,
-	gpointer user_data);
+static LdSymbol *resolve_diagram_symbol (LdCanvas *self,
+	LdDiagramSymbol *diagram_symbol);
+static gboolean get_symbol_clip_area_on_widget (LdCanvas *self,
+	LdDiagramSymbol *diagram_symbol, gdouble *x, gdouble *y,
+	gdouble *width, gdouble *height);
+
 static gboolean on_expose_event (GtkWidget *widget, GdkEventExpose *event,
 	gpointer user_data);
 static void draw_grid (GtkWidget *widget, DrawData *data);
 static void draw_diagram (GtkWidget *widget, DrawData *data);
-static void draw_diagram_cb (gpointer link_data, DrawData *data);
+static void draw_object (LdDiagramObject *diagram_object, DrawData *data);
 static void draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data);
 
 
@@ -366,6 +372,9 @@ on_size_allocate (GtkWidget *widget, GtkAllocation *allocation,
 	}
 }
 
+
+/* ===== Generic interface etc. ============================================ */
+
 /**
  * ld_canvas_new:
  *
@@ -547,6 +556,56 @@ ld_canvas_diagram_to_widget_coords (LdCanvas *self,
 	*wy = scale * (dy - self->priv->y) + 0.5 * widget->allocation.height;
 }
 
+
+/* ===== Events, rendering ================================================= */
+
+static LdSymbol *
+resolve_diagram_symbol (LdCanvas *self, LdDiagramSymbol *diagram_symbol)
+{
+	if (!self->priv->library)
+		return NULL;
+
+	return ld_library_find_symbol (self->priv->library,
+		ld_diagram_symbol_get_class (diagram_symbol));
+}
+
+static gboolean
+get_symbol_clip_area_on_widget (LdCanvas *self, LdDiagramSymbol *diagram_symbol,
+	gdouble *x, gdouble *y, gdouble *width, gdouble *height)
+{
+	LdSymbol *symbol;
+	LdSymbolArea area;
+	gdouble x1, x2;
+	gdouble y1, y2;
+	gdouble object_x, object_y;
+
+	symbol = resolve_diagram_symbol (self, diagram_symbol);
+
+	object_x = ld_diagram_object_get_x (LD_DIAGRAM_OBJECT (diagram_symbol));
+	object_y = ld_diagram_object_get_y (LD_DIAGRAM_OBJECT (diagram_symbol));
+
+	if (symbol)
+		ld_symbol_get_area (symbol, &area);
+	else
+		return FALSE;
+
+	/* TODO: Rotate the space for other orientations. */
+	ld_canvas_diagram_to_widget_coords (self,
+		object_x + area.x - SYMBOL_AREA_CLIP_TOLERANCE,
+		object_y + area.y - SYMBOL_AREA_CLIP_TOLERANCE,
+		&x1, &y1);
+	ld_canvas_diagram_to_widget_coords (self,
+		object_x + area.x + area.width  + SYMBOL_AREA_CLIP_TOLERANCE,
+		object_y + area.y + area.height + SYMBOL_AREA_CLIP_TOLERANCE,
+		&x2, &y2);
+
+	*x = x1;
+	*y = y1;
+	*width  = x2 - x1;
+	*height = y2 - y1;
+	return TRUE;
+}
+
 static gboolean
 on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 {
@@ -619,32 +678,28 @@ draw_diagram (GtkWidget *widget, DrawData *data)
 
 	/* Draw objects from the diagram. */
 	objects = ld_diagram_get_objects (data->self->priv->diagram);
-	g_slist_foreach (objects, (GFunc) draw_diagram_cb, data);
+	g_slist_foreach (objects, (GFunc) draw_object, data);
 
 	cairo_restore (data->cr);
 }
 
 static void
-draw_diagram_cb (gpointer link_data, DrawData *data)
+draw_object (LdDiagramObject *diagram_object, DrawData *data)
 {
-	g_return_if_fail (link_data != NULL);
+	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (diagram_object));
 	g_return_if_fail (data != NULL);
 
-	if (LD_IS_DIAGRAM_SYMBOL (link_data))
-		draw_symbol (LD_DIAGRAM_SYMBOL (link_data), data);
+	if (LD_IS_DIAGRAM_SYMBOL (diagram_object))
+		draw_symbol (LD_DIAGRAM_SYMBOL (diagram_object), data);
 }
 
 static void
 draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data)
 {
 	LdSymbol *symbol;
-	LdSymbolArea area;
-	gdouble x, y;
+	gdouble x, y, width, height;
 
-	if (!data->self->priv->library)
-		return;
-	symbol = ld_library_find_symbol (data->self->priv->library,
-		ld_diagram_symbol_get_class (diagram_symbol));
+	symbol = resolve_diagram_symbol (data->self, diagram_symbol);
 
 	/* TODO: Resolve this better; draw a cross or whatever. */
 	if (!symbol)
@@ -654,44 +709,28 @@ draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data)
 		return;
 	}
 
+	if (!get_symbol_clip_area_on_widget (data->self, diagram_symbol,
+		&x, &y, &width, &height))
+		return;
+	if    (x > data->exposed_rect.x + data->exposed_rect.width
+		|| y > data->exposed_rect.y + data->exposed_rect.height
+		|| x + width  < data->exposed_rect.x
+		|| y + height < data->exposed_rect.y)
+		return;
+
+	cairo_save (data->cr);
+
+	cairo_rectangle (data->cr, x, y, width, height);
+	cairo_clip (data->cr);
+
+	/* TODO: Rotate the space for other orientations. */
 	ld_canvas_diagram_to_widget_coords (data->self,
 		ld_diagram_object_get_x (LD_DIAGRAM_OBJECT (diagram_symbol)),
 		ld_diagram_object_get_y (LD_DIAGRAM_OBJECT (diagram_symbol)),
 		&x, &y);
-
-	/* TODO: Rotate the space for other orientations. */
-	cairo_save (data->cr);
 	cairo_translate (data->cr, x, y);
 	cairo_scale (data->cr, data->scale, data->scale);
-
-	/* Only draw the symbol if it intersects the exposed area. */
-	ld_symbol_get_area (symbol, &area);
-
-	x = area.x - SYMBOL_AREA_TOLERANCE;
-	y = area.y - SYMBOL_AREA_TOLERANCE;
-	cairo_user_to_device (data->cr, &x, &y);
-
-	if    (x > data->exposed_rect.x + data->exposed_rect.width
-		|| y > data->exposed_rect.y + data->exposed_rect.height)
-		goto draw_symbol_end;
-
-	x = area.x + area.width  + SYMBOL_AREA_TOLERANCE;
-	y = area.y + area.height + SYMBOL_AREA_TOLERANCE;
-	cairo_user_to_device (data->cr, &x, &y);
-
-	if    (x < data->exposed_rect.x
-		|| y < data->exposed_rect.y)
-		goto draw_symbol_end;
-
-	cairo_rectangle (data->cr,
-		area.x - SYMBOL_AREA_TOLERANCE,
-		area.y - SYMBOL_AREA_TOLERANCE,
-		area.width  + 2 * SYMBOL_AREA_TOLERANCE,
-		area.height + 2 * SYMBOL_AREA_TOLERANCE);
-	cairo_clip (data->cr);
-
 	ld_symbol_draw (symbol, data->cr);
 
-draw_symbol_end:
 	cairo_restore (data->cr);
 }

@@ -488,21 +488,24 @@ ld_canvas_get_scale_in_px (LdCanvas *self)
 /**
  * ld_canvas_widget_to_diagram_coords:
  * @self: An #LdCanvas object.
- * @x: The X coordinate to be translated.
- * @y: The Y coordinate to be translated.
+ * @wx: The X coordinate to be translated.
+ * @wy: The Y coordinate to be translated.
+ * @dx: (out): The translated X coordinate.
+ * @dy: (out): The translated Y coordinate.
  *
  * Translate coordinates located inside the canvas window
  * into diagram coordinates.
  */
 void
-ld_canvas_widget_to_diagram_coords (LdCanvas *self, gdouble *x, gdouble *y)
+ld_canvas_widget_to_diagram_coords (LdCanvas *self,
+	gdouble wx, gdouble wy, gdouble *dx, gdouble *dy)
 {
 	GtkWidget *widget;
 	gdouble scale;
 
 	g_return_if_fail (LD_IS_CANVAS (self));
-	g_return_if_fail (x != NULL);
-	g_return_if_fail (y != NULL);
+	g_return_if_fail (dx != NULL);
+	g_return_if_fail (dy != NULL);
 
 	widget = GTK_WIDGET (self);
 	scale = ld_canvas_get_scale_in_px (self);
@@ -511,35 +514,37 @@ ld_canvas_widget_to_diagram_coords (LdCanvas *self, gdouble *x, gdouble *y)
 	 * translate the given X and Y coordinates to this center and then scale
 	 * them by dividing them by the current scale.
 	 */
-	*x = self->priv->x + (*x - (widget->allocation.width  * 0.5)) / scale;
-	*y = self->priv->y + (*y - (widget->allocation.height * 0.5)) / scale;
+	*dx = self->priv->x + (wx - (widget->allocation.width  * 0.5)) / scale;
+	*dy = self->priv->y + (wy - (widget->allocation.height * 0.5)) / scale;
 }
 
 /**
  * ld_canvas_diagram_to_widget_coords:
  * @self: An #LdCanvas object.
- * @x: The X coordinate to be translated.
- * @y: The Y coordinate to be translated.
+ * @dx: The X coordinate to be translated.
+ * @dy: The Y coordinate to be translated.
+ * @wx: (out): The translated X coordinate.
+ * @wy: (out): The translated Y coordinate.
  *
  * Translate diagram coordinates into canvas coordinates.
  */
 void
 ld_canvas_diagram_to_widget_coords (LdCanvas *self,
-	gdouble *x, gdouble *y)
+	gdouble dx, gdouble dy, gdouble *wx, gdouble *wy)
 {
 	GtkWidget *widget;
 	gdouble scale;
 
 	g_return_if_fail (LD_IS_CANVAS (self));
-	g_return_if_fail (x != NULL);
-	g_return_if_fail (y != NULL);
+	g_return_if_fail (wx != NULL);
+	g_return_if_fail (wy != NULL);
 
 	widget = GTK_WIDGET (self);
 	scale = ld_canvas_get_scale_in_px (self);
 
 	/* Just the reversal of ld_canvas_widget_to_diagram_coords(). */
-	*x = scale * (*x - self->priv->x) + 0.5 * widget->allocation.width;
-	*y = scale * (*y - self->priv->y) + 0.5 * widget->allocation.height;
+	*wx = scale * (dx - self->priv->x) + 0.5 * widget->allocation.width;
+	*wy = scale * (dy - self->priv->y) + 0.5 * widget->allocation.height;
 }
 
 static gboolean
@@ -580,12 +585,10 @@ draw_grid (GtkWidget *widget, DrawData *data)
 	cairo_set_line_cap (data->cr, CAIRO_LINE_CAP_ROUND);
 
 	/* Get coordinates of the top-left point. */
-	x_init = data->exposed_rect.x;
-	y_init = data->exposed_rect.y;
-	ld_canvas_widget_to_diagram_coords (data->self, &x_init, &y_init);
-	x_init = ceil (x_init);
-	y_init = ceil (y_init);
-	ld_canvas_diagram_to_widget_coords (data->self, &x_init, &y_init);
+	ld_canvas_widget_to_diagram_coords (data->self,
+		data->exposed_rect.x, data->exposed_rect.y, &x_init, &y_init);
+	ld_canvas_diagram_to_widget_coords (data->self,
+		ceil (x_init), ceil (y_init), &x_init, &y_init);
 
 	/* Iterate over all the points. */
 	for     (x = x_init; x <= data->exposed_rect.x + data->exposed_rect.width;
@@ -651,9 +654,10 @@ draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data)
 		return;
 	}
 
-	x = ld_diagram_object_get_x (LD_DIAGRAM_OBJECT (diagram_symbol));
-	y = ld_diagram_object_get_y (LD_DIAGRAM_OBJECT (diagram_symbol));
-	ld_canvas_diagram_to_widget_coords (data->self, &x, &y);
+	ld_canvas_diagram_to_widget_coords (data->self,
+		ld_diagram_object_get_x (LD_DIAGRAM_OBJECT (diagram_symbol)),
+		ld_diagram_object_get_y (LD_DIAGRAM_OBJECT (diagram_symbol)),
+		&x, &y);
 
 	/* TODO: Rotate the space for other orientations. */
 	cairo_save (data->cr);

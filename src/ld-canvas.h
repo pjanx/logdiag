@@ -71,9 +71,9 @@ void ld_canvas_set_library (LdCanvas *self, LdLibrary *library);
 LdLibrary *ld_canvas_get_library (LdCanvas *self);
 
 void ld_canvas_widget_to_diagram_coords (LdCanvas *self,
-	gdouble *x, gdouble *y);
+	gdouble wx, gdouble wy, gdouble *dx, gdouble *dy);
 void ld_canvas_diagram_to_widget_coords (LdCanvas *self,
-	gdouble *x, gdouble *y);
+	gdouble dx, gdouble dy, gdouble *wx, gdouble *wy);
 
 /* TODO: The rest of the interface. */
 

@@ -1,9 +1,9 @@
 [Desktop Entry]
 Type=Application
-Name=logdiag %f
+Name=logdiag
 GenericName=Electric diagrams designer
 GenericName[cs]=Návrhář elektrických diagramů
 Icon=logdiag
-Exec=logdiag
+Exec=logdiag %f
 Categories=Graphics;VectorGraphics;Electricity;Engineering;GTK
 

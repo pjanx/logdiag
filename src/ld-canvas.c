@@ -152,7 +152,7 @@ ld_canvas_class_init (LdCanvasClass *klass)
 	pspec = g_param_spec_object ("library", "Library",
 		"The library that this canvas retrieves symbols from.",
 		LD_TYPE_LIBRARY, G_PARAM_READWRITE);
-	g_object_class_install_property (object_class, PROP_DIAGRAM, pspec);
+	g_object_class_install_property (object_class, PROP_LIBRARY, pspec);
 
 /**
  * LdCanvas::set-scroll-adjustments:

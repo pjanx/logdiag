@@ -18,55 +18,6 @@
 
 
 /**
- * ld_symbol_area_copy:
- * @self: An #LdSymbolArea structure.
- *
- * Makes a copy of the structure.
- * The result must be freed by ld_symbol_area_free().
- *
- * Return value: A copy of @self.
- **/
-LdSymbolArea *
-ld_symbol_area_copy (const LdSymbolArea *self)
-{
-	LdSymbolArea *new_area;
-
-	g_return_val_if_fail (self != NULL, NULL);
-
-	new_area = g_slice_new (LdSymbolArea);
-	*new_area = *self;
-	return new_area;
-}
-
-/**
- * ld_symbol_area_free:
- * @self: An #LdSymbolArea structure.
- *
- * Frees the structure created with ld_symbol_area_copy().
- **/
-void
-ld_symbol_area_free (LdSymbolArea *self)
-{
-	g_return_if_fail (self != NULL);
-
-	g_slice_free (LdSymbolArea, self);
-}
-
-GType
-ld_symbol_area_get_type (void)
-{
-	static GType our_type = 0;
-
-	if (our_type == 0)
-		our_type = g_boxed_type_register_static
-			(g_intern_static_string ("LdSymbolArea"),
-			(GBoxedCopyFunc) ld_symbol_area_copy,
-			(GBoxedFreeFunc) ld_symbol_area_free);
-	return our_type;
-}
-
-
-/**
  * SECTION:ld-symbol
  * @short_description: A symbol.
  * @see_also: #LdDiagram, #LdCanvas
@@ -77,8 +28,6 @@ ld_symbol_area_get_type (void)
  * All implementations of this abstract class are required to use
  * cairo_save() and cairo_restore() when drawing to store the state.
  */
-
-G_DEFINE_ABSTRACT_TYPE (LdSymbol, ld_symbol, G_TYPE_OBJECT);
 
 enum
 {
@@ -93,6 +42,8 @@ static void ld_symbol_get_property (GObject *object, guint property_id,
 static void ld_symbol_set_property (GObject *object, guint property_id,
 	const GValue *value, GParamSpec *pspec);
 
+
+G_DEFINE_ABSTRACT_TYPE (LdSymbol, ld_symbol, G_TYPE_OBJECT);
 
 static void
 ld_symbol_class_init (LdSymbolClass *klass)
@@ -250,4 +201,52 @@ ld_symbol_draw (LdSymbol *self, cairo_t *cr)
 	klass = LD_SYMBOL_GET_CLASS (self);
 	g_return_if_fail (klass->draw != NULL);
 	klass->draw (self, cr);
+}
+
+/**
+ * ld_symbol_area_copy:
+ * @self: An #LdSymbolArea structure.
+ *
+ * Makes a copy of the structure.
+ * The result must be freed by ld_symbol_area_free().
+ *
+ * Return value: A copy of @self.
+ **/
+LdSymbolArea *
+ld_symbol_area_copy (const LdSymbolArea *self)
+{
+	LdSymbolArea *new_area;
+
+	g_return_val_if_fail (self != NULL, NULL);
+
+	new_area = g_slice_new (LdSymbolArea);
+	*new_area = *self;
+	return new_area;
+}
+
+/**
+ * ld_symbol_area_free:
+ * @self: An #LdSymbolArea structure.
+ *
+ * Frees the structure created with ld_symbol_area_copy().
+ **/
+void
+ld_symbol_area_free (LdSymbolArea *self)
+{
+	g_return_if_fail (self != NULL);
+
+	g_slice_free (LdSymbolArea, self);
+}
+
+GType
+ld_symbol_area_get_type (void)
+{
+	static GType our_type = 0;
+
+	if (our_type == 0)
+		our_type = g_boxed_type_register_static
+			(g_intern_static_string ("LdSymbolArea"),
+			(GBoxedCopyFunc) ld_symbol_area_copy,
+			(GBoxedFreeFunc) ld_symbol_area_free);
+	return our_type;
 }

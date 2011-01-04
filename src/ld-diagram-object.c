@@ -34,8 +34,6 @@ struct _LdDiagramObjectPrivate
 	gdouble y;
 };
 
-G_DEFINE_ABSTRACT_TYPE (LdDiagramObject, ld_diagram_object, G_TYPE_OBJECT);
-
 enum
 {
 	PROP_0,
@@ -48,6 +46,8 @@ static void ld_diagram_object_get_property (GObject *object, guint property_id,
 static void ld_diagram_object_set_property (GObject *object, guint property_id,
 	const GValue *value, GParamSpec *pspec);
 
+
+G_DEFINE_ABSTRACT_TYPE (LdDiagramObject, ld_diagram_object, G_TYPE_OBJECT);
 
 static void
 ld_diagram_object_class_init (LdDiagramObjectClass *klass)

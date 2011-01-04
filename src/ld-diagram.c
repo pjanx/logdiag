@@ -41,8 +41,6 @@ struct _LdDiagramPrivate
 	GSList *connections;
 };
 
-G_DEFINE_TYPE (LdDiagram, ld_diagram, G_TYPE_OBJECT);
-
 enum
 {
 	PROP_0,
@@ -59,6 +57,8 @@ static void ld_diagram_finalize (GObject *gobject);
 static void ld_diagram_real_changed (LdDiagram *self);
 static void ld_diagram_clear_internal (LdDiagram *self);
 
+
+G_DEFINE_TYPE (LdDiagram, ld_diagram, G_TYPE_OBJECT);
 
 static void
 ld_diagram_class_init (LdDiagramClass *klass)

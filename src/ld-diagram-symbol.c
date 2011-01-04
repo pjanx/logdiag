@@ -33,10 +33,10 @@ struct _LdDiagramSymbolPrivate
 	gchar *klass;
 };
 
-G_DEFINE_TYPE (LdDiagramSymbol, ld_diagram_symbol, LD_TYPE_DIAGRAM_OBJECT);
-
 static void ld_diagram_symbol_finalize (GObject *gobject);
 
+
+G_DEFINE_TYPE (LdDiagramSymbol, ld_diagram_symbol, LD_TYPE_DIAGRAM_OBJECT);
 
 static void
 ld_diagram_symbol_class_init (LdDiagramSymbolClass *klass)

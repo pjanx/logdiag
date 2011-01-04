@@ -41,8 +41,6 @@ struct _LdLibraryPrivate
 	GSList *children;
 };
 
-G_DEFINE_TYPE (LdLibrary, ld_library, G_TYPE_OBJECT);
-
 static void ld_library_finalize (GObject *gobject);
 
 static LdSymbolCategory *load_category (LdLibrary *self,
@@ -59,6 +57,8 @@ static gboolean foreach_dir (const gchar *path,
 static gboolean ld_library_load_cb
 	(const gchar *base, const gchar *filename, gpointer userdata);
 
+
+G_DEFINE_TYPE (LdLibrary, ld_library, G_TYPE_OBJECT);
 
 static void
 ld_library_class_init (LdLibraryClass *klass)

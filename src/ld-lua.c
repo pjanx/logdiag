@@ -33,13 +33,6 @@
  * #LdLua is a symbol engine that uses Lua scripts to manage symbols.
  */
 
-/* How does the application call the function for rendering?
- *   registry.logdiag_symbols
- *     -> table indexed by pointers to LdLuaSymbol objects
- *   registry.logdiag_symbols.object.render(cr)
- *     -> rendering function
- */
-
 /*
  * LdLuaPrivate:
  * @L: Lua state.
@@ -51,12 +44,15 @@ struct _LdLuaPrivate
 	lua_State *L;
 };
 
-G_DEFINE_TYPE (LdLua, ld_lua, G_TYPE_OBJECT);
+/* registry.logdiag_symbols
+ *   -> table indexed by pointers to LdLuaSymbol objects
+ * registry.logdiag_symbols.object.render(cr)
+ *   -> rendering function
+ */
 
-static void ld_lua_finalize (GObject *gobject);
-
-static void *ld_lua_alloc (void *ud, void *ptr, size_t osize, size_t nsize);
-
+#define LD_LUA_LIBRARY_NAME "logdiag"
+#define LD_LUA_DATA_INDEX LD_LUA_LIBRARY_NAME "_data"
+#define LD_LUA_SYMBOLS_INDEX LD_LUA_LIBRARY_NAME "_symbols"
 
 /*
  * LdLuaData:
@@ -66,51 +62,49 @@ static void *ld_lua_alloc (void *ud, void *ptr, size_t osize, size_t nsize);
  *
  * Full user data to be stored in Lua registry.
  */
-typedef struct
+typedef struct _LdLuaData LdLuaData;
+
+struct _LdLuaData
 {
 	LdLua *self;
 	LdLuaLoadCallback load_callback;
 	gpointer load_user_data;
-}
-LdLuaData;
+};
 
-#define LD_LUA_LIBRARY_NAME "logdiag"
-#define LD_LUA_DATA_INDEX LD_LUA_LIBRARY_NAME "_data"
-#define LD_LUA_SYMBOLS_INDEX LD_LUA_LIBRARY_NAME "_symbols"
+typedef struct _LdLuaDrawData LdLuaDrawData;
 
-
-typedef struct
+struct _LdLuaDrawData
 {
 	LdLuaSymbol *symbol;
 	cairo_t *cr;
-}
-LdLuaDrawData;
+};
+
+static void ld_lua_finalize (GObject *gobject);
+
+static void *ld_lua_alloc (void *ud, void *ptr, size_t osize, size_t nsize);
 
 static int ld_lua_private_draw_cb (lua_State *L);
 static int ld_lua_private_unregister_cb (lua_State *L);
 
-
 static int ld_lua_logdiag_register (lua_State *L);
-
 static int process_registration (lua_State *L);
 static gchar *get_translation (lua_State *L, int index);
 static gboolean read_symbol_area (lua_State *L, int index, LdSymbolArea *area);
 
-static luaL_Reg ld_lua_logdiag_lib[] =
-{
-	{"register", ld_lua_logdiag_register},
-	{NULL, NULL}
-};
-
-
 static void push_cairo_object (lua_State *L, cairo_t *cr);
-
 static int ld_lua_cairo_move_to (lua_State *L);
 static int ld_lua_cairo_line_to (lua_State *L);
 static int ld_lua_cairo_stroke (lua_State *L);
 static int ld_lua_cairo_stroke_preserve (lua_State *L);
 static int ld_lua_cairo_fill (lua_State *L);
 static int ld_lua_cairo_fill_preserve (lua_State *L);
+
+
+static luaL_Reg ld_lua_logdiag_lib[] =
+{
+	{"register", ld_lua_logdiag_register},
+	{NULL, NULL}
+};
 
 static luaL_Reg ld_lua_cairo_table[] =
 {
@@ -125,6 +119,8 @@ static luaL_Reg ld_lua_cairo_table[] =
 
 
 /* ===== Generic =========================================================== */
+
+G_DEFINE_TYPE (LdLua, ld_lua, G_TYPE_OBJECT);
 
 static void
 ld_lua_class_init (LdLuaClass *klass)

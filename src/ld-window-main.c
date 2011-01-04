@@ -35,14 +35,13 @@
  *       the documentation or the static library.
  */
 
-typedef struct _SymbolMenuItem SymbolMenuItem;
-typedef struct _SymbolMenuData SymbolMenuData;
-
 /*
  * SymbolMenuItem:
  *
  * Data related to a symbol in an open symbol menu.
  */
+typedef struct _SymbolMenuItem SymbolMenuItem;
+
 struct _SymbolMenuItem
 {
 	LdSymbol *symbol;
@@ -56,6 +55,8 @@ struct _SymbolMenuItem
  *
  * Data related to the currently opened symbol menu.
  */
+typedef struct _SymbolMenuData SymbolMenuData;
+
 struct _SymbolMenuData
 {
 	gulong expose_handler;
@@ -98,9 +99,6 @@ struct _LdWindowMainPrivate
 
 	SymbolMenuData symbol_menu;
 };
-
-/* Define the type. */
-G_DEFINE_TYPE (LdWindowMain, ld_window_main, GTK_TYPE_WINDOW);
 
 #define LIBRARY_TOOLBAR_ICON_WIDTH 32
 
@@ -219,6 +217,8 @@ ld_window_main_new (void)
 {
 	return g_object_new (LD_TYPE_WINDOW_MAIN, NULL);
 }
+
+G_DEFINE_TYPE (LdWindowMain, ld_window_main, GTK_TYPE_WINDOW);
 
 static void
 ld_window_main_class_init (LdWindowMainClass *klass)

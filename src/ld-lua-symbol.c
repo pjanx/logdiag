@@ -31,8 +31,6 @@
  * #LdLuaSymbol is an implementation of #LdSymbol.
  */
 
-G_DEFINE_TYPE (LdLuaSymbol, ld_lua_symbol, LD_TYPE_SYMBOL);
-
 static void ld_lua_symbol_finalize (GObject *gobject);
 
 static const gchar *ld_lua_symbol_real_get_name (LdSymbol *symbol);
@@ -40,6 +38,8 @@ static const gchar *ld_lua_symbol_real_get_human_name (LdSymbol *symbol);
 static void ld_lua_symbol_real_get_area (LdSymbol *symbol, LdSymbolArea *area);
 static void ld_lua_symbol_real_draw (LdSymbol *symbol, cairo_t *cr);
 
+
+G_DEFINE_TYPE (LdLuaSymbol, ld_lua_symbol, LD_TYPE_SYMBOL);
 
 static void
 ld_lua_symbol_class_init (LdLuaSymbolClass *klass)

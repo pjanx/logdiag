@@ -47,14 +47,19 @@
  */
 typedef void (*OperationEnd) (LdCanvas *self);
 
+enum
+{
+	OPER_0,
+	OPER_ADD_OBJECT
+};
+
+typedef struct _AddObjectData AddObjectData;
+
 struct _AddObjectData
 {
 	LdDiagramObject *object;
 	gboolean visible;
 };
-
-typedef struct _AddObjectData AddObjectData;
-
 
 /*
  * LdCanvasPrivate:
@@ -82,30 +87,15 @@ struct _LdCanvasPrivate
 	gdouble zoom;
 
 	gint operation;
-	OperationEnd operation_end;
 	union
 	{
 		AddObjectData add_object;
 	}
 	operation_data;
+	OperationEnd operation_end;
 };
 
 #define OPER_DATA(self, member) ((self)->priv->operation_data.member)
-
-G_DEFINE_TYPE (LdCanvas, ld_canvas, GTK_TYPE_DRAWING_AREA);
-
-enum
-{
-	PROP_0,
-	PROP_DIAGRAM,
-	PROP_LIBRARY
-};
-
-enum
-{
-	OPER_0,
-	OPER_ADD_OBJECT
-};
 
 /*
  * DrawData:
@@ -114,6 +104,8 @@ enum
  * @exposed_rect: The area that is to be redrawn.
  * @scale: Computed size of one diagram unit in pixels.
  */
+typedef struct _DrawData DrawData;
+
 struct _DrawData
 {
 	LdCanvas *self;
@@ -122,8 +114,12 @@ struct _DrawData
 	gdouble scale;
 };
 
-typedef struct _DrawData DrawData;
-
+enum
+{
+	PROP_0,
+	PROP_DIAGRAM,
+	PROP_LIBRARY
+};
 
 static void ld_canvas_get_property (GObject *object, guint property_id,
 	GValue *value, GParamSpec *pspec);
@@ -169,6 +165,8 @@ static void draw_diagram (GtkWidget *widget, DrawData *data);
 static void draw_object (LdDiagramObject *diagram_object, DrawData *data);
 static void draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data);
 
+
+G_DEFINE_TYPE (LdCanvas, ld_canvas, GTK_TYPE_DRAWING_AREA);
 
 static void
 ld_canvas_class_init (LdCanvasClass *klass)
@@ -252,10 +250,10 @@ ld_canvas_init (LdCanvas *self)
 	self->priv->y = 0;
 	self->priv->zoom = 1;
 
-	g_signal_connect (self, "expose-event",
-		G_CALLBACK (on_expose_event), NULL);
 	g_signal_connect (self, "size-allocate",
 		G_CALLBACK (on_size_allocate), NULL);
+	g_signal_connect (self, "expose-event",
+		G_CALLBACK (on_expose_event), NULL);
 
 	g_signal_connect (self, "motion-notify-event",
 		G_CALLBACK (on_motion_notify), NULL);

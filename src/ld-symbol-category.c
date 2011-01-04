@@ -39,8 +39,6 @@ struct _LdSymbolCategoryPrivate
 	GSList *children;
 };
 
-G_DEFINE_TYPE (LdSymbolCategory, ld_symbol_category, G_TYPE_OBJECT);
-
 enum
 {
 	PROP_0,
@@ -55,6 +53,8 @@ static void ld_symbol_category_set_property (GObject *object, guint property_id,
 	const GValue *value, GParamSpec *pspec);
 static void ld_symbol_category_finalize (GObject *gobject);
 
+
+G_DEFINE_TYPE (LdSymbolCategory, ld_symbol_category, G_TYPE_OBJECT);
 
 static void
 ld_symbol_category_class_init (LdSymbolCategoryClass *klass)

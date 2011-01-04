@@ -761,7 +761,25 @@ on_canvas_button_release (GtkWidget *widget, GdkEventButton *event,
 	if (event->button != 1)
 		return FALSE;
 
-	/* TODO: Add the selected symbol into the document on the position. */
+	if (data->active_item != -1)
+	{
+		LdDiagramSymbol *symbol;
+		const gchar *category_name, *symbol_name;
+		gchar *klass;
+
+		category_name = ld_symbol_category_get_name
+			(g_object_get_data (G_OBJECT (data->active_button), "category"));
+		symbol_name = ld_symbol_get_name
+			(data->items[data->active_item].symbol);
+
+		klass = g_build_path (LD_LIBRARY_IDENTIFIER_SEPARATOR,
+			category_name, symbol_name, NULL);
+		symbol = ld_diagram_symbol_new (klass);
+		g_free (klass);
+
+		ld_canvas_add_object_begin (self->priv->canvas,
+			LD_DIAGRAM_OBJECT (symbol));
+	}
 
 	/* We've either chosen a symbol or canceled the menu, so hide it. */
 	if (data->active_button)

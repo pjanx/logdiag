@@ -48,8 +48,11 @@ struct _LdCanvasClass
 /*< private >*/
 	GtkDrawingAreaClass parent_class;
 
+	guint cancel_operation_signal;
+
 	void (*set_scroll_adjustments) (LdCanvas *self,
 		GtkAdjustment *horizontal, GtkAdjustment *vertical);
+	void (*cancel_operation) (LdCanvas *self);
 };
 
 
@@ -74,6 +77,8 @@ void ld_canvas_widget_to_diagram_coords (LdCanvas *self,
 	gdouble wx, gdouble wy, gdouble *dx, gdouble *dy);
 void ld_canvas_diagram_to_widget_coords (LdCanvas *self,
 	gdouble dx, gdouble dy, gdouble *wx, gdouble *wy);
+
+void ld_canvas_add_object_begin (LdCanvas *self, LdDiagramObject *object);
 
 /* TODO: The rest of the interface. */
 

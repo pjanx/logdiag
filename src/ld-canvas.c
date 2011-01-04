@@ -10,6 +10,7 @@
 
 #include <math.h>
 #include <gtk/gtk.h>
+#include <gdk/gdkkeysyms.h>
 
 #include "config.h"
 
@@ -40,6 +41,22 @@
 #define DEFAULT_SCREEN_RESOLUTION 96
 
 /*
+ * OperationEnd:
+ *
+ * Called upon ending an operation.
+ */
+typedef void (*OperationEnd) (LdCanvas *self);
+
+struct _AddObjectData
+{
+	LdDiagramObject *object;
+	gboolean visible;
+};
+
+typedef struct _AddObjectData AddObjectData;
+
+
+/*
  * LdCanvasPrivate:
  * @diagram: A diagram object assigned to this canvas as a model.
  * @library: A library object assigned to this canvas as a model.
@@ -48,6 +65,9 @@
  * @x: The X coordinate of the center of view.
  * @y: The Y coordinate of the center of view.
  * @zoom: The current zoom of the canvas.
+ * @operation: The current operation.
+ * @operation_data: Data related to the current operation.
+ * @operation_end: A callback to end the operation.
  */
 struct _LdCanvasPrivate
 {
@@ -60,7 +80,17 @@ struct _LdCanvasPrivate
 	gdouble x;
 	gdouble y;
 	gdouble zoom;
+
+	gint operation;
+	OperationEnd operation_end;
+	union
+	{
+		AddObjectData add_object;
+	}
+	operation_data;
 };
+
+#define OPER_DATA(self, member) ((self)->priv->operation_data.member)
 
 G_DEFINE_TYPE (LdCanvas, ld_canvas, GTK_TYPE_DRAWING_AREA);
 
@@ -71,7 +101,11 @@ enum
 	PROP_LIBRARY
 };
 
-typedef struct _DrawData DrawData;
+enum
+{
+	OPER_0,
+	OPER_ADD_OBJECT
+};
 
 /*
  * DrawData:
@@ -87,6 +121,9 @@ struct _DrawData
 	cairo_rectangle_t exposed_rect;
 	gdouble scale;
 };
+
+typedef struct _DrawData DrawData;
+
 
 static void ld_canvas_get_property (GObject *object, guint property_id,
 	GValue *value, GParamSpec *pspec);
@@ -104,11 +141,26 @@ static void on_size_allocate (GtkWidget *widget, GtkAllocation *allocation,
 static gdouble ld_canvas_get_base_unit_in_px (GtkWidget *self);
 static gdouble ld_canvas_get_scale_in_px (LdCanvas *self);
 
+static gboolean on_motion_notify (GtkWidget *widget, GdkEventMotion *event,
+	gpointer user_data);
+static gboolean on_leave_notify (GtkWidget *widget, GdkEventCrossing *event,
+	gpointer user_data);
+static gboolean on_button_press (GtkWidget *widget, GdkEventButton *event,
+	gpointer user_data);
+static gboolean on_button_release (GtkWidget *widget, GdkEventButton *event,
+	gpointer user_data);
+
+static void move_object_to_widget_coords (LdCanvas *self,
+	LdDiagramObject *object, gdouble x, gdouble y);
 static LdSymbol *resolve_diagram_symbol (LdCanvas *self,
 	LdDiagramSymbol *diagram_symbol);
 static gboolean get_symbol_clip_area_on_widget (LdCanvas *self,
 	LdDiagramSymbol *diagram_symbol, gdouble *x, gdouble *y,
 	gdouble *width, gdouble *height);
+static void queue_object_redraw (LdCanvas *self, LdDiagramObject *object);
+
+static void ld_canvas_real_cancel_operation (LdCanvas *self);
+static void ld_canvas_add_object_end (LdCanvas *self);
 
 static gboolean on_expose_event (GtkWidget *widget, GdkEventExpose *event,
 	gpointer user_data);
@@ -123,6 +175,7 @@ ld_canvas_class_init (LdCanvasClass *klass)
 {
 	GObjectClass *object_class;
 	GtkWidgetClass *widget_class;
+	GtkBindingSet *binding_set;
 	GParamSpec *pspec;
 
 	widget_class = GTK_WIDGET_CLASS (klass);
@@ -133,6 +186,11 @@ ld_canvas_class_init (LdCanvasClass *klass)
 	object_class->finalize = ld_canvas_finalize;
 
 	klass->set_scroll_adjustments = ld_canvas_real_set_scroll_adjustments;
+	klass->cancel_operation = ld_canvas_real_cancel_operation;
+
+	binding_set = gtk_binding_set_by_class (klass);
+	gtk_binding_entry_add_signal (binding_set, GDK_Escape, 0,
+		"cancel-operation", 0);
 
 /**
  * LdCanvas:diagram:
@@ -169,6 +227,18 @@ ld_canvas_class_init (LdCanvasClass *klass)
 		g_cclosure_user_marshal_VOID__OBJECT_OBJECT,
 		G_TYPE_NONE, 2, GTK_TYPE_ADJUSTMENT, GTK_TYPE_ADJUSTMENT);
 
+/**
+ * LdCanvas::cancel-operation:
+ *
+ * Cancel any current operation.
+ */
+	klass->cancel_operation_signal = g_signal_new
+		("cancel-operation", G_TYPE_FROM_CLASS (klass),
+		G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
+		G_STRUCT_OFFSET (LdCanvasClass, cancel_operation), NULL, NULL,
+		g_cclosure_marshal_VOID__VOID,
+		G_TYPE_NONE, 0);
+
 	g_type_class_add_private (klass, sizeof (LdCanvasPrivate));
 }
 
@@ -187,9 +257,21 @@ ld_canvas_init (LdCanvas *self)
 	g_signal_connect (self, "size-allocate",
 		G_CALLBACK (on_size_allocate), NULL);
 
+	g_signal_connect (self, "motion-notify-event",
+		G_CALLBACK (on_motion_notify), NULL);
+	g_signal_connect (self, "leave-notify-event",
+		G_CALLBACK (on_leave_notify), NULL);
+	g_signal_connect (self, "button-press-event",
+		G_CALLBACK (on_button_press), NULL);
+	g_signal_connect (self, "button-release-event",
+		G_CALLBACK (on_button_release), NULL);
+
+	g_object_set (self, "can-focus", TRUE, NULL);
+
 	gtk_widget_add_events (GTK_WIDGET (self),
 		GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK
-		| GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK);
+		| GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
+		| GDK_LEAVE_NOTIFY_MASK);
 }
 
 static void
@@ -557,7 +639,73 @@ ld_canvas_diagram_to_widget_coords (LdCanvas *self,
 }
 
 
+/* ===== Operations ======================================================== */
+
+static void
+ld_canvas_real_cancel_operation (LdCanvas *self)
+{
+	g_return_if_fail (LD_IS_CANVAS (self));
+
+	if (self->priv->operation)
+	{
+		if (self->priv->operation_end)
+			self->priv->operation_end (self);
+		self->priv->operation = OPER_0;
+		self->priv->operation_end = NULL;
+	}
+}
+
+/**
+ * ld_canvas_add_object_begin:
+ * @self: An #LdCanvas object.
+ * @object: (transfer full): The object to be added to the diagram.
+ *
+ * Begin an operation for adding an object into the diagram.
+ */
+void
+ld_canvas_add_object_begin (LdCanvas *self, LdDiagramObject *object)
+{
+	AddObjectData *data;
+
+	g_return_if_fail (LD_IS_CANVAS (self));
+	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (object));
+
+	ld_canvas_real_cancel_operation (self);
+
+	self->priv->operation = OPER_ADD_OBJECT;
+	self->priv->operation_end = ld_canvas_add_object_end;
+
+	data = &OPER_DATA (self, add_object);
+	data->object = object;
+}
+
+static void
+ld_canvas_add_object_end (LdCanvas *self)
+{
+	AddObjectData *data;
+
+	data = &OPER_DATA (self, add_object);
+	if (data->object)
+	{
+		queue_object_redraw (self, data->object);
+		g_object_unref (data->object);
+		data->object = NULL;
+	}
+}
+
+
 /* ===== Events, rendering ================================================= */
+
+static void
+move_object_to_widget_coords (LdCanvas *self, LdDiagramObject *object,
+	gdouble x, gdouble y)
+{
+	gdouble dx, dy;
+
+	ld_canvas_widget_to_diagram_coords (self, x, y, &dx, &dy);
+	ld_diagram_object_set_x (object, floor (dx + 0.5));
+	ld_diagram_object_set_y (object, floor (dy + 0.5));
+}
 
 static LdSymbol *
 resolve_diagram_symbol (LdCanvas *self, LdDiagramSymbol *diagram_symbol)
@@ -604,6 +752,98 @@ get_symbol_clip_area_on_widget (LdCanvas *self, LdDiagramSymbol *diagram_symbol,
 	*width  = x2 - x1;
 	*height = y2 - y1;
 	return TRUE;
+}
+
+static void
+queue_object_redraw (LdCanvas *self, LdDiagramObject *object)
+{
+	if (LD_IS_DIAGRAM_SYMBOL (object))
+	{
+		gdouble x, y, width, height;
+
+		if (!get_symbol_clip_area_on_widget (self, LD_DIAGRAM_SYMBOL (object),
+			&x, &y, &width, &height))
+			return;
+		gtk_widget_queue_draw_area (GTK_WIDGET (self),
+			floor (x), floor (y), ceil (width), ceil (height));
+	}
+}
+
+static gboolean
+on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
+{
+	LdCanvas *self;
+
+	self = LD_CANVAS (widget);
+	switch (self->priv->operation)
+	{
+		AddObjectData *data;
+
+	case OPER_ADD_OBJECT:
+		data = &OPER_DATA (self, add_object);
+		data->visible = TRUE;
+
+		queue_object_redraw (self, data->object);
+		move_object_to_widget_coords (self, data->object, event->x, event->y);
+		queue_object_redraw (self, data->object);
+		break;
+	}
+	return FALSE;
+}
+
+static gboolean
+on_leave_notify (GtkWidget *widget, GdkEventCrossing *event, gpointer user_data)
+{
+	LdCanvas *self;
+
+	self = LD_CANVAS (widget);
+	switch (self->priv->operation)
+	{
+		AddObjectData *data;
+
+	case OPER_ADD_OBJECT:
+		data = &OPER_DATA (self, add_object);
+		data->visible = FALSE;
+
+		queue_object_redraw (self, data->object);
+		break;
+	}
+	return FALSE;
+}
+
+static gboolean
+on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
+	LdCanvas *self;
+
+	if (!gtk_widget_has_focus (widget))
+		gtk_widget_grab_focus (widget);
+
+	self = LD_CANVAS (widget);
+	switch (self->priv->operation)
+	{
+		AddObjectData *data;
+
+	case OPER_ADD_OBJECT:
+		data = &OPER_DATA (self, add_object);
+
+		queue_object_redraw (self, data->object);
+		move_object_to_widget_coords (self, data->object, event->x, event->y);
+
+		if (self->priv->diagram)
+			ld_diagram_insert_object (self->priv->diagram, data->object, -1);
+
+		/* XXX: "cancel" causes confusion. */
+		ld_canvas_real_cancel_operation (self);
+		break;
+	}
+	return FALSE;
+}
+
+static gboolean
+on_button_release (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
+	return FALSE;
 }
 
 static gboolean
@@ -679,6 +919,17 @@ draw_diagram (GtkWidget *widget, DrawData *data)
 	/* Draw objects from the diagram. */
 	objects = ld_diagram_get_objects (data->self->priv->diagram);
 	g_slist_foreach (objects, (GFunc) draw_object, data);
+
+	switch (data->self->priv->operation)
+	{
+		AddObjectData *op_data;
+
+	case OPER_ADD_OBJECT:
+		op_data = &OPER_DATA (data->self, add_object);
+		if (op_data->visible)
+			draw_object (op_data->object, data);
+		break;
+	}
 
 	cairo_restore (data->cr);
 }

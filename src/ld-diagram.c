@@ -56,6 +56,7 @@ static void ld_diagram_finalize (GObject *gobject);
 
 static void ld_diagram_real_changed (LdDiagram *self);
 static void ld_diagram_clear_internal (LdDiagram *self);
+static void ld_diagram_unselect_all_internal (LdDiagram *self);
 
 
 G_DEFINE_TYPE (LdDiagram, ld_diagram, G_TYPE_OBJECT);
@@ -94,6 +95,18 @@ ld_diagram_class_init (LdDiagramClass *klass)
 		("changed", G_TYPE_FROM_CLASS (klass),
 		G_SIGNAL_RUN_LAST,
 		G_STRUCT_OFFSET (LdDiagramClass, changed), NULL, NULL,
+		g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+
+/**
+ * LdDiagram::selection-changed:
+ * @diagram: The diagram object.
+ *
+ * The current selection has changed.
+ */
+	klass->selection_changed_signal = g_signal_new
+		("selection-changed", G_TYPE_FROM_CLASS (klass),
+		G_SIGNAL_RUN_LAST,
+		G_STRUCT_OFFSET (LdDiagramClass, selection_changed), NULL, NULL,
 		g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
 
 	g_type_class_add_private (klass, sizeof (LdDiagramPrivate));
@@ -426,7 +439,7 @@ ld_diagram_selection_add (LdDiagram *self, LdDiagramObject *object, gint pos)
 		g_object_ref (object);
 
 		g_signal_emit (self,
-			LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
+			LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
 	}
 }
 
@@ -449,7 +462,7 @@ ld_diagram_selection_remove (LdDiagram *self, LdDiagramObject *object)
 		g_object_unref (object);
 
 		g_signal_emit (self,
-			LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
+			LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
 	}
 }
 
@@ -464,10 +477,13 @@ ld_diagram_select_all (LdDiagram *self)
 {
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 
-	ld_diagram_unselect_all (self);
+	ld_diagram_unselect_all_internal (self);
 
 	self->priv->selection = g_slist_copy (self->priv->objects);
 	g_slist_foreach (self->priv->selection, (GFunc) g_object_ref, NULL);
+
+	g_signal_emit (self,
+		LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
 }
 
 /**
@@ -481,6 +497,15 @@ ld_diagram_unselect_all (LdDiagram *self)
 {
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 
+	ld_diagram_unselect_all_internal (self);
+
+	g_signal_emit (self,
+		LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
+}
+
+static void
+ld_diagram_unselect_all_internal (LdDiagram *self)
+{
 	g_slist_foreach (self->priv->selection, (GFunc) g_object_unref, NULL);
 	g_slist_free (self->priv->selection);
 	self->priv->selection = NULL;

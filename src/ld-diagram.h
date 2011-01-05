@@ -48,10 +48,11 @@ struct _LdDiagramClass
 /*< private >*/
 	GObjectClass parent_class;
 
-	/* FIXME: Add a selection_changed signal? */
 	guint changed_signal;
+	guint selection_changed_signal;
 
 	void (*changed) (LdDiagram *self);
+	void (*selection_changed) (LdDiagram *self);
 };
 
 

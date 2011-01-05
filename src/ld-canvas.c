@@ -157,6 +157,9 @@ static void on_adjustment_value_changed
 static void on_size_allocate (GtkWidget *widget, GtkAllocation *allocation,
 	gpointer user_data);
 
+static void diagram_connect_signals (LdCanvas *self);
+static void diagram_disconnect_signals (LdCanvas *self);
+
 static gdouble ld_canvas_get_base_unit_in_px (GtkWidget *self);
 static gdouble ld_canvas_get_scale_in_px (LdCanvas *self);
 
@@ -316,7 +319,10 @@ ld_canvas_finalize (GObject *gobject)
 	ld_canvas_real_set_scroll_adjustments (self, NULL, NULL);
 
 	if (self->priv->diagram)
+	{
+		diagram_disconnect_signals (self);
 		g_object_unref (self->priv->diagram);
+	}
 	if (self->priv->library)
 		g_object_unref (self->priv->library);
 
@@ -514,9 +520,13 @@ ld_canvas_set_diagram (LdCanvas *self, LdDiagram *diagram)
 	g_return_if_fail (LD_IS_DIAGRAM (diagram));
 
 	if (self->priv->diagram)
+	{
+		diagram_disconnect_signals (self);
 		g_object_unref (self->priv->diagram);
+	}
 
 	self->priv->diagram = diagram;
+	diagram_connect_signals (self);
 	g_object_ref (diagram);
 
 	g_object_notify (G_OBJECT (self), "diagram");
@@ -534,6 +544,27 @@ ld_canvas_get_diagram (LdCanvas *self)
 {
 	g_return_val_if_fail (LD_IS_CANVAS (self), NULL);
 	return self->priv->diagram;
+}
+
+static void
+diagram_connect_signals (LdCanvas *self)
+{
+	g_return_if_fail (LD_IS_DIAGRAM (self->priv->diagram));
+
+	g_signal_connect_swapped (self->priv->diagram, "changed",
+		G_CALLBACK (gtk_widget_queue_draw), self);
+	g_signal_connect_swapped (self->priv->diagram, "selection-changed",
+		G_CALLBACK (gtk_widget_queue_draw), self);
+}
+
+static void
+diagram_disconnect_signals (LdCanvas *self)
+{
+	g_return_if_fail (LD_IS_DIAGRAM (self->priv->diagram));
+
+	g_signal_handlers_disconnect_matched (self->priv->diagram,
+		G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA, 0, 0, NULL,
+		gtk_widget_queue_draw, self);
 }
 
 /**

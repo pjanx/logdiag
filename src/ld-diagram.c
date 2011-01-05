@@ -419,8 +419,9 @@ ld_diagram_selection_add (LdDiagram *self, LdDiagramObject *object, gint pos)
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (object));
 
-	if (!g_slist_find (self->priv->selection, object)
-		&& g_slist_find (self->priv->objects, object))
+	g_return_if_fail (g_slist_find (self->priv->objects, object) != NULL);
+
+	if (!g_slist_find (self->priv->selection, object))
 	{
 		self->priv->selection =
 			g_slist_insert (self->priv->selection, object, pos);

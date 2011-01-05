@@ -2,7 +2,7 @@
  * ld-canvas.c
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010. All rights reserved.
+ * Copyright Přemysl Janouch 2010 - 2011. All rights reserved.
  *
  * See the file LICENSE for licensing information.
  *
@@ -61,6 +61,25 @@ struct _AddObjectData
 	gboolean visible;
 };
 
+enum
+{
+	COLOR_BASE,
+	COLOR_GRID,
+	COLOR_OBJECT,
+	COLOR_SELECTION,
+	COLOR_COUNT
+};
+
+typedef struct _LdCanvasColor LdCanvasColor;
+
+struct _LdCanvasColor
+{
+	gdouble r;
+	gdouble g;
+	gdouble b;
+	gdouble a;
+};
+
 /*
  * LdCanvasPrivate:
  * @diagram: A diagram object assigned to this canvas as a model.
@@ -73,6 +92,7 @@ struct _AddObjectData
  * @operation: The current operation.
  * @operation_data: Data related to the current operation.
  * @operation_end: A callback to end the operation.
+ * @palette: Colors used by the widget.
  */
 struct _LdCanvasPrivate
 {
@@ -93,9 +113,12 @@ struct _LdCanvasPrivate
 	}
 	operation_data;
 	OperationEnd operation_end;
+
+	LdCanvasColor palette[COLOR_COUNT];
 };
 
 #define OPER_DATA(self, member) ((self)->priv->operation_data.member)
+#define COLOR_GET(self, name) (&(self)->priv->palette[name])
 
 /*
  * DrawData:
@@ -146,8 +169,14 @@ static gboolean on_button_press (GtkWidget *widget, GdkEventButton *event,
 static gboolean on_button_release (GtkWidget *widget, GdkEventButton *event,
 	gpointer user_data);
 
+static void ld_canvas_color_set (LdCanvasColor *color,
+	gdouble r, gdouble g, gdouble b, gdouble a);
+static void ld_canvas_color_apply (LdCanvasColor *color, cairo_t *cr);
+
 static void move_object_to_widget_coords (LdCanvas *self,
 	LdDiagramObject *object, gdouble x, gdouble y);
+static gboolean is_object_in_selection (LdCanvas *self,
+	LdDiagramObject *object);
 static LdSymbol *resolve_diagram_symbol (LdCanvas *self,
 	LdDiagramSymbol *diagram_symbol);
 static gboolean get_symbol_clip_area_on_widget (LdCanvas *self,
@@ -249,6 +278,11 @@ ld_canvas_init (LdCanvas *self)
 	self->priv->x = 0;
 	self->priv->y = 0;
 	self->priv->zoom = 1;
+
+	ld_canvas_color_set (COLOR_GET (self, COLOR_BASE), 1, 1, 1, 1);
+	ld_canvas_color_set (COLOR_GET (self, COLOR_GRID), 0.5, 0.5, 0.5, 1);
+	ld_canvas_color_set (COLOR_GET (self, COLOR_OBJECT), 0, 0, 0, 1);
+	ld_canvas_color_set (COLOR_GET (self, COLOR_SELECTION), 0, 0, 1, 1);
 
 	g_signal_connect (self, "size-allocate",
 		G_CALLBACK (on_size_allocate), NULL);
@@ -695,6 +729,22 @@ ld_canvas_add_object_end (LdCanvas *self)
 /* ===== Events, rendering ================================================= */
 
 static void
+ld_canvas_color_set (LdCanvasColor *color,
+	gdouble r, gdouble g, gdouble b, gdouble a)
+{
+	color->r = r;
+	color->g = g;
+	color->b = b;
+	color->a = a;
+}
+
+static void
+ld_canvas_color_apply (LdCanvasColor *color, cairo_t *cr)
+{
+	cairo_set_source_rgba (cr, color->r, color->g, color->b, color->a);
+}
+
+static void
 move_object_to_widget_coords (LdCanvas *self, LdDiagramObject *object,
 	gdouble x, gdouble y)
 {
@@ -703,6 +753,13 @@ move_object_to_widget_coords (LdCanvas *self, LdDiagramObject *object,
 	ld_canvas_widget_to_diagram_coords (self, x, y, &dx, &dy);
 	ld_diagram_object_set_x (object, floor (dx + 0.5));
 	ld_diagram_object_set_y (object, floor (dy + 0.5));
+}
+
+static gboolean
+is_object_in_selection (LdCanvas *self, LdDiagramObject *object)
+{
+	return g_slist_find (ld_diagram_get_selection (self->priv->diagram),
+		object) != NULL;
 }
 
 static LdSymbol *
@@ -860,8 +917,7 @@ on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 	gdk_cairo_rectangle (data.cr, &event->area);
 	cairo_clip (data.cr);
 
-	/* Paint the background white. */
-	cairo_set_source_rgb (data.cr, 1, 1, 1);
+	ld_canvas_color_apply (COLOR_GET (data.self, COLOR_BASE), data.cr);
 	cairo_paint (data.cr);
 
 	draw_grid (widget, &data);
@@ -877,7 +933,7 @@ draw_grid (GtkWidget *widget, DrawData *data)
 	gdouble x_init, y_init;
 	gdouble x, y;
 
-	cairo_set_source_rgb (data->cr, 0.5, 0.5, 0.5);
+	ld_canvas_color_apply (COLOR_GET (data->self, COLOR_GRID), data->cr);
 	cairo_set_line_width (data->cr, 1);
 	cairo_set_line_cap (data->cr, CAIRO_LINE_CAP_ROUND);
 
@@ -911,7 +967,6 @@ draw_diagram (GtkWidget *widget, DrawData *data)
 
 	cairo_save (data->cr);
 
-	cairo_set_source_rgb (data->cr, 0, 0, 0);
 	cairo_set_line_width (data->cr, 1 / data->scale);
 
 	/* Draw objects from the diagram. */
@@ -937,6 +992,13 @@ draw_object (LdDiagramObject *diagram_object, DrawData *data)
 {
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (diagram_object));
 	g_return_if_fail (data != NULL);
+
+	if (is_object_in_selection (data->self, diagram_object))
+		ld_canvas_color_apply (COLOR_GET (data->self,
+			COLOR_SELECTION), data->cr);
+	else
+		ld_canvas_color_apply (COLOR_GET (data->self,
+			COLOR_OBJECT), data->cr);
 
 	if (LD_IS_DIAGRAM_SYMBOL (diagram_object))
 		draw_symbol (LD_DIAGRAM_SYMBOL (diagram_object), data);

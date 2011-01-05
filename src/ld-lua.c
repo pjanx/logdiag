@@ -2,7 +2,7 @@
  * ld-lua.c
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010. All rights reserved.
+ * Copyright Přemysl Janouch 2010 - 2011. All rights reserved.
  *
  * See the file LICENSE for licensing information.
  *
@@ -92,6 +92,9 @@ static gchar *get_translation (lua_State *L, int index);
 static gboolean read_symbol_area (lua_State *L, int index, LdSymbolArea *area);
 
 static void push_cairo_object (lua_State *L, cairo_t *cr);
+static gdouble get_cairo_scale (cairo_t *cr);
+static int ld_lua_cairo_get_line_width (lua_State *L);
+static int ld_lua_cairo_set_line_width (lua_State *L);
 static int ld_lua_cairo_move_to (lua_State *L);
 static int ld_lua_cairo_line_to (lua_State *L);
 static int ld_lua_cairo_stroke (lua_State *L);
@@ -108,6 +111,8 @@ static luaL_Reg ld_lua_logdiag_lib[] =
 
 static luaL_Reg ld_lua_cairo_table[] =
 {
+	{"get_line_width", ld_lua_cairo_get_line_width},
+	{"set_line_width", ld_lua_cairo_set_line_width},
 	{"move_to", ld_lua_cairo_move_to},
 	{"line_to", ld_lua_cairo_line_to},
 	{"stroke", ld_lua_cairo_stroke},
@@ -557,9 +562,40 @@ push_cairo_object (lua_State *L, cairo_t *cr)
 	}
 }
 
+static gdouble
+get_cairo_scale (cairo_t *cr)
+{
+	double dx = 1, dy = 0;
+
+	cairo_user_to_device_distance (cr, &dx, &dy);
+	return dx;
+}
+
 /* TODO: More functions. Possibly put it into another file
  *       and generate it automatically.
  */
+static int
+ld_lua_cairo_get_line_width (lua_State *L)
+{
+	cairo_t *cr;
+
+	cr = lua_touserdata (L, lua_upvalueindex (1));
+	lua_pushnumber (L, cairo_get_line_width (cr) * get_cairo_scale (cr));
+	return 1;
+}
+
+static int
+ld_lua_cairo_set_line_width (lua_State *L)
+{
+	cairo_t *cr;
+	lua_Number width;
+
+	cr = lua_touserdata (L, lua_upvalueindex (1));
+	width = luaL_checknumber (L, 1);
+	cairo_set_line_width (cr, width / get_cairo_scale (cr));
+	return 0;
+}
+
 static int
 ld_lua_cairo_move_to (lua_State *L)
 {

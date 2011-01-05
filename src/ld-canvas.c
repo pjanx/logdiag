@@ -886,7 +886,7 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 		move_object_to_widget_coords (self, data->object, event->x, event->y);
 
 		if (self->priv->diagram)
-			ld_diagram_insert_object (self->priv->diagram, data->object, -1);
+			ld_diagram_insert_object (self->priv->diagram, data->object, 0);
 
 		/* XXX: "cancel" causes confusion. */
 		ld_canvas_real_cancel_operation (self);

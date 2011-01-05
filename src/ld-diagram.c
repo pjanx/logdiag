@@ -2,7 +2,7 @@
  * ld-diagram.c
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010. All rights reserved.
+ * Copyright Přemysl Janouch 2010 - 2011. All rights reserved.
  *
  * See the file LICENSE for licensing information.
  *
@@ -205,12 +205,10 @@ ld_diagram_clear (LdDiagram *self)
 static void
 ld_diagram_clear_internal (LdDiagram *self)
 {
+	ld_diagram_unselect_all (self);
+
 	g_slist_free (self->priv->connections);
 	self->priv->connections = NULL;
-
-	g_slist_foreach (self->priv->selection, (GFunc) g_object_unref, NULL);
-	g_slist_free (self->priv->selection);
-	self->priv->selection = NULL;
 
 	g_slist_foreach (self->priv->objects, (GFunc) g_object_unref, NULL);
 	g_slist_free (self->priv->objects);
@@ -453,4 +451,37 @@ ld_diagram_selection_remove (LdDiagram *self, LdDiagramObject *object)
 		g_signal_emit (self,
 			LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
 	}
+}
+
+/**
+ * ld_diagram_select_all:
+ * @self: An #LdDiagram object.
+ *
+ * Include all objects in the document to the selection.
+ */
+void
+ld_diagram_select_all (LdDiagram *self)
+{
+	g_return_if_fail (LD_IS_DIAGRAM (self));
+
+	ld_diagram_unselect_all (self);
+
+	self->priv->selection = g_slist_copy (self->priv->objects);
+	g_slist_foreach (self->priv->selection, (GFunc) g_object_ref, NULL);
+}
+
+/**
+ * ld_diagram_unselect_all:
+ * @self: An #LdDiagram object.
+ *
+ * Remove all objects from the current selection.
+ */
+void
+ld_diagram_unselect_all (LdDiagram *self)
+{
+	g_return_if_fail (LD_IS_DIAGRAM (self));
+
+	g_slist_foreach (self->priv->selection, (GFunc) g_object_unref, NULL);
+	g_slist_free (self->priv->selection);
+	self->priv->selection = NULL;
 }

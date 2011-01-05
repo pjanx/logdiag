@@ -2,7 +2,7 @@
  * ld-diagram.h
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010. All rights reserved.
+ * Copyright Přemysl Janouch 2010 - 2011. All rights reserved.
  *
  * See the file LICENSE for licensing information.
  *
@@ -78,6 +78,9 @@ void ld_diagram_selection_add (LdDiagram *self,
 	LdDiagramObject *object, gint pos);
 void ld_diagram_selection_remove (LdDiagram *self,
 	LdDiagramObject *object);
+
+void ld_diagram_select_all (LdDiagram *self);
+void ld_diagram_unselect_all (LdDiagram *self);
 
 /*
 GSList *ld_diagram_get_connections (LdDiagram *self);

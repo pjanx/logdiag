@@ -35,7 +35,7 @@
 #define MM_PER_INCH 25.4
 
 /* Tolerance on all sides of symbols for strokes. */
-#define SYMBOL_AREA_CLIP_TOLERANCE 0.5
+#define SYMBOL_AREA_CLIP_TOLERANCE 5
 
 /* The default screen resolution in DPI units. */
 #define DEFAULT_SCREEN_RESOLUTION 96
@@ -825,18 +825,18 @@ get_symbol_clip_area_on_widget (LdCanvas *self, LdDiagramSymbol *diagram_symbol,
 
 	/* TODO: Rotate the space for other orientations. */
 	ld_canvas_diagram_to_widget_coords (self,
-		object_x + area.x - SYMBOL_AREA_CLIP_TOLERANCE,
-		object_y + area.y - SYMBOL_AREA_CLIP_TOLERANCE,
+		object_x + area.x,
+		object_y + area.y,
 		&x1, &y1);
 	ld_canvas_diagram_to_widget_coords (self,
-		object_x + area.x + area.width  + SYMBOL_AREA_CLIP_TOLERANCE,
-		object_y + area.y + area.height + SYMBOL_AREA_CLIP_TOLERANCE,
+		object_x + area.x + area.width,
+		object_y + area.y + area.height,
 		&x2, &y2);
 
-	*x = x1;
-	*y = y1;
-	*width  = x2 - x1;
-	*height = y2 - y1;
+	*x = x1 - SYMBOL_AREA_CLIP_TOLERANCE;
+	*y = y1 - SYMBOL_AREA_CLIP_TOLERANCE;
+	*width  = x2 - x1 + 2 * SYMBOL_AREA_CLIP_TOLERANCE;
+	*height = y2 - y1 + 2 * SYMBOL_AREA_CLIP_TOLERANCE;
 	return TRUE;
 }
 

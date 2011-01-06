@@ -80,6 +80,8 @@ struct _LdCanvasColor
 	gdouble a;
 };
 
+typedef cairo_rectangle_t LdCanvasRect;
+
 /*
  * LdCanvasPrivate:
  * @diagram: A diagram object assigned to this canvas as a model.
@@ -133,7 +135,7 @@ struct _DrawData
 {
 	LdCanvas *self;
 	cairo_t *cr;
-	cairo_rectangle_t exposed_rect;
+	LdCanvasRect exposed_rect;
 	gdouble scale;
 };
 
@@ -175,6 +177,12 @@ static gboolean on_button_release (GtkWidget *widget, GdkEventButton *event,
 static void ld_canvas_color_set (LdCanvasColor *color,
 	gdouble r, gdouble g, gdouble b, gdouble a);
 static void ld_canvas_color_apply (LdCanvasColor *color, cairo_t *cr);
+
+static gboolean ld_canvas_rect_contains (LdCanvasRect *rect,
+	gdouble x, gdouble y);
+static gboolean ld_canvas_rect_intersects (LdCanvasRect *first,
+	LdCanvasRect *second);
+static void ld_canvas_rect_extend (LdCanvasRect *rect, gdouble border);
 
 static void move_object_to_widget_coords (LdCanvas *self,
 	LdDiagramObject *object, gdouble x, gdouble y);
@@ -773,6 +781,37 @@ static void
 ld_canvas_color_apply (LdCanvasColor *color, cairo_t *cr)
 {
 	cairo_set_source_rgba (cr, color->r, color->g, color->b, color->a);
+}
+
+static gboolean
+ld_canvas_rect_contains (LdCanvasRect *rect, gdouble x, gdouble y)
+{
+	g_return_val_if_fail (rect != NULL, FALSE);
+	return (x >= rect->x && x <= rect->x + rect->width
+	     && y >= rect->y && y <= rect->y + rect->height);
+}
+
+static gboolean
+ld_canvas_rect_intersects (LdCanvasRect *first, LdCanvasRect *second)
+{
+	g_return_val_if_fail (first != NULL, FALSE);
+	g_return_val_if_fail (second != NULL, FALSE);
+
+	return !(first->x > second->x + second->width
+	      || first->y > second->y + second->height
+	      || first->x + first->width  < second->x
+	      || first->y + first->height < second->y);
+}
+
+static void
+ld_canvas_rect_extend (LdCanvasRect *rect, gdouble border)
+{
+	g_return_if_fail (rect != NULL);
+
+	rect->x -= border;
+	rect->y -= border;
+	rect->width  += 2 * border;
+	rect->height += 2 * border;
 }
 
 static void

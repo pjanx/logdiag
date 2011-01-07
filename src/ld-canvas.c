@@ -34,8 +34,11 @@
 /* Milimetres per inch. */
 #define MM_PER_INCH 25.4
 
+/* Tolerance for object borders. */
+#define OBJECT_BORDER_TOLERANCE 3
+
 /* Tolerance on all sides of symbols for strokes. */
-#define SYMBOL_AREA_CLIP_TOLERANCE 5
+#define SYMBOL_CLIP_TOLERANCE 5
 
 /* The default screen resolution in DPI units. */
 #define DEFAULT_SCREEN_RESOLUTION 96
@@ -184,15 +187,21 @@ static gboolean ld_canvas_rect_intersects (LdCanvasRect *first,
 	LdCanvasRect *second);
 static void ld_canvas_rect_extend (LdCanvasRect *rect, gdouble border);
 
-static void move_object_to_widget_coords (LdCanvas *self,
-	LdDiagramObject *object, gdouble x, gdouble y);
-static gboolean is_object_in_selection (LdCanvas *self,
-	LdDiagramObject *object);
+static void move_object_to_coords (LdCanvas *self, LdDiagramObject *object,
+	gdouble x, gdouble y);
+static LdDiagramObject *get_object_at_coords (LdCanvas *self,
+	gdouble x, gdouble y);
+static gboolean is_object_selected (LdCanvas *self, LdDiagramObject *object);
 static LdSymbol *resolve_diagram_symbol (LdCanvas *self,
 	LdDiagramSymbol *diagram_symbol);
-static gboolean get_symbol_clip_area_on_widget (LdCanvas *self,
-	LdDiagramSymbol *diagram_symbol, gdouble *x, gdouble *y,
-	gdouble *width, gdouble *height);
+static gboolean get_symbol_area (LdCanvas *self, LdDiagramSymbol *symbol,
+	LdCanvasRect *rect);
+static gboolean get_symbol_clip_area (LdCanvas *self, LdDiagramSymbol *symbol,
+	LdCanvasRect *rect);
+static gboolean get_object_area (LdCanvas *self, LdDiagramObject *object,
+	LdCanvasRect *rect);
+static gboolean object_hit_test (LdCanvas *self, LdDiagramObject *object,
+	gdouble x, gdouble y);
 static void queue_object_redraw (LdCanvas *self, LdDiagramObject *object);
 
 static void ld_canvas_real_cancel_operation (LdCanvas *self);
@@ -815,7 +824,7 @@ ld_canvas_rect_extend (LdCanvasRect *rect, gdouble border)
 }
 
 static void
-move_object_to_widget_coords (LdCanvas *self, LdDiagramObject *object,
+move_object_to_coords (LdCanvas *self, LdDiagramObject *object,
 	gdouble x, gdouble y)
 {
 	gdouble dx, dy;
@@ -825,8 +834,26 @@ move_object_to_widget_coords (LdCanvas *self, LdDiagramObject *object,
 	ld_diagram_object_set_y (object, floor (dy + 0.5));
 }
 
+static LdDiagramObject *
+get_object_at_coords (LdCanvas *self, gdouble x, gdouble y)
+{
+	GSList *objects, *iter;
+
+	/* Iterate from the top object downwards. */
+	objects = (GSList *) ld_diagram_get_objects (self->priv->diagram);
+	for (iter = objects; iter; iter = g_slist_next (iter))
+	{
+		LdDiagramObject *object;
+
+		object = LD_DIAGRAM_OBJECT (iter->data);
+		if (object_hit_test (self, object, x, y))
+			return object;
+	}
+	return NULL;
+}
+
 static gboolean
-is_object_in_selection (LdCanvas *self, LdDiagramObject *object)
+is_object_selected (LdCanvas *self, LdDiagramObject *object)
 {
 	return g_slist_find (ld_diagram_get_selection (self->priv->diagram),
 		object) != NULL;
@@ -843,26 +870,26 @@ resolve_diagram_symbol (LdCanvas *self, LdDiagramSymbol *diagram_symbol)
 }
 
 static gboolean
-get_symbol_clip_area_on_widget (LdCanvas *self, LdDiagramSymbol *diagram_symbol,
-	gdouble *x, gdouble *y, gdouble *width, gdouble *height)
+get_symbol_area (LdCanvas *self, LdDiagramSymbol *symbol, LdCanvasRect *rect)
 {
-	LdSymbol *symbol;
+	LdDiagramObject *object;
+	gdouble object_x, object_y;
+	LdSymbol *library_symbol;
 	LdSymbolArea area;
 	gdouble x1, x2;
 	gdouble y1, y2;
-	gdouble object_x, object_y;
 
-	symbol = resolve_diagram_symbol (self, diagram_symbol);
+	object = LD_DIAGRAM_OBJECT (symbol);
+	object_x = ld_diagram_object_get_x (object);
+	object_y = ld_diagram_object_get_y (object);
 
-	object_x = ld_diagram_object_get_x (LD_DIAGRAM_OBJECT (diagram_symbol));
-	object_y = ld_diagram_object_get_y (LD_DIAGRAM_OBJECT (diagram_symbol));
-
-	if (symbol)
-		ld_symbol_get_area (symbol, &area);
+	library_symbol = resolve_diagram_symbol (self, symbol);
+	if (library_symbol)
+		ld_symbol_get_area (library_symbol, &area);
 	else
 		return FALSE;
 
-	/* TODO: Rotate the space for other orientations. */
+	/* TODO: Rotate the rectangle for other orientations. */
 	ld_canvas_diagram_to_widget_coords (self,
 		object_x + area.x,
 		object_y + area.y,
@@ -872,11 +899,44 @@ get_symbol_clip_area_on_widget (LdCanvas *self, LdDiagramSymbol *diagram_symbol,
 		object_y + area.y + area.height,
 		&x2, &y2);
 
-	*x = x1 - SYMBOL_AREA_CLIP_TOLERANCE;
-	*y = y1 - SYMBOL_AREA_CLIP_TOLERANCE;
-	*width  = x2 - x1 + 2 * SYMBOL_AREA_CLIP_TOLERANCE;
-	*height = y2 - y1 + 2 * SYMBOL_AREA_CLIP_TOLERANCE;
+	rect->x = x1;
+	rect->y = y1;
+	rect->width  = x2 - x1;
+	rect->height = y2 - y1;
 	return TRUE;
+}
+
+static gboolean
+get_symbol_clip_area (LdCanvas *self, LdDiagramSymbol *symbol,
+	LdCanvasRect *rect)
+{
+	LdCanvasRect object_rect;
+
+	if (!get_object_area (self, LD_DIAGRAM_OBJECT (symbol), &object_rect))
+		return FALSE;
+
+	*rect = object_rect;
+	ld_canvas_rect_extend (rect, SYMBOL_CLIP_TOLERANCE);
+	return TRUE;
+}
+
+static gboolean
+get_object_area (LdCanvas *self, LdDiagramObject *object, LdCanvasRect *rect)
+{
+	if (LD_IS_DIAGRAM_SYMBOL (object))
+		return get_symbol_area (self, LD_DIAGRAM_SYMBOL (object), rect);
+	return FALSE;
+}
+
+static gboolean
+object_hit_test (LdCanvas *self, LdDiagramObject *object, gdouble x, gdouble y)
+{
+	LdCanvasRect rect;
+
+	if (!get_object_area (self, object, &rect))
+		return FALSE;
+	ld_canvas_rect_extend (&rect, OBJECT_BORDER_TOLERANCE);
+	return ld_canvas_rect_contains (&rect, x, y);
 }
 
 static void
@@ -884,13 +944,13 @@ queue_object_redraw (LdCanvas *self, LdDiagramObject *object)
 {
 	if (LD_IS_DIAGRAM_SYMBOL (object))
 	{
-		gdouble x, y, width, height;
+		LdCanvasRect rect;
 
-		if (!get_symbol_clip_area_on_widget (self, LD_DIAGRAM_SYMBOL (object),
-			&x, &y, &width, &height))
+		if (!get_symbol_clip_area (self, LD_DIAGRAM_SYMBOL (object), &rect))
 			return;
 		gtk_widget_queue_draw_area (GTK_WIDGET (self),
-			floor (x), floor (y), ceil (width), ceil (height));
+			floor (rect.x), floor (rect.y),
+			ceil (rect.width), ceil (rect.height));
 	}
 }
 
@@ -909,7 +969,7 @@ on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 		data->visible = TRUE;
 
 		queue_object_redraw (self, data->object);
-		move_object_to_widget_coords (self, data->object, event->x, event->y);
+		move_object_to_coords (self, data->object, event->x, event->y);
 		queue_object_redraw (self, data->object);
 		break;
 	}
@@ -953,13 +1013,26 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 		data = &OPER_DATA (self, add_object);
 
 		queue_object_redraw (self, data->object);
-		move_object_to_widget_coords (self, data->object, event->x, event->y);
+		move_object_to_coords (self, data->object, event->x, event->y);
 
 		if (self->priv->diagram)
 			ld_diagram_insert_object (self->priv->diagram, data->object, 0);
 
 		/* XXX: "cancel" causes confusion. */
 		ld_canvas_real_cancel_operation (self);
+		break;
+	case OPER_0:
+		if (self->priv->diagram)
+		{
+			LdDiagramObject *object;
+
+			if (event->state != GDK_SHIFT_MASK)
+				ld_diagram_unselect_all (self->priv->diagram);
+
+			object = get_object_at_coords (self, event->x, event->y);
+			if (object)
+				ld_diagram_selection_add (self->priv->diagram, object, 0);
+		}
 		break;
 	}
 	return FALSE;
@@ -1063,7 +1136,7 @@ draw_object (LdDiagramObject *diagram_object, DrawData *data)
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (diagram_object));
 	g_return_if_fail (data != NULL);
 
-	if (is_object_in_selection (data->self, diagram_object))
+	if (is_object_selected (data->self, diagram_object))
 		ld_canvas_color_apply (COLOR_GET (data->self,
 			COLOR_SELECTION), data->cr);
 	else
@@ -1078,7 +1151,8 @@ static void
 draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data)
 {
 	LdSymbol *symbol;
-	gdouble x, y, width, height;
+	LdCanvasRect clip_rect;
+	gdouble x, y;
 
 	symbol = resolve_diagram_symbol (data->self, diagram_symbol);
 
@@ -1090,18 +1164,14 @@ draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data)
 		return;
 	}
 
-	if (!get_symbol_clip_area_on_widget (data->self, diagram_symbol,
-		&x, &y, &width, &height))
-		return;
-	if    (x > data->exposed_rect.x + data->exposed_rect.width
-		|| y > data->exposed_rect.y + data->exposed_rect.height
-		|| x + width  < data->exposed_rect.x
-		|| y + height < data->exposed_rect.y)
+	if (!get_symbol_clip_area (data->self, diagram_symbol, &clip_rect)
+		|| !ld_canvas_rect_intersects (&clip_rect, &data->exposed_rect))
 		return;
 
 	cairo_save (data->cr);
 
-	cairo_rectangle (data->cr, x, y, width, height);
+	cairo_rectangle (data->cr, clip_rect.x, clip_rect.y,
+		clip_rect.width, clip_rect.height);
 	cairo_clip (data->cr);
 
 	/* TODO: Rotate the space for other orientations. */

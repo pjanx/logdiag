@@ -77,6 +77,7 @@ struct _LdLuaDrawData
 {
 	LdLuaSymbol *symbol;
 	cairo_t *cr;
+	unsigned save_count;
 };
 
 static void ld_lua_finalize (GObject *gobject);
@@ -91,16 +92,26 @@ static int process_registration (lua_State *L);
 static gchar *get_translation (lua_State *L, int index);
 static gboolean read_symbol_area (lua_State *L, int index, LdSymbolArea *area);
 
-static void push_cairo_object (lua_State *L, cairo_t *cr);
+static void push_cairo_object (lua_State *L, LdLuaDrawData *draw_data);
 static gdouble get_cairo_scale (cairo_t *cr);
+static int ld_lua_cairo_save (lua_State *L);
+static int ld_lua_cairo_restore (lua_State *L);
 static int ld_lua_cairo_get_line_width (lua_State *L);
 static int ld_lua_cairo_set_line_width (lua_State *L);
 static int ld_lua_cairo_move_to (lua_State *L);
 static int ld_lua_cairo_line_to (lua_State *L);
+static int ld_lua_cairo_curve_to (lua_State *L);
+static int ld_lua_cairo_arc (lua_State *L);
+static int ld_lua_cairo_arc_negative (lua_State *L);
+static int ld_lua_cairo_new_path (lua_State *L);
+static int ld_lua_cairo_new_sub_path (lua_State *L);
+static int ld_lua_cairo_close_path (lua_State *L);
 static int ld_lua_cairo_stroke (lua_State *L);
 static int ld_lua_cairo_stroke_preserve (lua_State *L);
 static int ld_lua_cairo_fill (lua_State *L);
 static int ld_lua_cairo_fill_preserve (lua_State *L);
+static int ld_lua_cairo_clip (lua_State *L);
+static int ld_lua_cairo_clip_preserve (lua_State *L);
 
 
 static luaL_Reg ld_lua_logdiag_lib[] =
@@ -111,14 +122,24 @@ static luaL_Reg ld_lua_logdiag_lib[] =
 
 static luaL_Reg ld_lua_cairo_table[] =
 {
+	{"save", ld_lua_cairo_save},
+	{"restore", ld_lua_cairo_restore},
 	{"get_line_width", ld_lua_cairo_get_line_width},
 	{"set_line_width", ld_lua_cairo_set_line_width},
 	{"move_to", ld_lua_cairo_move_to},
 	{"line_to", ld_lua_cairo_line_to},
+	{"curve_to", ld_lua_cairo_curve_to},
+	{"arc", ld_lua_cairo_arc},
+	{"arc_negative", ld_lua_cairo_arc_negative},
+	{"new_path", ld_lua_cairo_new_path},
+	{"new_sub_path", ld_lua_cairo_new_sub_path},
+	{"close_path", ld_lua_cairo_close_path},
 	{"stroke", ld_lua_cairo_stroke},
 	{"stroke_preserve", ld_lua_cairo_stroke_preserve},
 	{"fill", ld_lua_cairo_fill},
 	{"fill_preserve", ld_lua_cairo_fill_preserve},
+	{"clip", ld_lua_cairo_clip},
+	{"clip_preserve", ld_lua_cairo_clip_preserve},
 	{NULL, NULL}
 };
 
@@ -304,12 +325,16 @@ ld_lua_private_draw (LdLua *self, LdLuaSymbol *symbol, cairo_t *cr)
 
 	data.symbol = symbol;
 	data.cr = cr;
+	data.save_count = 0;
 
 	if (lua_cpcall (self->priv->L, ld_lua_private_draw_cb, &data))
 	{
 		g_warning ("Lua error: %s", lua_tostring (self->priv->L, -1));
 		lua_pop (self->priv->L, 1);
 	}
+
+	while (data.save_count--)
+		cairo_restore (cr);
 }
 
 static int
@@ -329,7 +354,7 @@ ld_lua_private_draw_cb (lua_State *L)
 	luaL_checktype (L, -1, LUA_TFUNCTION);
 
 	/* Call the function do draw the symbol. */
-	push_cairo_object (L, data->cr);
+	push_cairo_object (L, data);
 	lua_pcall (L, 1, 0, 0);
 	return 0;
 }
@@ -541,7 +566,7 @@ read_symbol_area (lua_State *L, int index, LdSymbolArea *area)
 /* ===== Cairo ============================================================= */
 
 static void
-push_cairo_object (lua_State *L, cairo_t *cr)
+push_cairo_object (lua_State *L, LdLuaDrawData *draw_data)
 {
 	luaL_Reg *fn;
 
@@ -556,7 +581,7 @@ push_cairo_object (lua_State *L, cairo_t *cr)
 	 */
 	for (fn = ld_lua_cairo_table; fn->name; fn++)
 	{
-		lua_pushlightuserdata (L, cr);
+		lua_pushlightuserdata (L, draw_data);
 		lua_pushcclosure (L, fn->func, 1);
 		lua_setfield (L, -2, fn->name);
 	}
@@ -571,98 +596,159 @@ get_cairo_scale (cairo_t *cr)
 	return dx;
 }
 
-/* TODO: More functions. Possibly put it into another file
- *       and generate it automatically.
- */
+#define LD_LUA_CAIRO_TRIVIAL(name) \
+static int \
+ld_lua_cairo_ ## name (lua_State *L) \
+{ \
+	LdLuaDrawData *data; \
+	data = lua_touserdata (L, lua_upvalueindex (1)); \
+	cairo_ ## name (data->cr); \
+	return 0; \
+}
+
+LD_LUA_CAIRO_TRIVIAL (new_path)
+LD_LUA_CAIRO_TRIVIAL (new_sub_path)
+LD_LUA_CAIRO_TRIVIAL (close_path)
+
+LD_LUA_CAIRO_TRIVIAL (stroke)
+LD_LUA_CAIRO_TRIVIAL (stroke_preserve)
+LD_LUA_CAIRO_TRIVIAL (fill)
+LD_LUA_CAIRO_TRIVIAL (fill_preserve)
+LD_LUA_CAIRO_TRIVIAL (clip)
+LD_LUA_CAIRO_TRIVIAL (clip_preserve)
+
+static int
+ld_lua_cairo_save (lua_State *L)
+{
+	LdLuaDrawData *data;
+
+	data = lua_touserdata (L, lua_upvalueindex (1));
+	if (data->save_count + 1)
+	{
+		data->save_count++;
+		cairo_save (data->cr);
+	}
+	return 0;
+}
+
+static int
+ld_lua_cairo_restore (lua_State *L)
+{
+	LdLuaDrawData *data;
+
+	data = lua_touserdata (L, lua_upvalueindex (1));
+	if (data->save_count)
+	{
+		data->save_count--;
+		cairo_restore (data->cr);
+	}
+	return 0;
+}
+
 static int
 ld_lua_cairo_get_line_width (lua_State *L)
 {
-	cairo_t *cr;
+	LdLuaDrawData *data;
 
-	cr = lua_touserdata (L, lua_upvalueindex (1));
-	lua_pushnumber (L, cairo_get_line_width (cr) * get_cairo_scale (cr));
+	data = lua_touserdata (L, lua_upvalueindex (1));
+	lua_pushnumber (L, cairo_get_line_width (data->cr)
+		* get_cairo_scale (data->cr));
 	return 1;
 }
 
 static int
 ld_lua_cairo_set_line_width (lua_State *L)
 {
-	cairo_t *cr;
-	lua_Number width;
+	LdLuaDrawData *data;
 
-	cr = lua_touserdata (L, lua_upvalueindex (1));
-	width = luaL_checknumber (L, 1);
-	cairo_set_line_width (cr, width / get_cairo_scale (cr));
+	data = lua_touserdata (L, lua_upvalueindex (1));
+	cairo_set_line_width (data->cr, luaL_checknumber (L, 1)
+		/ get_cairo_scale (data->cr));
 	return 0;
 }
 
 static int
 ld_lua_cairo_move_to (lua_State *L)
 {
-	cairo_t *cr;
+	LdLuaDrawData *data;
 	lua_Number x, y;
 
-	cr = lua_touserdata (L, lua_upvalueindex (1));
+	data = lua_touserdata (L, lua_upvalueindex (1));
 
 	x = luaL_checknumber (L, 1);
 	y = luaL_checknumber (L, 2);
 
-	cairo_move_to (cr, x, y);
+	cairo_move_to (data->cr, x, y);
 	return 0;
 }
 
 static int
 ld_lua_cairo_line_to (lua_State *L)
 {
-	cairo_t *cr;
+	LdLuaDrawData *data;
 	lua_Number x, y;
 
-	cr = lua_touserdata (L, lua_upvalueindex (1));
+	data = lua_touserdata (L, lua_upvalueindex (1));
+
 	x = luaL_checknumber (L, 1);
 	y = luaL_checknumber (L, 2);
-	cairo_line_to (cr, x, y);
+
+	cairo_line_to (data->cr, x, y);
 	return 0;
 }
 
 static int
-ld_lua_cairo_stroke (lua_State *L)
+ld_lua_cairo_curve_to (lua_State *L)
 {
-	cairo_t *cr;
+	LdLuaDrawData *data;
+	lua_Number x1, y1, x2, y2, x3, y3;
 
-	cr = lua_touserdata (L, lua_upvalueindex (1));
-	cairo_stroke (cr);
+	data = lua_touserdata (L, lua_upvalueindex (1));
+
+	x1 = luaL_checknumber (L, 1);
+	y1 = luaL_checknumber (L, 2);
+	x2 = luaL_checknumber (L, 3);
+	y2 = luaL_checknumber (L, 4);
+	x3 = luaL_checknumber (L, 5);
+	y3 = luaL_checknumber (L, 6);
+
+	cairo_curve_to (data->cr, x1, y1, x2, y2, x3, y3);
 	return 0;
 }
 
 static int
-ld_lua_cairo_stroke_preserve (lua_State *L)
+ld_lua_cairo_arc (lua_State *L)
 {
-	cairo_t *cr;
+	LdLuaDrawData *data;
+	lua_Number xc, yc, radius, angle1, angle2;
 
-	cr = lua_touserdata (L, lua_upvalueindex (1));
-	cairo_stroke_preserve (cr);
+	data = lua_touserdata (L, lua_upvalueindex (1));
+
+	xc = luaL_checknumber (L, 1);
+	yc = luaL_checknumber (L, 2);
+	radius = luaL_checknumber (L, 3);
+	angle1 = luaL_checknumber (L, 4);
+	angle2 = luaL_checknumber (L, 5);
+
+	cairo_arc (data->cr, xc, yc, radius, angle1, angle2);
 	return 0;
 }
 
 static int
-ld_lua_cairo_fill (lua_State *L)
+ld_lua_cairo_arc_negative (lua_State *L)
 {
-	cairo_t *cr;
+	LdLuaDrawData *data;
+	lua_Number xc, yc, radius, angle1, angle2;
 
-	cr = lua_touserdata (L, lua_upvalueindex (1));
-	cairo_fill (cr);
+	data = lua_touserdata (L, lua_upvalueindex (1));
+
+	xc = luaL_checknumber (L, 1);
+	yc = luaL_checknumber (L, 2);
+	radius = luaL_checknumber (L, 3);
+	angle1 = luaL_checknumber (L, 4);
+	angle2 = luaL_checknumber (L, 5);
+
+	cairo_arc_negative (data->cr, xc, yc, radius, angle1, angle2);
 	return 0;
 }
-
-static int
-ld_lua_cairo_fill_preserve (lua_State *L)
-{
-	cairo_t *cr;
-
-	cr = lua_touserdata (L, lua_upvalueindex (1));
-	cairo_fill_preserve (cr);
-	return 0;
-}
-
-
 

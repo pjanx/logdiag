@@ -2,7 +2,7 @@
  * ld-window-main.c
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010. All rights reserved.
+ * Copyright Přemysl Janouch 2010 - 2011. All rights reserved.
  *
  * See the file LICENSE for licensing information.
  *
@@ -1165,7 +1165,7 @@ on_action_about (GtkAction *action, LdWindowMain *self)
 	gtk_show_about_dialog (GTK_WINDOW (self),
 		"program-name", PROJECT_NAME,
 		"version", PROJECT_VERSION,
-		"copyright", "Copyright Přemysl Janouch 2010",
+		"copyright", "Copyright Přemysl Janouch 2010 - 2011",
 		NULL);
 }
 

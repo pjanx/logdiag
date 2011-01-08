@@ -15,6 +15,7 @@
 #include "config.h"
 
 #include "ld-marshal.h"
+#include "ld-types.h"
 #include "ld-diagram-object.h"
 #include "ld-diagram-symbol.h"
 #include "ld-diagram.h"
@@ -83,8 +84,6 @@ struct _LdCanvasColor
 	gdouble a;
 };
 
-typedef cairo_rectangle_t LdCanvasRect;
-
 /*
  * LdCanvasPrivate:
  * @diagram: A diagram object assigned to this canvas as a model.
@@ -138,7 +137,7 @@ struct _DrawData
 {
 	LdCanvas *self;
 	cairo_t *cr;
-	LdCanvasRect exposed_rect;
+	LdRectangle exposed_rect;
 	gdouble scale;
 };
 
@@ -181,12 +180,6 @@ static void ld_canvas_color_set (LdCanvasColor *color,
 	gdouble r, gdouble g, gdouble b, gdouble a);
 static void ld_canvas_color_apply (LdCanvasColor *color, cairo_t *cr);
 
-static gboolean ld_canvas_rect_contains (LdCanvasRect *rect,
-	gdouble x, gdouble y);
-static gboolean ld_canvas_rect_intersects (LdCanvasRect *first,
-	LdCanvasRect *second);
-static void ld_canvas_rect_extend (LdCanvasRect *rect, gdouble border);
-
 static void move_object_to_coords (LdCanvas *self, LdDiagramObject *object,
 	gdouble x, gdouble y);
 static LdDiagramObject *get_object_at_coords (LdCanvas *self,
@@ -195,11 +188,11 @@ static gboolean is_object_selected (LdCanvas *self, LdDiagramObject *object);
 static LdSymbol *resolve_diagram_symbol (LdCanvas *self,
 	LdDiagramSymbol *diagram_symbol);
 static gboolean get_symbol_area (LdCanvas *self, LdDiagramSymbol *symbol,
-	LdCanvasRect *rect);
+	LdRectangle *rect);
 static gboolean get_symbol_clip_area (LdCanvas *self, LdDiagramSymbol *symbol,
-	LdCanvasRect *rect);
+	LdRectangle *rect);
 static gboolean get_object_area (LdCanvas *self, LdDiagramObject *object,
-	LdCanvasRect *rect);
+	LdRectangle *rect);
 static gboolean object_hit_test (LdCanvas *self, LdDiagramObject *object,
 	gdouble x, gdouble y);
 static void queue_object_redraw (LdCanvas *self, LdDiagramObject *object);
@@ -792,37 +785,6 @@ ld_canvas_color_apply (LdCanvasColor *color, cairo_t *cr)
 	cairo_set_source_rgba (cr, color->r, color->g, color->b, color->a);
 }
 
-static gboolean
-ld_canvas_rect_contains (LdCanvasRect *rect, gdouble x, gdouble y)
-{
-	g_return_val_if_fail (rect != NULL, FALSE);
-	return (x >= rect->x && x <= rect->x + rect->width
-	     && y >= rect->y && y <= rect->y + rect->height);
-}
-
-static gboolean
-ld_canvas_rect_intersects (LdCanvasRect *first, LdCanvasRect *second)
-{
-	g_return_val_if_fail (first != NULL, FALSE);
-	g_return_val_if_fail (second != NULL, FALSE);
-
-	return !(first->x > second->x + second->width
-	      || first->y > second->y + second->height
-	      || first->x + first->width  < second->x
-	      || first->y + first->height < second->y);
-}
-
-static void
-ld_canvas_rect_extend (LdCanvasRect *rect, gdouble border)
-{
-	g_return_if_fail (rect != NULL);
-
-	rect->x -= border;
-	rect->y -= border;
-	rect->width  += 2 * border;
-	rect->height += 2 * border;
-}
-
 static void
 move_object_to_coords (LdCanvas *self, LdDiagramObject *object,
 	gdouble x, gdouble y)
@@ -870,12 +832,12 @@ resolve_diagram_symbol (LdCanvas *self, LdDiagramSymbol *diagram_symbol)
 }
 
 static gboolean
-get_symbol_area (LdCanvas *self, LdDiagramSymbol *symbol, LdCanvasRect *rect)
+get_symbol_area (LdCanvas *self, LdDiagramSymbol *symbol, LdRectangle *rect)
 {
 	LdDiagramObject *object;
 	gdouble object_x, object_y;
 	LdSymbol *library_symbol;
-	LdSymbolArea area;
+	LdRectangle area;
 	gdouble x1, x2;
 	gdouble y1, y2;
 
@@ -908,20 +870,20 @@ get_symbol_area (LdCanvas *self, LdDiagramSymbol *symbol, LdCanvasRect *rect)
 
 static gboolean
 get_symbol_clip_area (LdCanvas *self, LdDiagramSymbol *symbol,
-	LdCanvasRect *rect)
+	LdRectangle *rect)
 {
-	LdCanvasRect object_rect;
+	LdRectangle object_rect;
 
 	if (!get_object_area (self, LD_DIAGRAM_OBJECT (symbol), &object_rect))
 		return FALSE;
 
 	*rect = object_rect;
-	ld_canvas_rect_extend (rect, SYMBOL_CLIP_TOLERANCE);
+	ld_rectangle_extend (rect, SYMBOL_CLIP_TOLERANCE);
 	return TRUE;
 }
 
 static gboolean
-get_object_area (LdCanvas *self, LdDiagramObject *object, LdCanvasRect *rect)
+get_object_area (LdCanvas *self, LdDiagramObject *object, LdRectangle *rect)
 {
 	if (LD_IS_DIAGRAM_SYMBOL (object))
 		return get_symbol_area (self, LD_DIAGRAM_SYMBOL (object), rect);
@@ -931,12 +893,12 @@ get_object_area (LdCanvas *self, LdDiagramObject *object, LdCanvasRect *rect)
 static gboolean
 object_hit_test (LdCanvas *self, LdDiagramObject *object, gdouble x, gdouble y)
 {
-	LdCanvasRect rect;
+	LdRectangle rect;
 
 	if (!get_object_area (self, object, &rect))
 		return FALSE;
-	ld_canvas_rect_extend (&rect, OBJECT_BORDER_TOLERANCE);
-	return ld_canvas_rect_contains (&rect, x, y);
+	ld_rectangle_extend (&rect, OBJECT_BORDER_TOLERANCE);
+	return ld_rectangle_contains (&rect, x, y);
 }
 
 static void
@@ -944,7 +906,7 @@ queue_object_redraw (LdCanvas *self, LdDiagramObject *object)
 {
 	if (LD_IS_DIAGRAM_SYMBOL (object))
 	{
-		LdCanvasRect rect;
+		LdRectangle rect;
 
 		if (!get_symbol_clip_area (self, LD_DIAGRAM_SYMBOL (object), &rect))
 			return;
@@ -1151,7 +1113,7 @@ static void
 draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data)
 {
 	LdSymbol *symbol;
-	LdCanvasRect clip_rect;
+	LdRectangle clip_rect;
 	gdouble x, y;
 
 	symbol = resolve_diagram_symbol (data->self, diagram_symbol);
@@ -1165,7 +1127,7 @@ draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data)
 	}
 
 	if (!get_symbol_clip_area (data->self, diagram_symbol, &clip_rect)
-		|| !ld_canvas_rect_intersects (&clip_rect, &data->exposed_rect))
+		|| !ld_rectangle_intersects (&clip_rect, &data->exposed_rect))
 		return;
 
 	cairo_save (data->cr);

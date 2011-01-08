@@ -15,6 +15,7 @@
 
 #include "config.h"
 
+#include "ld-types.h"
 #include "ld-symbol.h"
 #include "ld-library.h"
 
@@ -90,7 +91,7 @@ static int ld_lua_private_unregister_cb (lua_State *L);
 static int ld_lua_logdiag_register (lua_State *L);
 static int process_registration (lua_State *L);
 static gchar *get_translation (lua_State *L, int index);
-static gboolean read_symbol_area (lua_State *L, int index, LdSymbolArea *area);
+static gboolean read_symbol_area (lua_State *L, int index, LdRectangle *area);
 
 static void push_cairo_object (lua_State *L, LdLuaDrawData *draw_data);
 static gdouble get_cairo_scale (cairo_t *cr);
@@ -528,7 +529,7 @@ get_translation (lua_State *L, int index)
  * Return value: TRUE on success, FALSE on failure.
  */
 static gboolean
-read_symbol_area (lua_State *L, int index, LdSymbolArea *area)
+read_symbol_area (lua_State *L, int index, LdRectangle *area)
 {
 	lua_Number x1, x2, y1, y2;
 

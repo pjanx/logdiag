@@ -82,6 +82,7 @@ set (project_DOC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/docs/reference")
 set (logdiag_SOURCES
 	src/logdiag.c
 	src/ld-marshal.c
+	src/ld-types.c
 	src/ld-window-main.c
 	src/ld-diagram.c
 	src/ld-diagram-object.c
@@ -95,6 +96,7 @@ set (logdiag_SOURCES
 set (logdiag_HEADERS
 	${CMAKE_CURRENT_BINARY_DIR}/config.h
 	src/ld-marshal.h
+	src/ld-types.h
 	src/ld-window-main.h
 	src/ld-diagram.h
 	src/ld-diagram-object.h

@@ -2,7 +2,7 @@
  * ld-lua-symbol-private.h
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010. All rights reserved.
+ * Copyright Přemysl Janouch 2010 - 2011. All rights reserved.
  *
  * See the file LICENSE for licensing information.
  *
@@ -28,7 +28,7 @@ struct _LdLuaSymbolPrivate
 	LdLua *lua;
 	gchar *name;
 	gchar *human_name;
-	LdSymbolArea area;
+	LdRectangle area;
 };
 
 

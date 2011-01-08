@@ -14,6 +14,7 @@
 
 #include "ld-window-main.h"
 
+#include "ld-types.h"
 #include "ld-symbol.h"
 #include "ld-symbol-category.h"
 #include "ld-library.h"
@@ -610,7 +611,7 @@ on_category_toggle (GtkToggleButton *toggle_button, gpointer user_data)
 		for (symbol_iter = children; symbol_iter;
 			symbol_iter = symbol_iter->next)
 		{
-			LdSymbolArea area;
+			LdRectangle area;
 
 			item->symbol = LD_SYMBOL (symbol_iter->data);
 			g_object_ref (item->symbol);

@@ -2,7 +2,7 @@
  * ld-lua-symbol.c
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010. All rights reserved.
+ * Copyright Přemysl Janouch 2010 - 2011. All rights reserved.
  *
  * See the file LICENSE for licensing information.
  *
@@ -12,6 +12,7 @@
 
 #include "config.h"
 
+#include "ld-types.h"
 #include "ld-symbol.h"
 #include "ld-symbol-category.h"
 #include "ld-library.h"
@@ -35,7 +36,7 @@ static void ld_lua_symbol_finalize (GObject *gobject);
 
 static const gchar *ld_lua_symbol_real_get_name (LdSymbol *symbol);
 static const gchar *ld_lua_symbol_real_get_human_name (LdSymbol *symbol);
-static void ld_lua_symbol_real_get_area (LdSymbol *symbol, LdSymbolArea *area);
+static void ld_lua_symbol_real_get_area (LdSymbol *symbol, LdRectangle *area);
 static void ld_lua_symbol_real_draw (LdSymbol *symbol, cairo_t *cr);
 
 
@@ -102,7 +103,7 @@ ld_lua_symbol_real_get_human_name (LdSymbol *symbol)
 }
 
 static void
-ld_lua_symbol_real_get_area (LdSymbol *symbol, LdSymbolArea *area)
+ld_lua_symbol_real_get_area (LdSymbol *symbol, LdRectangle *area)
 {
 	LdLuaSymbol *self;
 

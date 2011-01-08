@@ -2,7 +2,7 @@
  * ld-symbol.h
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010. All rights reserved.
+ * Copyright Přemysl Janouch 2010 - 2011. All rights reserved.
  *
  * See the file LICENSE for licensing information.
  *
@@ -12,33 +12,6 @@
 #define __LD_SYMBOL_H__
 
 G_BEGIN_DECLS
-
-
-#define LD_TYPE_SYMBOL_AREA (ld_symbol_area_get_type ())
-
-typedef struct _LdSymbolArea LdSymbolArea;
-
-/**
- * LdSymbolArea:
- * @x: Left-top X coordinate.
- * @y: Left-top Y coordinate.
- * @width: Width of the area, must be positive.
- * @height: Height of the area, must be positive.
- *
- * Defines the area of the symbol relative to the center of the symbol,
- * which is at the (0, 0) coordinates.
- */
-struct _LdSymbolArea
-{
-	gdouble x, y;
-	gdouble width, height;
-};
-
-
-GType ld_symbol_area_get_type (void) G_GNUC_CONST;
-
-LdSymbolArea *ld_symbol_area_copy (const LdSymbolArea *self);
-void ld_symbol_area_free (LdSymbolArea *self);
 
 
 #define LD_TYPE_SYMBOL (ld_symbol_get_type ())
@@ -79,7 +52,7 @@ struct _LdSymbolClass
 
 	const gchar *(*get_name) (LdSymbol *self);
 	const gchar *(*get_human_name) (LdSymbol *self);
-	void (*get_area) (LdSymbol *self, LdSymbolArea *area);
+	void (*get_area) (LdSymbol *self, LdRectangle *area);
 	void (*draw) (LdSymbol *self, cairo_t *cr);
 };
 
@@ -88,7 +61,7 @@ GType ld_symbol_get_type (void) G_GNUC_CONST;
 
 const gchar *ld_symbol_get_name (LdSymbol *self);
 const gchar *ld_symbol_get_human_name (LdSymbol *self);
-void ld_symbol_get_area (LdSymbol *self, LdSymbolArea *area);
+void ld_symbol_get_area (LdSymbol *self, LdRectangle *area);
 void ld_symbol_draw (LdSymbol *self, cairo_t *cr);
 
 /* TODO: Interface for terminals.

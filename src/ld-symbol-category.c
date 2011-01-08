@@ -2,7 +2,7 @@
  * ld-symbol-category.c
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010. All rights reserved.
+ * Copyright Přemysl Janouch 2010 - 2011. All rights reserved.
  *
  * See the file LICENSE for licensing information.
  *
@@ -12,6 +12,7 @@
 
 #include "config.h"
 
+#include "ld-types.h"
 #include "ld-symbol.h"
 #include "ld-symbol-category.h"
 #include "ld-library.h"

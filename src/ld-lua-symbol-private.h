@@ -22,6 +22,7 @@ G_BEGIN_DECLS
  * @name: Name of this symbol.
  * @human_name: Localized human name of this symbol.
  * @area: Area of this symbol.
+ * @terminals: Terminals of this symbol.
  */
 struct _LdLuaSymbolPrivate
 {
@@ -29,6 +30,7 @@ struct _LdLuaSymbolPrivate
 	gchar *name;
 	gchar *human_name;
 	LdRectangle area;
+	LdPointArray *terminals;
 };
 
 

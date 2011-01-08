@@ -37,6 +37,7 @@ static void ld_lua_symbol_finalize (GObject *gobject);
 static const gchar *ld_lua_symbol_real_get_name (LdSymbol *symbol);
 static const gchar *ld_lua_symbol_real_get_human_name (LdSymbol *symbol);
 static void ld_lua_symbol_real_get_area (LdSymbol *symbol, LdRectangle *area);
+static const LdPointArray *ld_lua_symbol_real_get_terminals (LdSymbol *symbol);
 static void ld_lua_symbol_real_draw (LdSymbol *symbol, cairo_t *cr);
 
 
@@ -53,6 +54,7 @@ ld_lua_symbol_class_init (LdLuaSymbolClass *klass)
 	klass->parent_class.get_name = ld_lua_symbol_real_get_name;
 	klass->parent_class.get_human_name = ld_lua_symbol_real_get_human_name;
 	klass->parent_class.get_area = ld_lua_symbol_real_get_area;
+	klass->parent_class.get_terminals = ld_lua_symbol_real_get_terminals;
 	klass->parent_class.draw = ld_lua_symbol_real_draw;
 
 	g_type_class_add_private (klass, sizeof (LdLuaSymbolPrivate));
@@ -83,6 +85,9 @@ ld_lua_symbol_finalize (GObject *gobject)
 	if (self->priv->human_name)
 		g_free (self->priv->human_name);
 
+	if (self->priv->terminals)
+		ld_point_array_free (self->priv->terminals);
+
 	/* Chain up to the parent class. */
 	G_OBJECT_CLASS (ld_lua_symbol_parent_class)->finalize (gobject);
 }
@@ -112,6 +117,17 @@ ld_lua_symbol_real_get_area (LdSymbol *symbol, LdRectangle *area)
 
 	self = LD_LUA_SYMBOL (symbol);
 	*area = self->priv->area;
+}
+
+static const LdPointArray *
+ld_lua_symbol_real_get_terminals (LdSymbol *symbol)
+{
+	LdLuaSymbol *self;
+
+	g_return_val_if_fail (LD_IS_LUA_SYMBOL (symbol), NULL);
+
+	self = LD_LUA_SYMBOL (symbol);
+	return self->priv->terminals;
 }
 
 static void

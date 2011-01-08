@@ -44,6 +44,7 @@ struct _LdSymbol
  * @get_name: Get the name of the symbol.
  * @get_human_name: Get the localized human name of the symbol.
  * @get_area: Get the area of the symbol.
+ * @get_terminals: Get a list of symbol terminals.
  * @draw: Draw the symbol on a Cairo surface.
  */
 struct _LdSymbolClass
@@ -53,6 +54,7 @@ struct _LdSymbolClass
 	const gchar *(*get_name) (LdSymbol *self);
 	const gchar *(*get_human_name) (LdSymbol *self);
 	void (*get_area) (LdSymbol *self, LdRectangle *area);
+	const LdPointArray *(*get_terminals) (LdSymbol *self);
 	void (*draw) (LdSymbol *self, cairo_t *cr);
 };
 
@@ -62,11 +64,8 @@ GType ld_symbol_get_type (void) G_GNUC_CONST;
 const gchar *ld_symbol_get_name (LdSymbol *self);
 const gchar *ld_symbol_get_human_name (LdSymbol *self);
 void ld_symbol_get_area (LdSymbol *self, LdRectangle *area);
+const LdPointArray *ld_symbol_get_terminals (LdSymbol *self);
 void ld_symbol_draw (LdSymbol *self, cairo_t *cr);
-
-/* TODO: Interface for terminals.
- *       Something like a list of gdouble pairs (-> a new structure).
- */
 
 
 G_END_DECLS

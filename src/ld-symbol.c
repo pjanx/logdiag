@@ -35,7 +35,8 @@ enum
 	PROP_0,
 	PROP_NAME,
 	PROP_HUMAN_NAME,
-	PROP_AREA
+	PROP_AREA,
+	PROP_TERMINALS
 };
 
 static void ld_symbol_get_property (GObject *object, guint property_id,
@@ -85,6 +86,16 @@ ld_symbol_class_init (LdSymbolClass *klass)
 		"The area of this symbol.",
 		LD_TYPE_RECTANGLE, G_PARAM_READABLE);
 	g_object_class_install_property (object_class, PROP_AREA, pspec);
+
+/**
+ * LdSymbol:terminals:
+ *
+ * A point array that specifies terminals of this symbol.
+ */
+	pspec = g_param_spec_boxed ("terminals", "Terminals",
+		"A point array that specifies terminals of this symbol.",
+		LD_TYPE_POINT_ARRAY, G_PARAM_READABLE);
+	g_object_class_install_property (object_class, PROP_TERMINALS, pspec);
 }
 
 static void
@@ -114,6 +125,9 @@ ld_symbol_get_property (GObject *object, guint property_id,
 			ld_symbol_get_area (self, &area);
 			g_value_set_boxed (value, &area);
 		}
+		break;
+	case PROP_TERMINALS:
+		g_value_set_boxed (value, ld_symbol_get_terminals (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -182,6 +196,26 @@ ld_symbol_get_area (LdSymbol *self, LdRectangle *area)
 	klass = LD_SYMBOL_GET_CLASS (self);
 	g_return_if_fail (klass->get_area != NULL);
 	klass->get_area (self, area);
+}
+
+/**
+ * ld_symbol_get_terminals:
+ * @self: A symbol object.
+ *
+ * Get a list of symbol terminals.
+ *
+ * Return value: An #LdPointArray structure.
+ */
+const LdPointArray *
+ld_symbol_get_terminals (LdSymbol *self)
+{
+	LdSymbolClass *klass;
+
+	g_return_val_if_fail (LD_IS_SYMBOL (self), NULL);
+
+	klass = LD_SYMBOL_GET_CLASS (self);
+	g_return_val_if_fail (klass->get_terminals != NULL, NULL);
+	return klass->get_terminals (self);
 }
 
 /**

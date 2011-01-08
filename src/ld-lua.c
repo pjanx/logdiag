@@ -92,6 +92,8 @@ static int ld_lua_logdiag_register (lua_State *L);
 static int process_registration (lua_State *L);
 static gchar *get_translation (lua_State *L, int index);
 static gboolean read_symbol_area (lua_State *L, int index, LdRectangle *area);
+static gboolean read_terminals (lua_State *L, int index,
+	LdPointArray **terminals);
 
 static void push_cairo_object (lua_State *L, LdLuaDrawData *draw_data);
 static gdouble get_cairo_scale (cairo_t *cr);
@@ -474,8 +476,8 @@ process_registration (lua_State *L)
 
 	if (!read_symbol_area (L, 3, &symbol->priv->area))
 		return luaL_error (L, "Malformed symbol area array.");
-
-	/* TODO: Read and set the terminals. */
+	if (!read_terminals (L, 4, &symbol->priv->terminals))
+		return luaL_error (L, "Malformed terminals array.");
 
 	lua_getfield (L, LUA_REGISTRYINDEX, LD_LUA_SYMBOLS_INDEX);
 	lua_pushlightuserdata (L, symbol);
@@ -561,8 +563,61 @@ read_symbol_area (lua_State *L, int index, LdRectangle *area)
 	area->width = ABS (x2 - x1);
 	area->height = ABS (y2 - y1);
 
+	lua_pop (L, 4);
 	return TRUE;
 }
+
+/*
+ * read_terminals:
+ * @L: A Lua state.
+ * @index: Stack index of the table.
+ * @area: Where the point array will be returned.
+ *
+ * Read symbol terminals from a Lua table.
+ *
+ * Return value: TRUE on success, FALSE on failure.
+ */
+static gboolean
+read_terminals (lua_State *L, int index, LdPointArray **terminals)
+{
+	LdPointArray *points;
+	size_t num_points;
+	unsigned i = 0;
+
+	num_points = lua_objlen (L, index);
+	points = ld_point_array_new (num_points);
+
+	lua_pushnil (L);
+	while (lua_next (L, index) != 0)
+	{
+		g_assert (i < num_points);
+
+		if (!lua_istable (L, -1) || lua_objlen (L, -1) != 2)
+			goto read_terminals_fail;
+
+		lua_rawgeti (L, -1, 1);
+		if (!lua_isnumber (L, -1))
+			goto read_terminals_fail;
+		points->points[i].x = lua_tonumber (L, -1);
+		lua_pop (L, 1);
+
+		lua_rawgeti (L, -1, 2);
+		if (!lua_isnumber (L, -1))
+			goto read_terminals_fail;
+		points->points[i].y = lua_tonumber (L, -1);
+
+		lua_pop (L, 2);
+		i++;
+	}
+	*terminals = points;
+	return TRUE;
+
+read_terminals_fail:
+	ld_point_array_free (points);
+	*terminals = NULL;
+	return FALSE;
+}
+
 
 /* ===== Cairo ============================================================= */
 

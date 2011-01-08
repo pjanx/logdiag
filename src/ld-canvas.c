@@ -1072,11 +1072,13 @@ on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 static void
 draw_grid (GtkWidget *widget, DrawData *data)
 {
+	gdouble grid_step;
 	gdouble x_init, y_init;
 	gdouble x, y;
 
-	if (data->scale < 2)
-		return;
+	grid_step = data->scale;
+	while (grid_step < 5)
+		grid_step *= 5;
 
 	ld_canvas_color_apply (COLOR_GET (data->self, COLOR_GRID), data->cr);
 	cairo_set_line_width (data->cr, 1);
@@ -1090,10 +1092,10 @@ draw_grid (GtkWidget *widget, DrawData *data)
 
 	/* Iterate over all the points. */
 	for     (x = x_init; x <= data->exposed_rect.x + data->exposed_rect.width;
-			 x += data->scale)
+			 x += grid_step)
 	{
 		for (y = y_init; y <= data->exposed_rect.y + data->exposed_rect.height;
-			 y += data->scale)
+			 y += grid_step)
 		{
 			cairo_move_to (data->cr, x, y);
 			cairo_line_to (data->cr, x, y);

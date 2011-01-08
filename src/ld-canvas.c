@@ -160,6 +160,7 @@ static void on_adjustment_value_changed
 	(GtkAdjustment *adjustment, LdCanvas *self);
 static void on_size_allocate (GtkWidget *widget, GtkAllocation *allocation,
 	gpointer user_data);
+static void update_adjustments (LdCanvas *self);
 
 static void diagram_connect_signals (LdCanvas *self);
 static void diagram_disconnect_signals (LdCanvas *self);
@@ -174,6 +175,8 @@ static gboolean on_leave_notify (GtkWidget *widget, GdkEventCrossing *event,
 static gboolean on_button_press (GtkWidget *widget, GdkEventButton *event,
 	gpointer user_data);
 static gboolean on_button_release (GtkWidget *widget, GdkEventButton *event,
+	gpointer user_data);
+static gboolean on_scroll (GtkWidget *widget, GdkEventScroll *event,
 	gpointer user_data);
 
 static void ld_canvas_color_set (LdCanvasColor *color,
@@ -310,6 +313,8 @@ ld_canvas_init (LdCanvas *self)
 		G_CALLBACK (on_button_press), NULL);
 	g_signal_connect (self, "button-release-event",
 		G_CALLBACK (on_button_release), NULL);
+	g_signal_connect (self, "scroll-event",
+		G_CALLBACK (on_scroll), NULL);
 
 	g_object_set (self, "can-focus", TRUE, NULL);
 
@@ -474,10 +479,8 @@ on_size_allocate (GtkWidget *widget, GtkAllocation *allocation,
 	gpointer user_data)
 {
 	LdCanvas *self;
-	gdouble scale;
 
 	self = LD_CANVAS (widget);
-	scale = ld_canvas_get_scale_in_px (self);
 
 	/* FIXME: If the new allocation is bigger, we may see more than
 	 *        what we're supposed to be able to see -> adjust X and Y.
@@ -485,17 +488,28 @@ on_size_allocate (GtkWidget *widget, GtkAllocation *allocation,
 	 *        If the visible area is just so large that we must see more,
 	 *        let's disable the scrollbars in question.
 	 */
+	update_adjustments (self);
+}
+
+static void
+update_adjustments (LdCanvas *self)
+{
+	gdouble scale;
+
+	scale = ld_canvas_get_scale_in_px (self);
+
 	if (self->priv->adjustment_h)
 	{
-		self->priv->adjustment_h->page_size = allocation->width / scale;
+		self->priv->adjustment_h->page_size
+			= GTK_WIDGET (self)->allocation.width  / scale;
 		self->priv->adjustment_h->value
 			= self->priv->x - self->priv->adjustment_h->page_size / 2;
 		gtk_adjustment_changed (self->priv->adjustment_h);
 	}
-
 	if (self->priv->adjustment_v)
 	{
-		self->priv->adjustment_v->page_size = allocation->height / scale;
+		self->priv->adjustment_v->page_size
+			= GTK_WIDGET (self)->allocation.height / scale;
 		self->priv->adjustment_v->value
 			= self->priv->y - self->priv->adjustment_v->page_size / 2;
 		gtk_adjustment_changed (self->priv->adjustment_v);
@@ -1004,6 +1018,29 @@ static gboolean
 on_button_release (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
 	return FALSE;
+}
+
+static gboolean
+on_scroll (GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
+{
+	LdCanvas *self;
+
+	self = LD_CANVAS (widget);
+	switch (event->direction)
+	{
+	case GDK_SCROLL_UP:
+		self->priv->zoom *= 1.5;
+		break;
+	case GDK_SCROLL_DOWN:
+		self->priv->zoom /= 1.5;
+		break;
+	default:
+		return FALSE;
+	}
+
+	update_adjustments (self);
+	gtk_widget_queue_draw (widget);
+	return TRUE;
 }
 
 static gboolean

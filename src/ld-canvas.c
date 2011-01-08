@@ -1075,6 +1075,9 @@ draw_grid (GtkWidget *widget, DrawData *data)
 	gdouble x_init, y_init;
 	gdouble x, y;
 
+	if (data->scale < 2)
+		return;
+
 	ld_canvas_color_apply (COLOR_GET (data->self, COLOR_GRID), data->cr);
 	cairo_set_line_width (data->cr, 1);
 	cairo_set_line_cap (data->cr, CAIRO_LINE_CAP_ROUND);

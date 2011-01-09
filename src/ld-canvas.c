@@ -210,6 +210,7 @@ static gboolean get_object_area (LdCanvas *self, LdDiagramObject *object,
 static gboolean object_hit_test (LdCanvas *self, LdDiagramObject *object,
 	gdouble x, gdouble y);
 static void check_terminals (LdCanvas *self, gdouble x, gdouble y);
+static void hide_terminals (LdCanvas *self);
 static void queue_draw (LdCanvas *self, LdRectangle *rect);
 static void queue_object_draw (LdCanvas *self, LdDiagramObject *object);
 static void queue_terminal_draw (LdCanvas *self, LdPoint *terminal);
@@ -984,8 +985,7 @@ check_terminals (LdCanvas *self, gdouble x, gdouble y)
 		}
 	}
 
-	if (self->priv->terminal_highlighted)
-		queue_terminal_draw (self, &self->priv->terminal);
+	hide_terminals (self);
 
 	if (closest_symbol)
 	{
@@ -993,8 +993,16 @@ check_terminals (LdCanvas *self, gdouble x, gdouble y)
 		self->priv->terminal = closest_terminal;
 		queue_terminal_draw (self, &closest_terminal);
 	}
-	else
+}
+
+static void
+hide_terminals (LdCanvas *self)
+{
+	if (self->priv->terminal_highlighted)
+	{
 		self->priv->terminal_highlighted = FALSE;
+		queue_terminal_draw (self, &self->priv->terminal);
+	}
 }
 
 static void

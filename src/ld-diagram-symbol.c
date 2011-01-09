@@ -2,7 +2,7 @@
  * ld-diagram-symbol.c
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010. All rights reserved.
+ * Copyright Přemysl Janouch 2010 - 2011. All rights reserved.
  *
  * See the file LICENSE for licensing information.
  *
@@ -33,6 +33,16 @@ struct _LdDiagramSymbolPrivate
 	gchar *klass;
 };
 
+enum
+{
+	PROP_0,
+	PROP_CLASS
+};
+
+static void ld_diagram_symbol_get_property (GObject *object, guint property_id,
+	GValue *value, GParamSpec *pspec);
+static void ld_diagram_symbol_set_property (GObject *object, guint property_id,
+	const GValue *value, GParamSpec *pspec);
 static void ld_diagram_symbol_finalize (GObject *gobject);
 
 
@@ -42,11 +52,22 @@ static void
 ld_diagram_symbol_class_init (LdDiagramSymbolClass *klass)
 {
 	GObjectClass *object_class;
+	GParamSpec *pspec;
 
 	object_class = G_OBJECT_CLASS (klass);
+	object_class->get_property = ld_diagram_symbol_get_property;
+	object_class->set_property = ld_diagram_symbol_set_property;
 	object_class->finalize = ld_diagram_symbol_finalize;
 
-	/* TODO: A property for the class. */
+/**
+ * LdDiagramSymbol:class:
+ *
+ * The class of this symbol.
+ */
+	pspec = g_param_spec_string ("class", "Class",
+		"The class of this symbol.",
+		"", G_PARAM_READWRITE);
+	g_object_class_install_property (object_class, PROP_CLASS, pspec);
 
 	g_type_class_add_private (klass, sizeof (LdDiagramSymbolPrivate));
 }
@@ -72,10 +93,44 @@ ld_diagram_symbol_finalize (GObject *gobject)
 	G_OBJECT_CLASS (ld_diagram_symbol_parent_class)->finalize (gobject);
 }
 
+static void
+ld_diagram_symbol_get_property (GObject *object, guint property_id,
+	GValue *value, GParamSpec *pspec)
+{
+	LdDiagramSymbol *self;
+
+	self = LD_DIAGRAM_SYMBOL (object);
+	switch (property_id)
+	{
+	case PROP_CLASS:
+		g_value_set_string (value, ld_diagram_symbol_get_class (self));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+	}
+}
+
+static void
+ld_diagram_symbol_set_property (GObject *object, guint property_id,
+	const GValue *value, GParamSpec *pspec)
+{
+	LdDiagramSymbol *self;
+
+	self = LD_DIAGRAM_SYMBOL (object);
+	switch (property_id)
+	{
+	case PROP_CLASS:
+		ld_diagram_symbol_set_class (self, g_value_get_string (value));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+	}
+}
+
 
 /**
  * ld_diagram_symbol_new:
- * @klass: The class of the symbol (symbol identifier).
+ * @klass: The class of the new symbol.
  *
  * Return value: A new #LdDiagramSymbol object.
  */
@@ -89,8 +144,12 @@ ld_diagram_symbol_new (const gchar *klass)
 	return self;
 }
 
-
-/* TODO: gtk-doc comments. */
+/**
+ * ld_diagram_symbol_get_class:
+ * @self: An #LdDiagramSymbol object.
+ *
+ * Return value: The class of the symbol.
+ */
 const gchar *
 ld_diagram_symbol_get_class (LdDiagramSymbol *self)
 {
@@ -98,6 +157,13 @@ ld_diagram_symbol_get_class (LdDiagramSymbol *self)
 	return self->priv->klass;
 }
 
+/**
+ * ld_diagram_symbol_get_class:
+ * @self: An #LdDiagramSymbol object.
+ * @klass: The class.
+ *
+ * Set the class of the symbol.
+ */
 void
 ld_diagram_symbol_set_class (LdDiagramSymbol *self, const gchar *klass)
 {

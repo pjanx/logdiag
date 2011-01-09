@@ -1129,9 +1129,15 @@ on_button_release (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 static gboolean
 on_scroll (GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
 {
+	gdouble prev_x, prev_y;
+	gdouble new_x, new_y;
 	LdCanvas *self;
 
 	self = LD_CANVAS (widget);
+
+	ld_canvas_widget_to_diagram_coords (self,
+		event->x, event->y, &prev_x, &prev_y);
+
 	switch (event->direction)
 	{
 	case GDK_SCROLL_UP:
@@ -1143,6 +1149,13 @@ on_scroll (GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
 	default:
 		return FALSE;
 	}
+
+	ld_canvas_widget_to_diagram_coords (self,
+		event->x, event->y, &new_x, &new_y);
+
+	/* Focus on the point under the cursor. */
+	self->priv->x += prev_x - new_x;
+	self->priv->y += prev_y - new_y;
 
 	update_adjustments (self);
 	check_terminals (self, event->x, event->y);

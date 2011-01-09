@@ -8,6 +8,8 @@
  *
  */
 
+#include <math.h>
+
 #include <gtk/gtk.h>
 
 #include "config.h"
@@ -69,6 +71,26 @@ DEFINE_BOXED_TRIVIAL_COPY (LdPoint, ld_point)
  * Frees the structure created with ld_point_copy().
  */
 DEFINE_BOXED_TRIVIAL_FREE (LdPoint, ld_point)
+
+/**
+ * ld_point_distance:
+ * @self: An #LdPoint structure.
+ * @x: The X coordinate of the second point.
+ * @y: The Y coordinate of the second point.
+ *
+ * Compute the distance between two points.
+ */
+gdouble
+ld_point_distance (LdPoint *self, gdouble x, gdouble y)
+{
+	gdouble dx, dy;
+
+	g_return_val_if_fail (self != NULL, -1);
+
+	dx = self->x - x;
+	dy = self->y - y;
+	return sqrt (dx * dx + dy * dy);
+}
 
 /**
  * ld_point_array_new:

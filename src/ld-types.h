@@ -48,6 +48,7 @@ GType ld_point_get_type (void) G_GNUC_CONST;
 
 LdPoint *ld_point_copy (const LdPoint *self);
 void ld_point_free (LdPoint *self);
+gdouble ld_point_distance (LdPoint *self, gdouble x, gdouble y);
 
 
 /**

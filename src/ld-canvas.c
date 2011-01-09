@@ -34,15 +34,17 @@
 
 /* Milimetres per inch. */
 #define MM_PER_INCH 25.4
-
-/* Tolerance for object borders. */
-#define OBJECT_BORDER_TOLERANCE 3
-
-/* Tolerance on all sides of symbols for strokes. */
-#define SYMBOL_CLIP_TOLERANCE 5
-
 /* The default screen resolution in DPI units. */
 #define DEFAULT_SCREEN_RESOLUTION 96
+
+/* When requesting drawing, extend all sides of
+ * the rectangle to be drawn by this number of pixels.
+ */
+#define QUEUE_DRAW_EXTEND 3
+/* Cursor tolerance for object borders. */
+#define OBJECT_BORDER_TOLERANCE 3
+/* Tolerance on all sides of symbols for strokes. */
+#define SYMBOL_CLIP_TOLERANCE 5
 
 /*
  * OperationEnd:
@@ -198,7 +200,8 @@ static gboolean get_object_area (LdCanvas *self, LdDiagramObject *object,
 	LdRectangle *rect);
 static gboolean object_hit_test (LdCanvas *self, LdDiagramObject *object,
 	gdouble x, gdouble y);
-static void queue_object_redraw (LdCanvas *self, LdDiagramObject *object);
+static void queue_draw (LdCanvas *self, LdRectangle *rect);
+static void queue_object_draw (LdCanvas *self, LdDiagramObject *object);
 
 static void ld_canvas_real_cancel_operation (LdCanvas *self);
 static void ld_canvas_add_object_end (LdCanvas *self);
@@ -774,7 +777,7 @@ ld_canvas_add_object_end (LdCanvas *self)
 	data = &OPER_DATA (self, add_object);
 	if (data->object)
 	{
-		queue_object_redraw (self, data->object);
+		queue_object_draw (self, data->object);
 		g_object_unref (data->object);
 		data->object = NULL;
 	}
@@ -916,7 +919,18 @@ object_hit_test (LdCanvas *self, LdDiagramObject *object, gdouble x, gdouble y)
 }
 
 static void
-queue_object_redraw (LdCanvas *self, LdDiagramObject *object)
+queue_draw (LdCanvas *self, LdRectangle *rect)
+{
+	LdRectangle area;
+
+	area = *rect;
+	ld_rectangle_extend (&area, QUEUE_DRAW_EXTEND);
+	gtk_widget_queue_draw_area (GTK_WIDGET (self),
+		area.x, area.y, area.width, area.height);
+}
+
+static void
+queue_object_draw (LdCanvas *self, LdDiagramObject *object)
 {
 	if (LD_IS_DIAGRAM_SYMBOL (object))
 	{
@@ -924,9 +938,7 @@ queue_object_redraw (LdCanvas *self, LdDiagramObject *object)
 
 		if (!get_symbol_clip_area (self, LD_DIAGRAM_SYMBOL (object), &rect))
 			return;
-		gtk_widget_queue_draw_area (GTK_WIDGET (self),
-			floor (rect.x), floor (rect.y),
-			ceil (rect.width), ceil (rect.height));
+		queue_draw (self, &rect);
 	}
 }
 
@@ -944,9 +956,9 @@ on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 		data = &OPER_DATA (self, add_object);
 		data->visible = TRUE;
 
-		queue_object_redraw (self, data->object);
+		queue_object_draw (self, data->object);
 		move_object_to_coords (self, data->object, event->x, event->y);
-		queue_object_redraw (self, data->object);
+		queue_object_draw (self, data->object);
 		break;
 	}
 	return FALSE;
@@ -966,7 +978,7 @@ on_leave_notify (GtkWidget *widget, GdkEventCrossing *event, gpointer user_data)
 		data = &OPER_DATA (self, add_object);
 		data->visible = FALSE;
 
-		queue_object_redraw (self, data->object);
+		queue_object_draw (self, data->object);
 		break;
 	}
 	return FALSE;
@@ -988,7 +1000,7 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 	case OPER_ADD_OBJECT:
 		data = &OPER_DATA (self, add_object);
 
-		queue_object_redraw (self, data->object);
+		queue_object_draw (self, data->object);
 		move_object_to_coords (self, data->object, event->x, event->y);
 
 		if (self->priv->diagram)

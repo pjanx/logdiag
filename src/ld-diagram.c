@@ -36,9 +36,9 @@ struct _LdDiagramPrivate
 {
 	gboolean modified;
 
-	GSList *objects;
-	GSList *selection;
-	GSList *connections;
+	GList *objects;
+	GList *selection;
+	GList *connections;
 };
 
 enum
@@ -220,11 +220,11 @@ ld_diagram_clear_internal (LdDiagram *self)
 {
 	ld_diagram_unselect_all (self);
 
-	g_slist_free (self->priv->connections);
+	g_list_free (self->priv->connections);
 	self->priv->connections = NULL;
 
-	g_slist_foreach (self->priv->objects, (GFunc) g_object_unref, NULL);
-	g_slist_free (self->priv->objects);
+	g_list_foreach (self->priv->objects, (GFunc) g_object_unref, NULL);
+	g_list_free (self->priv->objects);
 	self->priv->objects = NULL;
 }
 
@@ -343,7 +343,7 @@ ld_diagram_set_modified (LdDiagram *self, gboolean value)
  * Get a list of objects in the diagram.
  * You mustn't make any changes to the list.
  */
-GSList *
+GList *
 ld_diagram_get_objects (LdDiagram *self)
 {
 	g_return_val_if_fail (LD_IS_DIAGRAM (self), NULL);
@@ -365,10 +365,10 @@ ld_diagram_insert_object (LdDiagram *self, LdDiagramObject *object, gint pos)
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (object));
 
-	if (!g_slist_find (self->priv->objects, object))
+	if (!g_list_find (self->priv->objects, object))
 	{
 		self->priv->objects =
-			g_slist_insert (self->priv->objects, object, pos);
+			g_list_insert (self->priv->objects, object, pos);
 		g_object_ref (object);
 
 		g_signal_emit (self,
@@ -389,11 +389,11 @@ ld_diagram_remove_object (LdDiagram *self, LdDiagramObject *object)
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (object));
 
-	if (g_slist_find (self->priv->objects, object))
+	if (g_list_find (self->priv->objects, object))
 	{
 		ld_diagram_selection_remove (self, object);
 
-		self->priv->objects = g_slist_remove (self->priv->objects, object);
+		self->priv->objects = g_list_remove (self->priv->objects, object);
 		g_object_unref (object);
 
 		g_signal_emit (self,
@@ -408,7 +408,7 @@ ld_diagram_remove_object (LdDiagram *self, LdDiagramObject *object)
  * Get a list of objects that are currently selected in the diagram.
  * You mustn't make any changes to the list.
  */
-GSList *
+GList *
 ld_diagram_get_selection (LdDiagram *self)
 {
 	g_return_val_if_fail (LD_IS_DIAGRAM (self), NULL);
@@ -430,12 +430,12 @@ ld_diagram_selection_add (LdDiagram *self, LdDiagramObject *object, gint pos)
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (object));
 
-	g_return_if_fail (g_slist_find (self->priv->objects, object) != NULL);
+	g_return_if_fail (g_list_find (self->priv->objects, object) != NULL);
 
-	if (!g_slist_find (self->priv->selection, object))
+	if (!g_list_find (self->priv->selection, object))
 	{
 		self->priv->selection =
-			g_slist_insert (self->priv->selection, object, pos);
+			g_list_insert (self->priv->selection, object, pos);
 		g_object_ref (object);
 
 		g_signal_emit (self,
@@ -456,9 +456,9 @@ ld_diagram_selection_remove (LdDiagram *self, LdDiagramObject *object)
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (object));
 
-	if (g_slist_find (self->priv->selection, object))
+	if (g_list_find (self->priv->selection, object))
 	{
-		self->priv->selection = g_slist_remove (self->priv->selection, object);
+		self->priv->selection = g_list_remove (self->priv->selection, object);
 		g_object_unref (object);
 
 		g_signal_emit (self,
@@ -479,8 +479,8 @@ ld_diagram_select_all (LdDiagram *self)
 
 	ld_diagram_unselect_all_internal (self);
 
-	self->priv->selection = g_slist_copy (self->priv->objects);
-	g_slist_foreach (self->priv->selection, (GFunc) g_object_ref, NULL);
+	self->priv->selection = g_list_copy (self->priv->objects);
+	g_list_foreach (self->priv->selection, (GFunc) g_object_ref, NULL);
 
 	g_signal_emit (self,
 		LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
@@ -506,7 +506,7 @@ ld_diagram_unselect_all (LdDiagram *self)
 static void
 ld_diagram_unselect_all_internal (LdDiagram *self)
 {
-	g_slist_foreach (self->priv->selection, (GFunc) g_object_unref, NULL);
-	g_slist_free (self->priv->selection);
+	g_list_foreach (self->priv->selection, (GFunc) g_object_unref, NULL);
+	g_list_free (self->priv->selection);
 	self->priv->selection = NULL;
 }

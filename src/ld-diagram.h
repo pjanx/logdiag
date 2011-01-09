@@ -68,13 +68,13 @@ gboolean ld_diagram_save_to_file (LdDiagram *self,
 gboolean ld_diagram_get_modified (LdDiagram *self);
 void ld_diagram_set_modified (LdDiagram *self, gboolean value);
 
-GSList *ld_diagram_get_objects (LdDiagram *self);
+GList *ld_diagram_get_objects (LdDiagram *self);
 void ld_diagram_insert_object (LdDiagram *self,
 	LdDiagramObject *object, gint pos);
 void ld_diagram_remove_object (LdDiagram *self,
 	LdDiagramObject *object);
 
-GSList *ld_diagram_get_selection (LdDiagram *self);
+GList *ld_diagram_get_selection (LdDiagram *self);
 void ld_diagram_selection_add (LdDiagram *self,
 	LdDiagramObject *object, gint pos);
 void ld_diagram_selection_remove (LdDiagram *self,
@@ -84,7 +84,7 @@ void ld_diagram_select_all (LdDiagram *self);
 void ld_diagram_unselect_all (LdDiagram *self);
 
 /*
-GSList *ld_diagram_get_connections (LdDiagram *self);
+GList *ld_diagram_get_connections (LdDiagram *self);
 void ld_diagram_connection_add (LdDiagram *self,
 	LdConnection *connection, gint pos);
 void ld_diagram_connection_remove (LdDiagram *self,

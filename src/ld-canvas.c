@@ -829,11 +829,11 @@ move_object_to_coords (LdCanvas *self, LdDiagramObject *object,
 static LdDiagramObject *
 get_object_at_coords (LdCanvas *self, gdouble x, gdouble y)
 {
-	GSList *objects, *iter;
+	GList *objects, *iter;
 
 	/* Iterate from the top object downwards. */
-	objects = (GSList *) ld_diagram_get_objects (self->priv->diagram);
-	for (iter = objects; iter; iter = g_slist_next (iter))
+	objects = (GList *) ld_diagram_get_objects (self->priv->diagram);
+	for (iter = objects; iter; iter = g_list_next (iter))
 	{
 		LdDiagramObject *object;
 
@@ -847,7 +847,7 @@ get_object_at_coords (LdCanvas *self, gdouble x, gdouble y)
 static gboolean
 is_object_selected (LdCanvas *self, LdDiagramObject *object)
 {
-	return g_slist_find (ld_diagram_get_selection (self->priv->diagram),
+	return g_list_find (ld_diagram_get_selection (self->priv->diagram),
 		object) != NULL;
 }
 
@@ -934,13 +934,13 @@ object_hit_test (LdCanvas *self, LdDiagramObject *object, gdouble x, gdouble y)
 static void
 check_terminals (LdCanvas *self, gdouble x, gdouble y)
 {
-	GSList *objects, *iter;
+	GList *objects, *iter;
 	LdDiagramSymbol *closest_symbol = NULL;
 	gdouble closest_distance = TERMINAL_HOVER_TOLERANCE;
 	LdPoint closest_terminal;
 
-	objects = (GSList *) ld_diagram_get_objects (self->priv->diagram);
-	for (iter = objects; iter; iter = g_slist_next (iter))
+	objects = (GList *) ld_diagram_get_objects (self->priv->diagram);
+	for (iter = objects; iter; iter = g_list_next (iter))
 	{
 		LdDiagramObject *diagram_object;
 		gdouble object_x, object_y;
@@ -1246,7 +1246,7 @@ draw_terminal (GtkWidget *widget, DrawData *data)
 static void
 draw_diagram (GtkWidget *widget, DrawData *data)
 {
-	GSList *objects;
+	GList *objects;
 
 	if (!data->self->priv->diagram)
 		return;
@@ -1257,7 +1257,7 @@ draw_diagram (GtkWidget *widget, DrawData *data)
 
 	/* Draw objects from the diagram. */
 	objects = ld_diagram_get_objects (data->self->priv->diagram);
-	g_slist_foreach (objects, (GFunc) draw_object, data);
+	g_list_foreach (objects, (GFunc) draw_object, data);
 
 	switch (data->self->priv->operation)
 	{

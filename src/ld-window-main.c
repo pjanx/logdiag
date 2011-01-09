@@ -110,6 +110,7 @@ static void ld_window_main_finalize (GObject *gobject);
 
 static void load_library_toolbar (LdWindowMain *self);
 static void load_category_cb (gpointer data, gpointer user_data);
+static GdkPixbuf *recolor_pixbuf (GdkPixbuf *pbuf, GdkColor *color);
 
 static void redraw_symbol_menu (LdWindowMain *self);
 static void on_category_toggle (GtkToggleButton *toggle_button,
@@ -488,10 +489,11 @@ load_category_cb (gpointer data, gpointer user_data)
 	LdWindowMain *self;
 	LdSymbolCategory *cat;
 	const gchar *human_name;
-	GdkPixbuf *pbuf;
+	GdkPixbuf *pbuf, *new_pbuf;
 	GtkWidget *img;
 	GtkToolItem *item;
 	GtkWidget *button;
+	GtkStyle *style;
 
 	g_return_if_fail (LD_IS_WINDOW_MAIN (user_data));
 	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (data));
@@ -499,17 +501,25 @@ load_category_cb (gpointer data, gpointer user_data)
 	self = user_data;
 	cat = data;
 
-	human_name = ld_symbol_category_get_human_name (cat);
-
 	pbuf = gdk_pixbuf_new_from_file_at_size	(ld_symbol_category_get_image_path
 		(cat), LIBRARY_TOOLBAR_ICON_WIDTH, -1, NULL);
 	g_return_if_fail (pbuf != NULL);
+
+	button = gtk_toggle_button_new ();
+	style = gtk_rc_get_style (button);
+
+	/* TODO: Handle all states. */
+	new_pbuf = recolor_pixbuf (pbuf, &style->fg[GTK_STATE_NORMAL]);
+	if (new_pbuf)
+	{
+		g_object_unref (pbuf);
+		pbuf = new_pbuf;
+	}
 
 	img = gtk_image_new_from_pixbuf (pbuf);
 	g_object_unref (pbuf);
 
 	item = gtk_tool_item_new ();
-	button = gtk_toggle_button_new ();
 	gtk_container_add (GTK_CONTAINER (button), img);
 	gtk_container_add (GTK_CONTAINER (item), button);
 
@@ -524,8 +534,46 @@ load_category_cb (gpointer data, gpointer user_data)
 	/* Hook toggling of the button. */
 	g_signal_connect (button, "toggled", G_CALLBACK (on_category_toggle), self);
 
+	human_name = ld_symbol_category_get_human_name (cat);
 	gtk_tool_item_set_tooltip_text (item, human_name);
 	gtk_toolbar_insert (GTK_TOOLBAR (self->priv->library_toolbar), item, 0);
+}
+
+/*
+ * recolor_pixbuf:
+ *
+ * Change the color of all pixels to @color,
+ * but leave the alpha channel intact.
+ */
+static GdkPixbuf *
+recolor_pixbuf (GdkPixbuf *pbuf, GdkColor *color)
+{
+	gint width, height;
+	GdkPixbuf *new_pbuf;
+	cairo_surface_t *cr_surface;
+	cairo_t *cr;
+
+	width  = gdk_pixbuf_get_width  (pbuf);
+	height = gdk_pixbuf_get_height (pbuf);
+
+	new_pbuf = gdk_pixbuf_new (GDK_COLORSPACE_RGB, TRUE, 8, width, height);
+	g_return_val_if_fail (new_pbuf != NULL, NULL);
+
+	cr_surface = cairo_image_surface_create_for_data
+		(gdk_pixbuf_get_pixels (new_pbuf), CAIRO_FORMAT_ARGB32,
+		width, height, gdk_pixbuf_get_rowstride (new_pbuf));
+	cr = cairo_create (cr_surface);
+
+	gdk_cairo_set_source_color (cr, color);
+	cairo_paint (cr);
+
+	cairo_set_operator (cr, CAIRO_OPERATOR_DEST_IN);
+	gdk_cairo_set_source_pixbuf (cr, pbuf, 0, 0);
+	cairo_paint (cr);
+
+	cairo_destroy (cr);
+	cairo_surface_destroy (cr_surface);
+	return new_pbuf;
 }
 
 /*

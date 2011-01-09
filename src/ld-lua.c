@@ -406,12 +406,13 @@ ld_lua_logdiag_register (lua_State *L)
 	lua_pop (L, 1);
 	g_return_val_if_fail (ud != NULL, 0);
 
+	/* Use a protected environment, so script errors won't cause leaking
+	 * of the symbol object. Only a failure of the last three function calls
+	 * before lua_pcall() may cause the symbol to leak.
+	 */
+	lua_checkstack (L, 3);
 	symbol = g_object_new (LD_TYPE_LUA_SYMBOL, NULL);
 
-	/* Use a protected environment, so script errors won't cause leaking
-	 * of the symbol object. Only the failure of one of the following three
-	 * function calls may cause the symbol to leak.
-	 */
 	lua_pushlightuserdata (L, symbol);
 	lua_pushcclosure (L, process_registration, 1);
 	lua_insert (L, 1);

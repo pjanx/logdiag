@@ -46,6 +46,11 @@
 /* Tolerance on all sides of symbols for strokes. */
 #define SYMBOL_CLIP_TOLERANCE 5
 
+/* Size of a highlighted terminal. */
+#define TERMINAL_RADIUS 5
+/* Tolerance around terminal points. */
+#define TERMINAL_HOVER_TOLERANCE 8
+
 /*
  * OperationEnd:
  *
@@ -73,6 +78,7 @@ enum
 	COLOR_GRID,
 	COLOR_OBJECT,
 	COLOR_SELECTION,
+	COLOR_TERMINAL,
 	COLOR_COUNT
 };
 
@@ -111,6 +117,9 @@ struct _LdCanvasPrivate
 	gdouble x;
 	gdouble y;
 	gdouble zoom;
+
+	LdPoint terminal;
+	gboolean terminal_highlighted;
 
 	gint operation;
 	union
@@ -200,8 +209,10 @@ static gboolean get_object_area (LdCanvas *self, LdDiagramObject *object,
 	LdRectangle *rect);
 static gboolean object_hit_test (LdCanvas *self, LdDiagramObject *object,
 	gdouble x, gdouble y);
+static void check_terminals (LdCanvas *self, gdouble x, gdouble y);
 static void queue_draw (LdCanvas *self, LdRectangle *rect);
 static void queue_object_draw (LdCanvas *self, LdDiagramObject *object);
+static void queue_terminal_draw (LdCanvas *self, LdPoint *terminal);
 
 static void ld_canvas_real_cancel_operation (LdCanvas *self);
 static void ld_canvas_add_object_end (LdCanvas *self);
@@ -210,6 +221,7 @@ static gboolean on_expose_event (GtkWidget *widget, GdkEventExpose *event,
 	gpointer user_data);
 static void draw_grid (GtkWidget *widget, DrawData *data);
 static void draw_diagram (GtkWidget *widget, DrawData *data);
+static void draw_terminal (GtkWidget *widget, DrawData *data);
 static void draw_object (LdDiagramObject *diagram_object, DrawData *data);
 static void draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data);
 
@@ -302,6 +314,7 @@ ld_canvas_init (LdCanvas *self)
 	ld_canvas_color_set (COLOR_GET (self, COLOR_GRID), 0.5, 0.5, 0.5, 1);
 	ld_canvas_color_set (COLOR_GET (self, COLOR_OBJECT), 0, 0, 0, 1);
 	ld_canvas_color_set (COLOR_GET (self, COLOR_SELECTION), 0, 0, 1, 1);
+	ld_canvas_color_set (COLOR_GET (self, COLOR_TERMINAL), 1, 0.5, 0.5, 1);
 
 	g_signal_connect (self, "size-allocate",
 		G_CALLBACK (on_size_allocate), NULL);
@@ -919,6 +932,72 @@ object_hit_test (LdCanvas *self, LdDiagramObject *object, gdouble x, gdouble y)
 }
 
 static void
+check_terminals (LdCanvas *self, gdouble x, gdouble y)
+{
+	GSList *objects, *iter;
+	LdDiagramSymbol *closest_symbol = NULL;
+	gdouble closest_distance = TERMINAL_HOVER_TOLERANCE;
+	LdPoint closest_terminal;
+
+	objects = (GSList *) ld_diagram_get_objects (self->priv->diagram);
+	for (iter = objects; iter; iter = g_slist_next (iter))
+	{
+		LdDiagramObject *diagram_object;
+		gdouble object_x, object_y;
+		LdDiagramSymbol *diagram_symbol;
+		LdSymbol *symbol;
+		const LdPointArray *terminals;
+		gint i;
+
+		if (!LD_IS_DIAGRAM_SYMBOL (iter->data))
+			continue;
+
+		diagram_symbol = LD_DIAGRAM_SYMBOL (iter->data);
+		symbol = resolve_diagram_symbol (self, diagram_symbol);
+		if (!symbol)
+			continue;
+
+		diagram_object = LD_DIAGRAM_OBJECT (iter->data);
+		object_x = ld_diagram_object_get_x (diagram_object);
+		object_y = ld_diagram_object_get_y (diagram_object);
+
+		terminals = ld_symbol_get_terminals (symbol);
+
+		for (i = 0; i < terminals->num_points; i++)
+		{
+			LdPoint cur_term;
+			gdouble distance;
+
+			cur_term = terminals->points[i];
+			cur_term.x += object_x;
+			cur_term.y += object_y;
+			ld_canvas_diagram_to_widget_coords (self,
+				cur_term.x, cur_term.y, &cur_term.x, &cur_term.y);
+
+			distance = ld_point_distance (&cur_term, x, y);
+			if (distance <= closest_distance)
+			{
+				closest_symbol = diagram_symbol;
+				closest_distance = distance;
+				closest_terminal = cur_term;
+			}
+		}
+	}
+
+	if (self->priv->terminal_highlighted)
+		queue_terminal_draw (self, &self->priv->terminal);
+
+	if (closest_symbol)
+	{
+		self->priv->terminal_highlighted = TRUE;
+		self->priv->terminal = closest_terminal;
+		queue_terminal_draw (self, &closest_terminal);
+	}
+	else
+		self->priv->terminal_highlighted = FALSE;
+}
+
+static void
 queue_draw (LdCanvas *self, LdRectangle *rect)
 {
 	LdRectangle area;
@@ -942,6 +1021,18 @@ queue_object_draw (LdCanvas *self, LdDiagramObject *object)
 	}
 }
 
+static void
+queue_terminal_draw (LdCanvas *self, LdPoint *terminal)
+{
+	LdRectangle rect;
+
+	rect.x = terminal->x - TERMINAL_RADIUS;
+	rect.y = terminal->y - TERMINAL_RADIUS;
+	rect.width  = 2 * TERMINAL_RADIUS;
+	rect.height = 2 * TERMINAL_RADIUS;
+	queue_draw (self, &rect);
+}
+
 static gboolean
 on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 {
@@ -959,6 +1050,9 @@ on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 		queue_object_draw (self, data->object);
 		move_object_to_coords (self, data->object, event->x, event->y);
 		queue_object_draw (self, data->object);
+		break;
+	case OPER_0:
+		check_terminals (self, event->x, event->y);
 		break;
 	}
 	return FALSE;
@@ -1051,6 +1145,7 @@ on_scroll (GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
 	}
 
 	update_adjustments (self);
+	check_terminals (self, event->x, event->y);
 	gtk_widget_queue_draw (widget);
 	return TRUE;
 }
@@ -1076,6 +1171,7 @@ on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 
 	draw_grid (widget, &data);
 	draw_diagram (widget, &data);
+	draw_terminal (widget, &data);
 
 	cairo_destroy (data.cr);
 	return FALSE;
@@ -1113,6 +1209,24 @@ draw_grid (GtkWidget *widget, DrawData *data)
 			cairo_line_to (data->cr, x, y);
 		}
 	}
+	cairo_stroke (data->cr);
+}
+
+static void
+draw_terminal (GtkWidget *widget, DrawData *data)
+{
+	LdCanvasPrivate *priv;
+
+	priv = data->self->priv;
+	if (!priv->terminal_highlighted)
+		return;
+
+	ld_canvas_color_apply (COLOR_GET (data->self, COLOR_TERMINAL), data->cr);
+	cairo_set_line_width (data->cr, 1);
+
+	cairo_new_path (data->cr);
+	cairo_arc (data->cr, priv->terminal.x, priv->terminal.y,
+		TERMINAL_RADIUS, 0, 2 * G_PI);
 	cairo_stroke (data->cr);
 }
 

@@ -355,6 +355,8 @@ ld_window_main_init (LdWindowMain *self)
 	action_set_sensitive (self, "Delete", FALSE);
 	action_set_sensitive (self, "SelectAll", FALSE);
 
+	gtk_widget_grab_focus (GTK_WIDGET (priv->canvas));
+
 	/* Realize the window. */
 	gtk_widget_show_all (GTK_WIDGET (self));
 }
@@ -498,6 +500,9 @@ load_category_cb (gpointer data, gpointer user_data)
 	button = gtk_toggle_button_new ();
 	gtk_container_add (GTK_CONTAINER (button), img);
 	gtk_container_add (GTK_CONTAINER (item), button);
+
+	/* Don't steal focus from the canvas. */
+	g_object_set (button, "can-focus", FALSE, NULL);
 
 	/* Assign the category to the toggle button. */
 	g_object_ref (cat);

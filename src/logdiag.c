@@ -2,7 +2,7 @@
  * logdiag.c -- logdiag main source file.
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010. All rights reserved.
+ * Copyright Přemysl Janouch 2010 - 2011. All rights reserved.
  *
  * See the file LICENSE for licensing information.
  *
@@ -24,6 +24,7 @@ main (int argc, char *argv[])
 	setlocale (LC_ALL, "");
 
 	bindtextdomain (GETTEXT_DOMAIN, GETTEXT_DIRNAME);
+	bind_textdomain_codeset (GETTEXT_DOMAIN, "UTF-8");
 	textdomain (GETTEXT_DOMAIN);
 #endif
 

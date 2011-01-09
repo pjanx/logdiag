@@ -1246,18 +1246,18 @@ draw_terminal (GtkWidget *widget, DrawData *data)
 static void
 draw_diagram (GtkWidget *widget, DrawData *data)
 {
-	GList *objects;
+	GList *objects, *iter;
 
 	if (!data->self->priv->diagram)
 		return;
 
 	cairo_save (data->cr);
-
 	cairo_set_line_width (data->cr, 1 / data->scale);
 
-	/* Draw objects from the diagram. */
-	objects = ld_diagram_get_objects (data->self->priv->diagram);
-	g_list_foreach (objects, (GFunc) draw_object, data);
+	/* Draw objects from the diagram, from bottom to top. */
+	objects = (GList *) ld_diagram_get_objects (data->self->priv->diagram);
+	for (iter = g_list_last (objects); iter; iter = g_list_previous (iter))
+		draw_object (LD_DIAGRAM_OBJECT (iter->data), data);
 
 	switch (data->self->priv->operation)
 	{

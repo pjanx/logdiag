@@ -22,13 +22,13 @@
  * @short_description: A diagram object.
  * @see_also: #LdCanvas
  *
- * #LdDiagram is a model for storing diagrams.
+ * #LdDiagram is a model used for storing diagrams.
  */
 
 /*
  * LdDiagramPrivate:
  * @modified: Whether the diagram has been modified.
- * @objects: All the objects in the diagram.
+ * @objects: All objects in the diagram.
  * @selection: All currently selected objects.
  * @connections: Connections between objects.
  */
@@ -213,7 +213,7 @@ ld_diagram_clear (LdDiagram *self)
  * ld_diagram_clear_internal:
  * @self: An #LdDiagram object.
  *
- * Do the same what ld_diagram_clear() does but don't emit signals.
+ * Do the same as ld_diagram_clear() does but don't emit signals.
  */
 static void
 ld_diagram_clear_internal (LdDiagram *self)
@@ -340,8 +340,7 @@ ld_diagram_set_modified (LdDiagram *self, gboolean value)
  * ld_diagram_get_objects:
  * @self: An #LdDiagram object.
  *
- * Get a list of objects in the diagram.
- * You mustn't make any changes to the list.
+ * Get a list of objects in the diagram. Do not modify.
  */
 GList *
 ld_diagram_get_objects (LdDiagram *self)
@@ -406,7 +405,7 @@ ld_diagram_remove_object (LdDiagram *self, LdDiagramObject *object)
  * @self: An #LdDiagram object.
  *
  * Get a list of objects that are currently selected in the diagram.
- * You mustn't make any changes to the list.
+ * Do not modify.
  */
 GList *
 ld_diagram_get_selection (LdDiagram *self)

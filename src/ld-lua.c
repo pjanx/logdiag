@@ -46,9 +46,9 @@ struct _LdLuaPrivate
 };
 
 /* registry.logdiag_symbols
- *   -> table indexed by pointers to LdLuaSymbol objects
+ *   -> A table indexed by pointers to LdLuaSymbol objects
  * registry.logdiag_symbols.object.render(cr)
- *   -> rendering function
+ *   -> The rendering function
  */
 
 #define LD_LUA_LIBRARY_NAME "logdiag"
@@ -197,7 +197,7 @@ ld_lua_init (LdLua *self)
 
 	lua_setfield (L, LUA_REGISTRYINDEX, LD_LUA_DATA_INDEX);
 
-	/* Create an empty symbols table. */
+	/* Create an empty symbol table. */
 	lua_newtable (L);
 	lua_setfield (L, LUA_REGISTRYINDEX, LD_LUA_SYMBOLS_INDEX);
 }
@@ -633,7 +633,11 @@ push_cairo_object (lua_State *L, LdLuaDrawData *draw_data)
 	/* XXX: The light user data pointer gets invalid after the end of
 	 *      "render" function invocation. If the script stores the "cr" object
 	 *      in some global variable and then tries to reuse it the next time,
-	 *      the application will go SIGSEGV.
+	 *      the application may go SIGSEGV.
+	 *
+	 *      The solution is creating a full user data instead, referencing
+	 *      the cairo object and dereferencing it upon garbage collection
+	 *      of the user data object.
 	 */
 	for (fn = ld_lua_cairo_table; fn->name; fn++)
 	{

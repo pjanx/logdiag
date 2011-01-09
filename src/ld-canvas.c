@@ -37,7 +37,7 @@
 /* The default screen resolution in DPI units. */
 #define DEFAULT_SCREEN_RESOLUTION 96
 
-/* When requesting drawing, extend all sides of
+/* When drawing is requested, extend all sides of
  * the rectangle to be drawn by this number of pixels.
  */
 #define QUEUE_DRAW_EXTEND 3
@@ -501,7 +501,7 @@ on_size_allocate (GtkWidget *widget, GtkAllocation *allocation,
 	/* FIXME: If the new allocation is bigger, we may see more than
 	 *        what we're supposed to be able to see -> adjust X and Y.
 	 *
-	 *        If the visible area is just so large that we must see more,
+	 *        If the visible area is so large that we simply must see more,
 	 *        let's disable the scrollbars in question.
 	 */
 	update_adjustments (self);
@@ -647,7 +647,7 @@ ld_canvas_get_library (LdCanvas *self)
  * ld_canvas_get_base_unit_in_px:
  * @self: A #GtkWidget object to retrieve DPI from (indirectly).
  *
- * Return value: The length of the base unit in pixels.
+ * Return value: Length of the base unit in pixels.
  */
 static gdouble
 ld_canvas_get_base_unit_in_px (GtkWidget *self)
@@ -668,7 +668,7 @@ ld_canvas_get_base_unit_in_px (GtkWidget *self)
  * ld_canvas_get_scale_in_px:
  * @self: An #LdCanvas object.
  *
- * Return value: The displayed length of the base unit in pixels.
+ * Return value: Displayed length of the base unit in pixels.
  */
 static gdouble
 ld_canvas_get_scale_in_px (LdCanvas *self)

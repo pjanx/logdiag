@@ -59,7 +59,7 @@ struct _LdCanvasClass
 /**
  * LD_CANVAS_BASE_UNIT:
  *
- * The length of the base unit in milimetres.
+ * Length of the base unit in milimetres.
  */
 #define LD_CANVAS_BASE_UNIT_LENGTH 2.5
 

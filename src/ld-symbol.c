@@ -21,10 +21,9 @@
 /**
  * SECTION:ld-symbol
  * @short_description: A symbol.
- * @see_also: #LdDiagram, #LdCanvas
+ * @see_also: #LdDiagramSymbol, #LdCanvas
  *
- * #LdSymbol represents a symbol in the #LdDiagram that is in turn
- * drawn onto the #LdCanvas.
+ * #LdSymbol represents a symbol to be drawn onto a #LdCanvas.
  *
  * All implementations of this abstract class are required to use
  * cairo_save() and cairo_restore() when drawing to store the state.
@@ -180,7 +179,7 @@ ld_symbol_get_human_name (LdSymbol *self)
 
 /**
  * ld_symbol_get_area:
- * @self: A symbol object.
+ * @self: An #LdSymbol object.
  * @area: Where the area of the symbol will be returned.
  *
  * Get the area of the symbol.
@@ -200,7 +199,7 @@ ld_symbol_get_area (LdSymbol *self, LdRectangle *area)
 
 /**
  * ld_symbol_get_terminals:
- * @self: A symbol object.
+ * @self: An #LdSymbol object.
  *
  * Get a list of symbol terminals.
  *
@@ -220,7 +219,7 @@ ld_symbol_get_terminals (LdSymbol *self)
 
 /**
  * ld_symbol_draw:
- * @self: A symbol object.
+ * @self: An #LdSymbol object.
  * @cr: A cairo surface to be drawn on.
  *
  * Draw the symbol onto a Cairo surface.

@@ -168,7 +168,7 @@ LoadCategoryData;
 
 /*
  * load_category:
- * @self: A symbol library object.
+ * @self: An #LdLibrary object.
  * @path: The path to the category.
  * @name: The default name of the category.
  *
@@ -277,7 +277,7 @@ load_category_symbol_cb (LdSymbol *symbol, gpointer user_data)
 
 /*
  * read_human_name_from_file:
- * @filename: Where the JSON file is located.
+ * @filename: Location of the JSON file.
  *
  * Read the human name of the processed category.
  */
@@ -347,7 +347,7 @@ LibraryLoadData;
 
 /**
  * ld_library_load:
- * @self: A symbol library object.
+ * @self: An #LdLibrary object.
  * @directory: A directory to be loaded.
  *
  * Load the contents of a directory into the library.
@@ -397,7 +397,7 @@ ld_library_load_cb (const gchar *base, const gchar *filename, gpointer userdata)
 
 /**
  * ld_library_find_symbol:
- * @self: A symbol library object.
+ * @self: An #LdLibrary object.
  * @identifier: An identifier of the symbol to be searched for.
  *
  * Search for a symbol in the library.
@@ -463,9 +463,9 @@ ld_library_find_symbol (LdLibrary *self, const gchar *identifier)
 
 /**
  * ld_library_clear:
- * @self: A symbol library object.
+ * @self: An #LdLibrary object.
  *
- * Clears all the contents.
+ * Clear all the contents.
  */
 void
 ld_library_clear (LdLibrary *self)
@@ -504,7 +504,7 @@ ld_library_insert_child (LdLibrary *self, GObject *child, gint pos)
  * @self: An #LdLibrary object.
  * @child: The child to be removed.
  *
- * Removes a child from the library.
+ * Remove a child from the library.
  */
 void
 ld_library_remove_child (LdLibrary *self, GObject *child)

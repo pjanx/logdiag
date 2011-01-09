@@ -743,7 +743,7 @@ on_canvas_button_press (GtkWidget *widget, GdkEventButton *event,
 	self = LD_WINDOW_MAIN (user_data);
 	data = &self->priv->symbol_menu;
 
-	/* The event occured elsewhere, cancel the menu and put the event
+	/* If the event occured elsewhere, cancel the menu and put the event
 	 * back into the queue.
 	 */
 	if (widget->window != event->window && data->active_button)

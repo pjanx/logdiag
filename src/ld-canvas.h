@@ -78,6 +78,9 @@ void ld_canvas_widget_to_diagram_coords (LdCanvas *self,
 void ld_canvas_diagram_to_widget_coords (LdCanvas *self,
 	gdouble dx, gdouble dy, gdouble *wx, gdouble *wy);
 
+gdouble ld_canvas_get_zoom (LdCanvas *self);
+void ld_canvas_set_zoom (LdCanvas *self, gdouble zoom);
+
 void ld_canvas_add_object_begin (LdCanvas *self, LdDiagramObject *object);
 
 /* TODO: The rest of the interface. */

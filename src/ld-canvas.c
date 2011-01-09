@@ -37,6 +37,13 @@
 /* The default screen resolution in DPI units. */
 #define DEFAULT_SCREEN_RESOLUTION 96
 
+/* The maximal, minimal and default values of zoom. */
+#define ZOOM_MIN 0.01
+#define ZOOM_MAX 100
+#define ZOOM_DEFAULT 1
+/* Multiplication factor for zooming with mouse wheel. */
+#define ZOOM_WHEEL_STEP 1.4
+
 /* When drawing is requested, extend all sides of
  * the rectangle to be drawn by this number of pixels.
  */
@@ -156,7 +163,8 @@ enum
 {
 	PROP_0,
 	PROP_DIAGRAM,
-	PROP_LIBRARY
+	PROP_LIBRARY,
+	PROP_ZOOM
 };
 
 static void ld_canvas_get_property (GObject *object, guint property_id,
@@ -272,6 +280,16 @@ ld_canvas_class_init (LdCanvasClass *klass)
 	g_object_class_install_property (object_class, PROP_LIBRARY, pspec);
 
 /**
+ * LdCanvas:zoom:
+ *
+ * The zoom of this canvas.
+ */
+	pspec = g_param_spec_double ("zoom", "Zoom",
+		"The zoom of this canvas.",
+		ZOOM_MIN, ZOOM_MAX, ZOOM_DEFAULT, G_PARAM_READWRITE);
+	g_object_class_install_property (object_class, PROP_ZOOM, pspec);
+
+/**
  * LdCanvas::set-scroll-adjustments:
  * @horizontal: The horizontal #GtkAdjustment.
  * @vertical: The vertical #GtkAdjustment.
@@ -309,7 +327,7 @@ ld_canvas_init (LdCanvas *self)
 
 	self->priv->x = 0;
 	self->priv->y = 0;
-	self->priv->zoom = 1;
+	self->priv->zoom = ZOOM_DEFAULT;
 
 	ld_canvas_color_set (COLOR_GET (self, COLOR_BASE), 1, 1, 1, 1);
 	ld_canvas_color_set (COLOR_GET (self, COLOR_GRID), 0.5, 0.5, 0.5, 1);
@@ -377,6 +395,9 @@ ld_canvas_get_property (GObject *object, guint property_id,
 	case PROP_LIBRARY:
 		g_value_set_object (value, ld_canvas_get_library (self));
 		break;
+	case PROP_ZOOM:
+		g_value_set_double (value, ld_canvas_get_zoom (self));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
 	}
@@ -396,6 +417,9 @@ ld_canvas_set_property (GObject *object, guint property_id,
 		break;
 	case PROP_LIBRARY:
 		ld_canvas_set_library (self, LD_LIBRARY (g_value_get_object (value)));
+		break;
+	case PROP_ZOOM:
+		ld_canvas_set_zoom (self, g_value_get_double (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -740,6 +764,49 @@ ld_canvas_diagram_to_widget_coords (LdCanvas *self,
 	/* Just the reversal of ld_canvas_widget_to_diagram_coords(). */
 	*wx = scale * (dx - self->priv->x) + 0.5 * widget->allocation.width;
 	*wy = scale * (dy - self->priv->y) + 0.5 * widget->allocation.height;
+}
+
+/**
+ * ld_canvas_get_zoom:
+ * @self: An #LdCanvas object.
+ *
+ * Return value: Zoom of the canvas.
+ */
+gdouble
+ld_canvas_get_zoom (LdCanvas *self)
+{
+	g_return_val_if_fail (LD_IS_CANVAS (self), -1);
+	return self->priv->zoom;
+}
+
+/**
+ * ld_canvas_set_zoom:
+ * @self: An #LdCanvas object.
+ * @zoom: The zoom.
+ *
+ * Set zoom of the canvas.
+ */
+void
+ld_canvas_set_zoom (LdCanvas *self, gdouble zoom)
+{
+	gdouble clamped_zoom;
+
+	g_return_if_fail (LD_IS_CANVAS (self));
+
+	clamped_zoom = CLAMP (zoom, ZOOM_MIN, ZOOM_MAX);
+	if (self->priv->zoom == clamped_zoom)
+		return;
+
+	self->priv->zoom = clamped_zoom;
+
+	/* TODO: Retrieve the position of the mouse and call
+	 *       check_terminals() instead of just hiding the terminals.
+	 */
+	hide_terminals (self);
+	update_adjustments (self);
+	gtk_widget_queue_draw (GTK_WIDGET (self));
+
+	g_object_notify (G_OBJECT (self), "zoom");
 }
 
 
@@ -1149,10 +1216,10 @@ on_scroll (GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
 	switch (event->direction)
 	{
 	case GDK_SCROLL_UP:
-		self->priv->zoom *= 1.5;
+		ld_canvas_set_zoom (self, self->priv->zoom * ZOOM_WHEEL_STEP);
 		break;
 	case GDK_SCROLL_DOWN:
-		self->priv->zoom /= 1.5;
+		ld_canvas_set_zoom (self, self->priv->zoom / ZOOM_WHEEL_STEP);
 		break;
 	default:
 		return FALSE;
@@ -1165,9 +1232,7 @@ on_scroll (GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
 	self->priv->x += prev_x - new_x;
 	self->priv->y += prev_y - new_y;
 
-	update_adjustments (self);
 	check_terminals (self, event->x, event->y);
-	gtk_widget_queue_draw (widget);
 	return TRUE;
 }
 

@@ -197,7 +197,16 @@ static GtkActionEntry wm_action_entries[] =
 			Q_("Select all objects in the diagram"),
 			NULL},
 
-	/* TODO: View menu (zooming). */
+	{"ViewMenu", NULL, Q_("_View"), NULL, NULL, NULL},
+		{"ZoomIn", GTK_STOCK_ZOOM_IN, Q_("_Zoom In"), "<Ctrl>plus",
+			Q_("Zoom into the diagram"),
+			NULL},
+		{"ZoomOut", GTK_STOCK_ZOOM_OUT, Q_("Zoom _Out"), "<Ctrl>minus",
+			Q_("Zoom out of the diagram"),
+			NULL},
+		{"NormalSize", GTK_STOCK_ZOOM_100, Q_("_Normal Size"), "<Ctrl>0",
+			Q_("Reset zoom level back to the default"),
+			NULL},
 
 	{"HelpMenu", NULL, Q_("_Help"), NULL, NULL, NULL},
 		{"About", GTK_STOCK_ABOUT, Q_("_About"), NULL,
@@ -354,6 +363,9 @@ ld_window_main_init (LdWindowMain *self)
 	action_set_sensitive (self, "Export", FALSE);
 	action_set_sensitive (self, "Delete", FALSE);
 	action_set_sensitive (self, "SelectAll", FALSE);
+	action_set_sensitive (self, "ZoomIn", FALSE);
+	action_set_sensitive (self, "ZoomOut", FALSE);
+	action_set_sensitive (self, "NormalSize", FALSE);
 
 	gtk_widget_grab_focus (GTK_WIDGET (priv->canvas));
 

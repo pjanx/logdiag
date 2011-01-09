@@ -20,6 +20,11 @@
 			<separator />
 			<menuitem action="SelectAll" />
 		</menu>
+		<menu name="ViewMenu" action="ViewMenu">
+			<menuitem action="ZoomIn" />
+			<menuitem action="ZoomOut" />
+			<menuitem action="NormalSize" />
+		</menu>
 		<menu name="HelpMenu" action="HelpMenu">
 			<menuitem action="About" />
 		</menu>

@@ -95,6 +95,7 @@ set (logdiag_SOURCES
 	src/ld-lua-symbol.c)
 set (logdiag_HEADERS
 	${CMAKE_CURRENT_BINARY_DIR}/config.h
+	src/liblogdiag.h
 	src/ld-marshal.h
 	src/ld-types.h
 	src/ld-window-main.h

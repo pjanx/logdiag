@@ -10,17 +10,8 @@
 
 #include <string.h>
 
-#include <gtk/gtk.h>
-#include <json-glib/json-glib.h>
-
+#include "liblogdiag.h"
 #include "config.h"
-
-#include "ld-types.h"
-#include "ld-symbol.h"
-#include "ld-symbol-category.h"
-#include "ld-library.h"
-
-#include "ld-lua.h"
 
 
 /**

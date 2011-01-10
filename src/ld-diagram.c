@@ -8,13 +8,8 @@
  *
  */
 
-#include <gtk/gtk.h>
-#include <json-glib/json-glib.h>
-
+#include "liblogdiag.h"
 #include "config.h"
-
-#include "ld-diagram-object.h"
-#include "ld-diagram.h"
 
 
 /**

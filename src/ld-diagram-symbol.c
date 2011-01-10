@@ -8,12 +8,8 @@
  *
  */
 
-#include <gtk/gtk.h>
-
+#include "liblogdiag.h"
 #include "config.h"
-
-#include "ld-diagram-object.h"
-#include "ld-diagram-symbol.h"
 
 
 /**

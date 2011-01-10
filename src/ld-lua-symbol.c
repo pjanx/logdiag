@@ -8,17 +8,8 @@
  *
  */
 
-#include <gtk/gtk.h>
-
+#include "liblogdiag.h"
 #include "config.h"
-
-#include "ld-types.h"
-#include "ld-symbol.h"
-#include "ld-symbol-category.h"
-#include "ld-library.h"
-
-#include "ld-lua.h"
-#include "ld-lua-symbol.h"
 
 #include "ld-lua-private.h"
 #include "ld-lua-symbol-private.h"

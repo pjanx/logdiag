@@ -8,19 +8,12 @@
  *
  */
 
-#include <gtk/gtk.h>
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
 
+#include "liblogdiag.h"
 #include "config.h"
-
-#include "ld-types.h"
-#include "ld-symbol.h"
-#include "ld-library.h"
-
-#include "ld-lua.h"
-#include "ld-lua-symbol.h"
 
 #include "ld-lua-private.h"
 #include "ld-lua-symbol-private.h"

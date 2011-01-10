@@ -10,11 +10,8 @@
 
 #include <math.h>
 
-#include <gtk/gtk.h>
-
+#include "liblogdiag.h"
 #include "config.h"
-
-#include "ld-types.h"
 
 
 #define DEFINE_BOXED_TYPE(TypeName, type_name) \

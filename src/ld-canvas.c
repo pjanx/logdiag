@@ -10,20 +10,10 @@
 
 #include <math.h>
 #include <string.h>
-
-#include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 
+#include "liblogdiag.h"
 #include "config.h"
-
-#include "ld-marshal.h"
-#include "ld-types.h"
-#include "ld-diagram-object.h"
-#include "ld-diagram-symbol.h"
-#include "ld-diagram.h"
-#include "ld-symbol.h"
-#include "ld-library.h"
-#include "ld-canvas.h"
 
 
 /**

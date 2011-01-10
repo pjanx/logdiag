@@ -133,7 +133,6 @@ foreach_dir (const gchar *path,
 	GDir *dir;
 	const gchar *item;
 
-	/* FIXME: We don't set an error. */
 	g_return_val_if_fail (path != NULL, FALSE);
 	g_return_val_if_fail (callback != NULL, FALSE);
 

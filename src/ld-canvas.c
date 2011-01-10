@@ -9,6 +9,8 @@
  */
 
 #include <math.h>
+#include <string.h>
+
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 
@@ -187,6 +189,7 @@ static void diagram_disconnect_signals (LdCanvas *self);
 static gdouble ld_canvas_get_base_unit_in_px (GtkWidget *self);
 static gdouble ld_canvas_get_scale_in_px (LdCanvas *self);
 
+static void simulate_motion (LdCanvas *self);
 static gboolean on_motion_notify (GtkWidget *widget, GdkEventMotion *event,
 	gpointer user_data);
 static gboolean on_leave_notify (GtkWidget *widget, GdkEventCrossing *event,
@@ -799,10 +802,7 @@ ld_canvas_set_zoom (LdCanvas *self, gdouble zoom)
 
 	self->priv->zoom = clamped_zoom;
 
-	/* TODO: Retrieve the position of the mouse and call
-	 *       check_terminals() instead of just hiding the terminals.
-	 */
-	hide_terminals (self);
+	simulate_motion (self);
 	update_adjustments (self);
 	gtk_widget_queue_draw (GTK_WIDGET (self));
 
@@ -1106,6 +1106,30 @@ queue_terminal_draw (LdCanvas *self, LdPoint *terminal)
 	rect.width  = 2 * TERMINAL_RADIUS;
 	rect.height = 2 * TERMINAL_RADIUS;
 	queue_draw (self, &rect);
+}
+
+static void
+simulate_motion (LdCanvas *self)
+{
+	GdkEventMotion event;
+	GtkWidget *widget;
+	gint x, y;
+	GdkModifierType state;
+
+	widget = GTK_WIDGET (self);
+
+	if (gdk_window_get_pointer (widget->window, &x, &y, &state)
+		!= widget->window)
+		return;
+
+	memset (&event, 0, sizeof (event));
+	event.type = GDK_MOTION_NOTIFY;
+	event.window = widget->window;
+	event.x = x;
+	event.y = y;
+	event.state = state;
+
+	on_motion_notify (widget, &event, NULL);
 }
 
 static gboolean

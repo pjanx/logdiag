@@ -96,6 +96,7 @@ struct _LdWindowMainPrivate
 	LdCanvas *canvas;
 
 	GtkWidget *statusbar;
+	guint statusbar_symbol_context_id;
 	guint statusbar_menu_context_id;
 
 	SymbolMenuData symbol_menu;
@@ -294,6 +295,8 @@ ld_window_main_init (LdWindowMain *self)
 	priv->statusbar = gtk_statusbar_new ();
 	priv->statusbar_menu_context_id = gtk_statusbar_get_context_id
 		(GTK_STATUSBAR (priv->statusbar), "menu");
+	priv->statusbar_symbol_context_id = gtk_statusbar_get_context_id
+		(GTK_STATUSBAR (priv->statusbar), "symbol");
 
 	/* Pack all widgets into the window. */
 	priv->hbox = gtk_hbox_new (FALSE, 0);
@@ -639,6 +642,9 @@ on_category_toggle (GtkToggleButton *toggle_button, gpointer user_data)
 		g_free (data->items);
 		data->items = NULL;
 
+		gtk_statusbar_pop (GTK_STATUSBAR (self->priv->statusbar),
+			self->priv->statusbar_menu_context_id);
+
 		gtk_grab_remove (GTK_WIDGET (self->priv->canvas));
 	}
 	else
@@ -763,7 +769,7 @@ on_canvas_motion_notify (GtkWidget *widget, GdkEventMotion *event,
 {
 	LdWindowMain *self;
 	SymbolMenuData *data;
-	gint i, x;
+	gint i, x, at_cursor = -1;
 
 	self = LD_WINDOW_MAIN (user_data);
 	data = &self->priv->symbol_menu;
@@ -771,24 +777,34 @@ on_canvas_motion_notify (GtkWidget *widget, GdkEventMotion *event,
 	if (widget->window != event->window
 		|| event->x < 0 || event->y < data->menu_y
 		|| event->y >= data->menu_y + data->menu_height)
-	{
-		data->active_item = -1;
-		redraw_symbol_menu (self);
-		return FALSE;
-	}
+		goto on_canvas_motion_notify_end;
 
 	for (x = i = 0; i < data->n_items; i++)
 	{
 		x += data->items[i].width;
 		if (event->x < x)
 		{
-			/* TODO: Show the human name of this symbol in status bar. */
-			data->active_item = i;
-			redraw_symbol_menu (self);
-			return FALSE;
+			at_cursor = i;
+			break;
 		}
 	}
-	data->active_item = -1;
+
+on_canvas_motion_notify_end:
+	if (data->active_item != at_cursor)
+	{
+		const gchar *symbol_name;
+
+		gtk_statusbar_pop (GTK_STATUSBAR (self->priv->statusbar),
+			self->priv->statusbar_menu_context_id);
+
+		if (at_cursor != -1)
+		{
+			symbol_name = ld_symbol_get_human_name (data->items[i].symbol);
+			gtk_statusbar_push (GTK_STATUSBAR (self->priv->statusbar),
+				self->priv->statusbar_menu_context_id, symbol_name);
+		}
+	}
+	data->active_item = at_cursor;
 	redraw_symbol_menu (self);
 	return FALSE;
 }

@@ -1,11 +1,12 @@
-/**
- *  @file configure.h.in
- *  @brief Tries to fix various differences in compilers and libraries.
+/*
+ * config.h.in
+ *
+ * Tries to fix various differences in compilers and libraries.
  *
  */
 
-#ifndef CONFIGURE_H_INCLUDED
-#define CONFIGURE_H_INCLUDED
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
 
 #define PROJECT_NAME "${PROJECT_NAME}"
 #define PROJECT_VERSION "${project_VERSION}"
@@ -59,5 +60,5 @@
 	#endif
 #endif /* ! HAVE_STRTOK_R */
 
-#endif /* CONFIGURE_H_INCLUDED */
+#endif /* __CONFIG_H__ */
 

@@ -54,6 +54,8 @@ static void ld_diagram_set_property (GObject *object, guint property_id,
 static void ld_diagram_dispose (GObject *gobject);
 static void ld_diagram_finalize (GObject *gobject);
 
+static gboolean write_signature (GOutputStream *stream, GError **error);
+
 static void ld_diagram_real_changed (LdDiagram *self);
 static void ld_diagram_clear_internal (LdDiagram *self);
 static void ld_diagram_unselect_all_internal (LdDiagram *self);
@@ -279,12 +281,36 @@ gboolean
 ld_diagram_save_to_file (LdDiagram *self,
 	const gchar *filename, GError **error)
 {
+	GFile *file;
+	GFileOutputStream *file_stream;
 	JsonGenerator *generator;
 	JsonNode *root;
-	GError *json_error;
+	GError *local_error;
 
 	g_return_val_if_fail (LD_IS_DIAGRAM (self), FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
+
+	file = g_file_new_for_path (filename);
+
+	local_error = NULL;
+	file_stream = g_file_replace (file, NULL, FALSE,
+		G_FILE_CREATE_NONE, NULL, &local_error);
+	g_object_unref (file);
+
+	if (local_error)
+	{
+		g_propagate_error (error, local_error);
+		return FALSE;
+	}
+
+	local_error = NULL;
+	write_signature (G_OUTPUT_STREAM (file_stream), &local_error);
+	if (local_error)
+	{
+		g_object_unref (file_stream);
+		g_propagate_error (error, local_error);
+		return FALSE;
+	}
 
 	/* TODO: Implement saving for real. This is just a stub. */
 	generator = json_generator_new ();
@@ -295,15 +321,33 @@ ld_diagram_save_to_file (LdDiagram *self,
 	json_generator_set_root (generator, root);
 	json_node_free (root);
 
-	json_error = NULL;
-	json_generator_to_file (generator, filename, &json_error);
-	if (json_error)
+	local_error = NULL;
+	json_generator_to_stream (generator, G_OUTPUT_STREAM (file_stream),
+		NULL, &local_error);
+	g_object_unref (file_stream);
+	g_object_unref (generator);
+
+	if (local_error)
 	{
-		g_propagate_error (error, json_error);
-		g_object_unref (generator);
+		g_propagate_error (error, local_error);
 		return FALSE;
 	}
-	g_object_unref (generator);
+	return TRUE;
+}
+
+static gboolean
+write_signature (GOutputStream *stream, GError **error)
+{
+	static const gchar signature[] = "/* logdiag diagram */\n";
+	GError *local_error = NULL;
+
+	g_output_stream_write (stream, signature, sizeof (signature) - 1,
+		NULL, &local_error);
+	if (local_error)
+	{
+		g_propagate_error (error, local_error);
+		return FALSE;
+	}
 	return TRUE;
 }
 

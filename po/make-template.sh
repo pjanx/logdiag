@@ -4,6 +4,9 @@
 # is that the translator should not need to run
 # the whole configure process to get this single stupid file.
 
+# Source files
+SOURCES=$(echo ../{src,liblogdiag}/*.c)
+
 # Get the package name from CMakeLists.txt
 PACKAGE=$(sed -n '/^[ \t]*[pP][rR][oO][jJ][eE][cC][tT][ \t]*([ \t]*\([^ \t)]\{1,\}\).*).*/{s//\1/p;q}' \
 	../CMakeLists.txt)
@@ -27,7 +30,7 @@ if [ "$MAJOR" != "" ]; then
 fi
 
 # Finally make the template
-xgettext -LC -k_ -kN_:1,2 -kG_ ../src/*.c -o "$PACKAGE".pot \
+xgettext -LC -k_ -kN_:1,2 -kG_ $SOURCES -o "$PACKAGE".pot \
 	--package-name="$PACKAGE" --package-version="$VERSION" \
 	--copyright-holder="Přemysl Janouch"
 

@@ -22,9 +22,6 @@
  *
  * #LdWindowMain is the main window of the application.
  */
-/* NOTE: The main window should not maybe be included in either
- *       the documentation or the static library.
- */
 
 /*
  * SymbolMenuItem:

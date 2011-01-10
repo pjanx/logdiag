@@ -79,37 +79,41 @@ find_package (GtkDoc)
 set (project_DOC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/docs/reference")
 
 # Project source files
-set (logdiag_SOURCES
-	src/logdiag.c
-	src/ld-marshal.c
-	src/ld-types.c
-	src/ld-window-main.c
-	src/ld-diagram.c
-	src/ld-diagram-object.c
-	src/ld-diagram-symbol.c
-	src/ld-canvas.c
-	src/ld-library.c
-	src/ld-symbol-category.c
-	src/ld-symbol.c
-	src/ld-lua.c
-	src/ld-lua-symbol.c)
-set (logdiag_HEADERS
+set (liblogdiag_SOURCES
+	liblogdiag/ld-marshal.c
+	liblogdiag/ld-types.c
+	liblogdiag/ld-diagram.c
+	liblogdiag/ld-diagram-object.c
+	liblogdiag/ld-diagram-symbol.c
+	liblogdiag/ld-canvas.c
+	liblogdiag/ld-library.c
+	liblogdiag/ld-symbol-category.c
+	liblogdiag/ld-symbol.c
+	liblogdiag/ld-lua.c
+	liblogdiag/ld-lua-symbol.c)
+set (liblogdiag_HEADERS
 	${CMAKE_CURRENT_BINARY_DIR}/config.h
-	src/liblogdiag.h
-	src/ld-marshal.h
-	src/ld-types.h
-	src/ld-window-main.h
-	src/ld-diagram.h
-	src/ld-diagram-object.h
-	src/ld-diagram-symbol.h
-	src/ld-canvas.h
-	src/ld-library.h
-	src/ld-symbol-category.h
-	src/ld-symbol.h
-	src/ld-lua.h
-	src/ld-lua-private.h
-	src/ld-lua-symbol.h
-	src/ld-lua-symbol-private.h)
+	liblogdiag/liblogdiag.h
+	liblogdiag/ld-marshal.h
+	liblogdiag/ld-types.h
+	liblogdiag/ld-diagram.h
+	liblogdiag/ld-diagram-object.h
+	liblogdiag/ld-diagram-symbol.h
+	liblogdiag/ld-canvas.h
+	liblogdiag/ld-library.h
+	liblogdiag/ld-symbol-category.h
+	liblogdiag/ld-symbol.h
+	liblogdiag/ld-lua.h
+	liblogdiag/ld-lua-private.h
+	liblogdiag/ld-lua-symbol.h
+	liblogdiag/ld-lua-symbol-private.h)
+
+set (logdiag_SOURCES
+	src/ld-window-main.c
+	src/logdiag.c)
+set (logdiag_HEADERS
+	${liblogdiag_HEADERS}
+	src/ld-window-main.h)
 
 # Generate a configure file
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
@@ -151,18 +155,24 @@ function (glib_genmarshal base prefix)
 	endif (GLIB_GENMARSHAL_EXECUTABLE)
 endfunction (glib_genmarshal)
 
-glib_genmarshal (${CMAKE_CURRENT_SOURCE_DIR}/src/ld-marshal
+glib_genmarshal (${CMAKE_CURRENT_SOURCE_DIR}/liblogdiag/ld-marshal
 	g_cclosure_user_marshal)
 
-# Build the executable
+include_directories (${CMAKE_CURRENT_SOURCE_DIR}/liblogdiag)
 include_directories (${GTK2_INCLUDE_DIRS} ${JSON_GLIB_INCLUDE_DIRS} ${LUA_INCLUDE_DIR})
+
+# Build the library
+add_library (liblogdiag STATIC ${liblogdiag_SOURCES} ${liblogdiag_HEADERS})
+set_target_properties (liblogdiag PROPERTIES OUTPUT_NAME logdiag)
+
+# Build the executable
 add_executable (logdiag ${logdiag_SOURCES} ${logdiag_HEADERS})
-target_link_libraries (logdiag ${GTK2_LIBRARIES} ${JSON_GLIB_LIBRARIES} ${LUA_LIBRARIES})
+target_link_libraries (logdiag liblogdiag ${GTK2_LIBRARIES} ${JSON_GLIB_LIBRARIES} ${LUA_LIBRARIES})
 
 # Generate documentation
 if (GTK_DOC_FOUND)
 	GTK_DOC_RUN (WORKING_DIR ${project_DOC_DIR}
-		SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src
+		SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/liblogdiag
 		XML ${project_DOC_DIR}/xml --sgml-mode
 		HTML ${project_DOC_DIR}/html)
 endif (GTK_DOC_FOUND)

@@ -48,6 +48,7 @@ struct _SymbolMenuItem
 	LdSymbol *symbol;
 
 	gint width;
+	gdouble dx;
 	gdouble scale;
 };
 
@@ -693,10 +694,10 @@ on_category_toggle (GtkToggleButton *toggle_button, gpointer user_data)
 			 * in the center of it's symbol menu item.
 			 */
 			item->scale = data->menu_height * 0.5
-				/ MAX (ABS (area.y), ABS (area.y + area.height)) / 2;
-			/* FIXME: The width is probably wrong (related to the center). */
-			item->width = item->scale * area.width
-				+ data->menu_height * 0.5;
+				/ MAX (ABS (area.y), ABS (area.y + area.height)) * 0.5;
+			item->width = data->menu_height * 0.5 + item->scale * area.width;
+			item->dx = item->width * 0.5 + item->scale * (area.width * 0.5
+				- MAX (ABS (area.x), ABS (area.x + area.width)));
 
 			menu_width += item++->width;
 		}
@@ -743,8 +744,8 @@ on_canvas_exposed (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 			cairo_paint (cr);
 		}
 
-		cairo_translate (cr, x + (gdouble) item->width / 2,
-			data->menu_y + (gdouble) data->menu_height / 2);
+		cairo_translate (cr, x + item->dx,
+			data->menu_y + data->menu_height * 0.5);
 		cairo_scale (cr, item->scale, item->scale);
 
 		cairo_set_source_rgb (cr, 0, 0, 0);

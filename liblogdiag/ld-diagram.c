@@ -50,6 +50,9 @@ static void ld_diagram_dispose (GObject *gobject);
 static void ld_diagram_finalize (GObject *gobject);
 
 static gboolean write_signature (GOutputStream *stream, GError **error);
+static JsonNode *serialize_diagram (LdDiagram *self);
+static JsonNode *serialize_object (LdDiagramObject *object);
+static const gchar *get_object_class_string (GType type);
 
 static void ld_diagram_real_changed (LdDiagram *self);
 static void ld_diagram_clear_internal (LdDiagram *self);
@@ -307,12 +310,10 @@ ld_diagram_save_to_file (LdDiagram *self,
 		return FALSE;
 	}
 
-	/* TODO: Implement saving for real. This is just a stub. */
 	generator = json_generator_new ();
 	g_object_set (generator, "pretty", TRUE, NULL);
 
-	/* XXX: json-glib dislikes empty objects. */
-	root = json_node_new (JSON_NODE_OBJECT);
+	root = serialize_diagram (self);
 	json_generator_set_root (generator, root);
 	json_node_free (root);
 
@@ -344,6 +345,58 @@ write_signature (GOutputStream *stream, GError **error)
 		return FALSE;
 	}
 	return TRUE;
+}
+
+static JsonNode *
+serialize_diagram (LdDiagram *self)
+{
+	JsonNode *root_node;
+	JsonObject *root_object;
+	JsonArray *objects_array;
+	GList *iter;
+
+	root_node = json_node_new (JSON_NODE_OBJECT);
+	root_object = json_object_new ();
+	json_node_take_object (root_node, root_object);
+
+	objects_array = json_array_new ();
+	iter = g_list_last (self->priv->objects);
+	for (; iter; iter = g_list_previous (iter))
+		json_array_add_element (objects_array,
+			serialize_object (LD_DIAGRAM_OBJECT (iter->data)));
+
+	json_object_set_int_member (root_object, "version", 1);
+	json_object_set_array_member (root_object, "objects", objects_array);
+	return root_node;
+}
+
+static JsonNode *
+serialize_object (LdDiagramObject *object)
+{
+	JsonNode *object_node, *object_type_node;
+	JsonObject *object_storage;
+
+	object_node = json_node_new (JSON_NODE_OBJECT);
+	object_storage = ld_diagram_object_get_storage (object);
+
+	object_type_node = json_object_get_member (object_storage, "type");
+	if (!object_type_node || !JSON_NODE_HOLDS_VALUE (object_type_node))
+		json_object_set_string_member (object_storage,
+			"type", get_object_class_string (G_OBJECT_TYPE (object)));
+
+	json_node_set_object (object_node, object_storage);
+	return object_node;
+}
+
+static const gchar *
+get_object_class_string (GType type)
+{
+	if (type == LD_TYPE_DIAGRAM_SYMBOL)
+		return "symbol";
+	if (type != LD_TYPE_DIAGRAM_OBJECT)
+		/* We don't know our own type, that's just plain wrong. */
+		g_warn_if_reached ();
+	return "object";
 }
 
 /**

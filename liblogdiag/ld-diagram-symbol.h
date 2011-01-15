@@ -2,7 +2,7 @@
  * ld-diagram-symbol.h
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010. All rights reserved.
+ * Copyright Přemysl Janouch 2010 - 2011. All rights reserved.
  *
  * See the file LICENSE for licensing information.
  *
@@ -38,7 +38,6 @@ struct _LdDiagramSymbol
 {
 /*< private >*/
 	LdDiagramObject parent_instance;
-	LdDiagramSymbolPrivate *priv;
 };
 
 /**
@@ -53,7 +52,7 @@ struct _LdDiagramSymbolClass
 
 GType ld_diagram_symbol_get_type (void) G_GNUC_CONST;
 
-LdDiagramSymbol *ld_diagram_symbol_new (const gchar *klass);
+LdDiagramSymbol *ld_diagram_symbol_new (JsonObject *storage);
 const gchar *ld_diagram_symbol_get_class (LdDiagramSymbol *self);
 void ld_diagram_symbol_set_class (LdDiagramSymbol *self, const gchar *klass);
 

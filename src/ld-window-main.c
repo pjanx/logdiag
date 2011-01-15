@@ -844,7 +844,8 @@ on_canvas_button_release (GtkWidget *widget, GdkEventButton *event,
 
 		klass = g_build_path (LD_LIBRARY_IDENTIFIER_SEPARATOR,
 			category_name, symbol_name, NULL);
-		symbol = ld_diagram_symbol_new (klass);
+		symbol = ld_diagram_symbol_new (NULL);
+		ld_diagram_symbol_set_class (symbol, klass);
 		g_free (klass);
 
 		ld_canvas_add_object_begin (self->priv->canvas,

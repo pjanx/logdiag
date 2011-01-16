@@ -193,7 +193,7 @@ if (NOT WIN32)
 endif (NOT WIN32)
 
 # CPack
-set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Electric diagram designer.")
+set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Schematic editor")
 set (CPACK_PACKAGE_VENDOR "Přemysl Janouch")
 set (CPACK_PACKAGE_CONTACT "p.janouch@gmail.com")
 set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")

@@ -461,8 +461,7 @@ serialize_diagram (LdDiagram *self)
 	json_node_take_object (root_node, root_object);
 
 	objects_array = json_array_new ();
-	iter = g_list_last (self->priv->objects);
-	for (; iter; iter = g_list_previous (iter))
+	for (iter = self->priv->objects; iter; iter = g_list_next (iter))
 		json_array_add_element (objects_array,
 			serialize_object (LD_DIAGRAM_OBJECT (iter->data)));
 

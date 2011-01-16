@@ -890,7 +890,7 @@ get_object_at_coords (LdCanvas *self, gdouble x, gdouble y)
 
 	/* Iterate from the top object downwards. */
 	objects = (GList *) ld_diagram_get_objects (self->priv->diagram);
-	for (iter = objects; iter; iter = g_list_next (iter))
+	for (iter = g_list_last (objects); iter; iter = g_list_previous (iter))
 	{
 		LdDiagramObject *object;
 
@@ -1182,7 +1182,7 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 		move_object_to_coords (self, data->object, event->x, event->y);
 
 		if (self->priv->diagram)
-			ld_diagram_insert_object (self->priv->diagram, data->object, 0);
+			ld_diagram_insert_object (self->priv->diagram, data->object, -1);
 
 		/* XXX: "cancel" causes confusion. */
 		ld_canvas_real_cancel_operation (self);
@@ -1338,7 +1338,7 @@ draw_diagram (GtkWidget *widget, DrawData *data)
 
 	/* Draw objects from the diagram, from bottom to top. */
 	objects = (GList *) ld_diagram_get_objects (data->self->priv->diagram);
-	for (iter = g_list_last (objects); iter; iter = g_list_previous (iter))
+	for (iter = objects; iter; iter = g_list_next (iter))
 		draw_object (LD_DIAGRAM_OBJECT (iter->data), data);
 
 	switch (data->self->priv->operation)

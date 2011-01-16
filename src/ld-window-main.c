@@ -127,6 +127,9 @@ static void update_title (LdWindowMain *self);
 static void action_set_sensitive (LdWindowMain *self, const gchar *name,
 	gboolean sensitive);
 
+static void on_diagram_selection_changed (LdDiagram *diagram,
+	LdWindowMain *self);
+
 static gchar *diagram_get_name (LdWindowMain *self);
 static void diagram_set_filename (LdWindowMain *self, gchar *filename);
 static void diagram_new (LdWindowMain *self);
@@ -146,6 +149,9 @@ static void on_action_save (GtkAction *action, LdWindowMain *self);
 static void on_action_save_as (GtkAction *action, LdWindowMain *self);
 static void on_action_quit (GtkAction *action, LdWindowMain *self);
 static void on_action_about (GtkAction *action, LdWindowMain *self);
+
+static void on_action_delete (GtkAction *action, LdWindowMain *self);
+static void on_action_select_all (GtkAction *action, LdWindowMain *self);
 
 
 /* ===== Local variables =================================================== */
@@ -182,10 +188,10 @@ static GtkActionEntry wm_action_entries[] =
  */
 		{"Delete", GTK_STOCK_DELETE, Q_("_Delete"), "Delete",
 			Q_("Delete the contents of the selection"),
-			NULL},
+			G_CALLBACK (on_action_delete)},
 		{"SelectAll", GTK_STOCK_SELECT_ALL, Q_("Select _All"), "<Ctrl>A",
 			Q_("Select all objects in the diagram"),
-			NULL},
+			G_CALLBACK (on_action_select_all)},
 
 	{"ViewMenu", NULL, Q_("_View"), NULL, NULL, NULL},
 		{"ZoomIn", GTK_STOCK_ZOOM_IN, Q_("_Zoom In"), "<Ctrl>plus",
@@ -342,6 +348,8 @@ ld_window_main_init (LdWindowMain *self)
 	g_signal_connect_data (priv->diagram, "changed",
 		G_CALLBACK (update_title), self,
 		NULL, G_CONNECT_AFTER | G_CONNECT_SWAPPED);
+	g_signal_connect_after (priv->diagram, "selection-changed",
+		G_CALLBACK (on_diagram_selection_changed), self);
 
 	priv->library = ld_library_new ();
 	ld_library_load (priv->library, PROJECT_SHARE_DIR "library");
@@ -354,7 +362,6 @@ ld_window_main_init (LdWindowMain *self)
 
 	action_set_sensitive (self, "Export", FALSE);
 	action_set_sensitive (self, "Delete", FALSE);
-	action_set_sensitive (self, "SelectAll", FALSE);
 	action_set_sensitive (self, "ZoomIn", FALSE);
 	action_set_sensitive (self, "ZoomOut", FALSE);
 	action_set_sensitive (self, "NormalSize", FALSE);
@@ -914,6 +921,15 @@ on_menu_item_deselected (GtkItem *item, LdWindowMain *window)
 
 /* ===== Diagram handling ================================================== */
 
+static void
+on_diagram_selection_changed (LdDiagram *diagram, LdWindowMain *self)
+{
+	gboolean selection_empty;
+
+	selection_empty = !ld_diagram_get_selection (diagram);
+	action_set_sensitive (self, "Delete", !selection_empty);
+}
+
 /*
  * diagram_get_name:
  *
@@ -1240,3 +1256,14 @@ on_action_about (GtkAction *action, LdWindowMain *self)
 		NULL);
 }
 
+static void
+on_action_delete (GtkAction *action, LdWindowMain *self)
+{
+	ld_diagram_remove_selection (self->priv->diagram);
+}
+
+static void
+on_action_select_all (GtkAction *action, LdWindowMain *self)
+{
+	ld_diagram_select_all (self->priv->diagram);
+}

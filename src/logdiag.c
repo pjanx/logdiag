@@ -33,6 +33,7 @@ main (int argc, char *argv[])
 	 */
 
 	gtk_init (&argc, &argv);
+	gtk_window_set_default_icon_name (PROJECT_NAME);
 	wnd = ld_window_main_new ();
 	gtk_main ();
 

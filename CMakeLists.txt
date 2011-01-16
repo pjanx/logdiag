@@ -184,6 +184,7 @@ if (NOT WIN32)
 	install (FILES share/logdiag.desktop DESTINATION share/applications)
 	install (DIRECTORY "${project_DOC_DIR}/html/"
 		DESTINATION usr/gtk-doc/${CMAKE_PROJECT_NAME})
+	install (DIRECTORY share/icons DESTINATION share)
 endif (NOT WIN32)
 
 # CPack

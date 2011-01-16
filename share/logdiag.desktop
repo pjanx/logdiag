@@ -5,5 +5,5 @@ GenericName=Electric diagrams designer
 GenericName[cs]=Návrhář elektrických diagramů
 Icon=logdiag
 Exec=logdiag %f
-Categories=Graphics;VectorGraphics;Electricity;Engineering;GTK
+Categories=Graphics;VectorGraphics;Electricity;Engineering;GTK;
 

@@ -50,6 +50,13 @@ static void ld_diagram_dispose (GObject *gobject);
 static void ld_diagram_finalize (GObject *gobject);
 
 static gboolean write_signature (GOutputStream *stream, GError **error);
+
+static gboolean check_node (JsonNode *node, JsonNodeType type,
+	const gchar *id, GError **error);
+static gboolean deserialize_diagram (LdDiagram *self, JsonNode *root,
+	GError **error);
+static LdDiagramObject *deserialize_object (JsonObject *object_storage);
+
 static JsonNode *serialize_diagram (LdDiagram *self);
 static JsonNode *serialize_object (LdDiagramObject *object);
 static const gchar *get_object_class_string (GType type);
@@ -182,6 +189,19 @@ ld_diagram_real_changed (LdDiagram *self)
 
 
 /**
+ * ld_diagram_error_quark:
+ *
+ * Registers an error quark for #LdDiagram if necessary.
+ *
+ * Return value: The error quark used for #LdDiagram errors.
+ */
+GQuark
+ld_diagram_error_quark (void)
+{
+	return g_quark_from_static_string ("ld-diagram-error-quark");
+}
+
+/**
  * ld_diagram_new:
  *
  * Create an instance.
@@ -243,25 +263,32 @@ ld_diagram_load_from_file (LdDiagram *self,
 	const gchar *filename, GError **error)
 {
 	JsonParser *parser;
-	GError *json_error;
+	GError *local_error;
 
 	g_return_val_if_fail (LD_IS_DIAGRAM (self), FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
 
-	/* TODO: Implement loading for real. This is just a stub. */
 	parser = json_parser_new ();
 
-	json_error = NULL;
-	json_parser_load_from_file (parser, filename, &json_error);
-	if (json_error)
+	local_error = NULL;
+	json_parser_load_from_file (parser, filename, &local_error);
+	if (local_error)
 	{
-		g_propagate_error (error, json_error);
+		g_propagate_error (error, local_error);
 		g_object_unref (parser);
 		return FALSE;
 	}
 
 	ld_diagram_clear (self);
+
+	local_error = NULL;
+	deserialize_diagram (self, json_parser_get_root (parser), &local_error);
 	g_object_unref (parser);
+	if (local_error)
+	{
+		g_propagate_error (error, local_error);
+		return FALSE;
+	}
 	return TRUE;
 }
 
@@ -345,6 +372,80 @@ write_signature (GOutputStream *stream, GError **error)
 		return FALSE;
 	}
 	return TRUE;
+}
+
+static gboolean
+check_node (JsonNode *node, JsonNodeType type, const gchar *id, GError **error)
+{
+	if (!node)
+	{
+		g_set_error (error, LD_DIAGRAM_ERROR, LD_DIAGRAM_ERROR_DIAGRAM_CORRUPT,
+			"%s is missing", id);
+		return FALSE;
+	}
+	if (!JSON_NODE_HOLDS (node, type))
+	{
+		g_set_error (error, LD_DIAGRAM_ERROR, LD_DIAGRAM_ERROR_DIAGRAM_CORRUPT,
+			"%s is of wrong type", id);
+		return FALSE;
+	}
+	return TRUE;
+}
+
+static gboolean
+deserialize_diagram (LdDiagram *self, JsonNode *root, GError **error)
+{
+	JsonObject *root_object;
+	JsonNode *objects_node;
+	GList *iter;
+
+	if (!check_node (root, JSON_NODE_OBJECT, "the root node", error))
+		return FALSE;
+
+	root_object = json_node_get_object (root);
+	objects_node = json_object_get_member (root_object, "objects");
+	if (!check_node (objects_node, JSON_NODE_ARRAY,
+		"the `objects' array", error))
+		return FALSE;
+
+	iter = json_array_get_elements (json_node_get_array (objects_node));
+	for (; iter; iter = g_list_next (iter))
+	{
+		GError *node_error = NULL;
+
+		check_node (iter->data, JSON_NODE_OBJECT, "object node", &node_error);
+		if (node_error)
+		{
+			g_warning ("%s", node_error->message);
+			g_error_free (node_error);
+		}
+		else
+			/* FIXME: Appending is slow. */
+			ld_diagram_insert_object (self,
+				deserialize_object (json_node_get_object (iter->data)), -1);
+	}
+	return TRUE;
+}
+
+static LdDiagramObject *
+deserialize_object (JsonObject *object_storage)
+{
+	JsonNode *object_type_node;
+	const gchar *type;
+
+	json_object_ref (object_storage);
+	object_type_node = json_object_get_member (object_storage, "type");
+
+	if (!object_type_node || !JSON_NODE_HOLDS_VALUE (object_type_node))
+		goto deserialize_object_default;
+
+	type = json_node_get_string (object_type_node);
+	if (!g_strcmp0 ("symbol", type))
+		return LD_DIAGRAM_OBJECT (ld_diagram_symbol_new (object_storage));
+
+deserialize_object_default:
+	/* Anything we can't identify is just an indefinite object. */
+	return ld_diagram_object_new (object_storage);
 }
 
 static JsonNode *

@@ -56,6 +56,28 @@ struct _LdDiagramClass
 };
 
 
+GQuark ld_diagram_error_quark (void);
+
+/**
+ * LD_DIAGRAM_ERROR:
+ *
+ * Uset to get the #GError quark for #LdDiagram errors.
+ */
+#define LD_DIAGRAM_ERROR (ld_diagram_error_quark ())
+
+/**
+ * LdDiagramError:
+ * @LD_DIAGRAM_ERROR_DIAGRAM_CORRUPT: The input diagram is corrupt.
+ *
+ * These identify errors that can occur while calling #LdDiagram functions.
+ */
+typedef enum
+{
+	LD_DIAGRAM_ERROR_DIAGRAM_CORRUPT
+}
+LdDiagramError;
+
+
 GType ld_diagram_get_type (void) G_GNUC_CONST;
 
 LdDiagram *ld_diagram_new (void);

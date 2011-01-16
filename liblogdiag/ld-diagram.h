@@ -97,12 +97,10 @@ void ld_diagram_remove_object (LdDiagram *self,
 	LdDiagramObject *object);
 
 GList *ld_diagram_get_selection (LdDiagram *self);
-void ld_diagram_selection_add (LdDiagram *self,
-	LdDiagramObject *object, gint pos);
-void ld_diagram_selection_remove (LdDiagram *self,
-	LdDiagramObject *object);
-
+void ld_diagram_remove_selection (LdDiagram *self);
+void ld_diagram_select (LdDiagram *self, LdDiagramObject *object);
 void ld_diagram_select_all (LdDiagram *self);
+void ld_diagram_unselect (LdDiagram *self, LdDiagramObject *object);
 void ld_diagram_unselect_all (LdDiagram *self);
 
 /*

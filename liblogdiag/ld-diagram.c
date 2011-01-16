@@ -227,6 +227,8 @@ ld_diagram_clear (LdDiagram *self)
 
 	g_signal_emit (self,
 		LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
+	g_signal_emit (self,
+		LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
 }
 
 /*
@@ -238,7 +240,7 @@ ld_diagram_clear (LdDiagram *self)
 static void
 ld_diagram_clear_internal (LdDiagram *self)
 {
-	ld_diagram_unselect_all (self);
+	ld_diagram_unselect_all_internal (self);
 
 	g_list_free (self->priv->connections);
 	self->priv->connections = NULL;
@@ -582,7 +584,7 @@ ld_diagram_remove_object (LdDiagram *self, LdDiagramObject *object)
 
 	if (g_list_find (self->priv->objects, object))
 	{
-		ld_diagram_selection_remove (self, object);
+		ld_diagram_unselect (self, object);
 
 		self->priv->objects = g_list_remove (self->priv->objects, object);
 		g_object_unref (object);
@@ -607,16 +609,51 @@ ld_diagram_get_selection (LdDiagram *self)
 }
 
 /**
- * ld_diagram_selection_add:
+ * ld_diagram_remove_selection:
+ * @self: An #LdDiagram object.
+ *
+ * Remove selected objects from the diagram.
+ */
+void
+ld_diagram_remove_selection (LdDiagram *self)
+{
+	gboolean changed = FALSE;
+	GList *iter;
+
+	g_return_if_fail (LD_IS_DIAGRAM (self));
+
+	for (iter = self->priv->selection; iter; iter = g_list_next (iter))
+	{
+		LdDiagramObject *object;
+
+		changed = TRUE;
+		object = LD_DIAGRAM_OBJECT (iter->data);
+
+		self->priv->objects = g_list_remove (self->priv->objects, object);
+		g_object_unref (object);
+		g_object_unref (object);
+	}
+	g_list_free (self->priv->selection);
+	self->priv->selection = NULL;
+
+	if (changed)
+	{
+		g_signal_emit (self,
+			LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
+		g_signal_emit (self,
+			LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
+	}
+}
+
+/**
+ * ld_diagram_select:
  * @self: An #LdDiagram object.
  * @object: The object to be added to the selection.
- * @pos: The position at which the object is to be inserted.
- *       Negative values will append to the end.
  *
  * Add an object to selection.
  */
 void
-ld_diagram_selection_add (LdDiagram *self, LdDiagramObject *object, gint pos)
+ld_diagram_select (LdDiagram *self, LdDiagramObject *object)
 {
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (object));
@@ -626,7 +663,7 @@ ld_diagram_selection_add (LdDiagram *self, LdDiagramObject *object, gint pos)
 	if (!g_list_find (self->priv->selection, object))
 	{
 		self->priv->selection =
-			g_list_insert (self->priv->selection, object, pos);
+			g_list_insert (self->priv->selection, object, 0);
 		g_object_ref (object);
 
 		g_signal_emit (self,
@@ -635,14 +672,14 @@ ld_diagram_selection_add (LdDiagram *self, LdDiagramObject *object, gint pos)
 }
 
 /**
- * ld_diagram_selection_remove:
+ * ld_diagram_unselect:
  * @self: An #LdDiagram object.
  * @object: The object to be removed from the selection.
  *
  * Remove an object from the selection.
  */
 void
-ld_diagram_selection_remove (LdDiagram *self, LdDiagramObject *object)
+ld_diagram_unselect (LdDiagram *self, LdDiagramObject *object)
 {
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (object));
@@ -688,10 +725,12 @@ ld_diagram_unselect_all (LdDiagram *self)
 {
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 
-	ld_diagram_unselect_all_internal (self);
-
-	g_signal_emit (self,
-		LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
+	if (self->priv->selection)
+	{
+		ld_diagram_unselect_all_internal (self);
+		g_signal_emit (self,
+			LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
+	}
 }
 
 static void

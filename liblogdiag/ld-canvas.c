@@ -1197,7 +1197,7 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 
 			object = get_object_at_coords (self, event->x, event->y);
 			if (object)
-				ld_diagram_selection_add (self->priv->diagram, object, 0);
+				ld_diagram_select (self->priv->diagram, object);
 		}
 		break;
 	}

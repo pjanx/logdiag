@@ -880,8 +880,7 @@ move_object_to_coords (LdCanvas *self, LdDiagramObject *object,
 	gdouble dx, dy;
 
 	ld_canvas_widget_to_diagram_coords (self, x, y, &dx, &dy);
-	ld_diagram_object_set_x (object, floor (dx + 0.5));
-	ld_diagram_object_set_y (object, floor (dy + 0.5));
+	g_object_set (object, "x", floor (dx + 0.5), "y", floor (dy + 0.5), NULL);
 }
 
 static LdDiagramObject *
@@ -922,16 +921,13 @@ resolve_diagram_symbol (LdCanvas *self, LdDiagramSymbol *diagram_symbol)
 static gboolean
 get_symbol_area (LdCanvas *self, LdDiagramSymbol *symbol, LdRectangle *rect)
 {
-	LdDiagramObject *object;
 	gdouble object_x, object_y;
 	LdSymbol *library_symbol;
 	LdRectangle area;
 	gdouble x1, x2;
 	gdouble y1, y2;
 
-	object = LD_DIAGRAM_OBJECT (symbol);
-	object_x = ld_diagram_object_get_x (object);
-	object_y = ld_diagram_object_get_y (object);
+	g_object_get (symbol, "x", &object_x, "y", &object_y, NULL);
 
 	library_symbol = resolve_diagram_symbol (self, symbol);
 	if (library_symbol)
@@ -1016,8 +1012,7 @@ check_terminals (LdCanvas *self, gdouble x, gdouble y)
 			continue;
 
 		diagram_object = LD_DIAGRAM_OBJECT (iter->data);
-		object_x = ld_diagram_object_get_x (diagram_object);
-		object_y = ld_diagram_object_get_y (diagram_object);
+		g_object_get (diagram_object, "x", &object_x, "y", &object_y, NULL);
 
 		terminals = ld_symbol_get_terminals (symbol);
 

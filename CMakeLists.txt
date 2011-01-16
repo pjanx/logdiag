@@ -159,7 +159,8 @@ glib_genmarshal (${CMAKE_CURRENT_SOURCE_DIR}/liblogdiag/ld-marshal
 	g_cclosure_user_marshal)
 
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/liblogdiag)
-include_directories (${GTK2_INCLUDE_DIRS} ${JSON_GLIB_INCLUDE_DIRS} ${LUA_INCLUDE_DIR})
+include_directories (${GTK2_INCLUDE_DIRS}
+	${JSON_GLIB_INCLUDE_DIRS} ${LUA_INCLUDE_DIR})
 
 # Build the library
 add_library (liblogdiag STATIC ${liblogdiag_SOURCES} ${liblogdiag_HEADERS})
@@ -167,7 +168,8 @@ set_target_properties (liblogdiag PROPERTIES OUTPUT_NAME logdiag)
 
 # Build the executable
 add_executable (logdiag ${logdiag_SOURCES} ${logdiag_HEADERS})
-target_link_libraries (logdiag liblogdiag ${GTK2_LIBRARIES} ${JSON_GLIB_LIBRARIES} ${LUA_LIBRARIES})
+target_link_libraries (logdiag liblogdiag ${GTK2_LIBRARIES}
+	${JSON_GLIB_LIBRARIES} ${LUA_LIBRARIES})
 
 # Generate documentation
 if (GTK_DOC_FOUND)
@@ -179,12 +181,15 @@ endif (GTK_DOC_FOUND)
 
 # Installation
 install (TARGETS logdiag DESTINATION bin)
+install (DIRECTORY share/gui share/library
+	DESTINATION share/${CMAKE_PROJECT_NAME})
 
 if (NOT WIN32)
 	install (FILES share/logdiag.desktop DESTINATION share/applications)
-	install (DIRECTORY "${project_DOC_DIR}/html/"
-		DESTINATION usr/gtk-doc/${CMAKE_PROJECT_NAME})
 	install (DIRECTORY share/icons DESTINATION share)
+	install (DIRECTORY "${project_DOC_DIR}/html/"
+		DESTINATION share/gtk-doc/${CMAKE_PROJECT_NAME})
+	install (FILES LICENSE DESTINATION share/doc/${CMAKE_PROJECT_NAME})
 endif (NOT WIN32)
 
 # CPack

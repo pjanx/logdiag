@@ -53,6 +53,35 @@ if (WIN32)
 		remove_directory ${WIN32_DEPENDS_PATH})
 endif (WIN32)
 
+# Generate icons
+find_program (CONVERT_EXECUTABLE convert)
+mark_as_advanced (CONVERT_EXECUTABLE)
+
+if (CONVERT_EXECUTABLE AND NOT WIN32)
+	set (icon_base ${CMAKE_CURRENT_SOURCE_DIR}/share/icons/hicolor)
+	set (icon_svg ${icon_base}/scalable/apps/logdiag.svg)
+	set (icon_size_list 16x16 32x32 48x48)
+
+	set (icon_png_list)
+	foreach (icon_size ${icon_size_list})
+		set (icon_png_path ${icon_base}/${icon_size}/apps)
+		set (icon_png ${icon_png_path}/logdiag.png)
+		list (APPEND icon_png_list ${icon_png})
+
+		add_custom_command (OUTPUT ${icon_png}
+			COMMAND ${CMAKE_COMMAND} -E make_directory ${icon_png_path}
+			COMMAND ${CONVERT_EXECUTABLE} -background none
+				-resize ${icon_size} ${icon_svg} ${icon_png}
+			DEPENDS ${icon_svg})
+	endforeach (icon_size)
+
+	set (icon_ico ${CMAKE_CURRENT_SOURCE_DIR}/share/logdiag.ico)
+	add_custom_command (OUTPUT ${icon_ico}
+		COMMAND ${CONVERT_EXECUTABLE} ${icon_png_list} ${icon_ico}
+		DEPENDS ${icon_png_list})
+	add_custom_target (logdiag_icons DEPENDS ${icon_ico})
+endif (CONVERT_EXECUTABLE AND NOT WIN32)
+
 # Dependencies
 find_package (GTK2 2.12 REQUIRED gtk)
 find_package (Lua51 REQUIRED)
@@ -115,6 +144,21 @@ set (logdiag_SOURCES
 set (logdiag_HEADERS
 	${liblogdiag_HEADERS}
 	src/ld-window-main.h)
+
+# Resource compilation for MinGW
+if (MINGW)
+	set (CMAKE_RC_COMPILER_INIT windres)
+	enable_language (RC)
+	set (CMAKE_RC_FLAGS "-O coff")
+	set (CMAKE_RC_COMPILE_OBJECT
+		"<CMAKE_RC_COMPILER> <FLAGS> <DEFINES> -o <OBJECT> <SOURCE>")
+endif (MINGW)
+
+if (WIN32)
+	set (logdiag_SOURCES
+		${logdiag_SOURCES}
+		share/logdiag.rc)
+endif (WIN32)
 
 # Generate a configure file
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/config.h.in

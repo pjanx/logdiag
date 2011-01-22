@@ -420,6 +420,7 @@ foreach(_GTK2_component ${GTK2_FIND_COMPONENTS})
         _GTK2_FIND_INCLUDE_DIR(GTK2_GLIB_INCLUDE_DIR glib.h)
         _GTK2_FIND_INCLUDE_DIR(GTK2_GLIBCONFIG_INCLUDE_DIR glibconfig.h)
         _GTK2_FIND_LIBRARY    (GTK2_GLIB_LIBRARY glib false true)
+        _GTK2_FIND_LIBRARY    (GTK2_GIO_LIBRARY gio false true)
         
         _GTK2_FIND_INCLUDE_DIR(GTK2_GOBJECT_INCLUDE_DIR gobject/gobject.h)
         _GTK2_FIND_LIBRARY    (GTK2_GOBJECT_LIBRARY gobject false true)
@@ -529,6 +530,7 @@ foreach(_GTK2_component ${GTK2_FIND_COMPONENTS})
             GTK2_GLIB_INCLUDE_DIR
             GTK2_GLIBCONFIG_INCLUDE_DIR
             GTK2_GLIB_LIBRARY
+            GTK2_GIO_LIBRARY
 
             GTK2_GDK_INCLUDE_DIR
             GTK2_GDKCONFIG_INCLUDE_DIR

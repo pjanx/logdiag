@@ -22,10 +22,6 @@
 #cmakedefine HAVE_SANE___RESTRICT
 #cmakedefine HAVE_RESTRICT
 
-#cmakedefine HAVE_STRTOK_R
-#cmakedefine HAVE_STRTOK_S
-#cmakedefine HAVE_THREADSAFE_STRTOK
-
 #cmakedefine HAVE_GETTEXT
 
 
@@ -51,14 +47,6 @@
 		#define __restrict
 	#endif
 #endif /* ! HAVE_SANE___RESTRICT */
-
-#ifndef HAVE_STRTOK_R
-	#ifdef HAVE_STRTOK_S
-		#define strtok_r strtok_s
-	#elif defined(HAVE_THREADSAFE_STRTOK)
-		#define strtok_r(a, b, c) strtok(a, b)
-	#endif
-#endif /* ! HAVE_STRTOK_R */
 
 #endif /* __CONFIG_H__ */
 

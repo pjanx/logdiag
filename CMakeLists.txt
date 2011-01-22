@@ -1,4 +1,4 @@
-project (logdiag)
+project (logdiag C)
 cmake_minimum_required (VERSION 2.6.2)
 
 # Default to 2.6.3 behaviour
@@ -13,7 +13,6 @@ else (OPTION_NOINSTALL)
 	set (OPTION_NOINSTALL 0)
 endif (OPTION_NOINSTALL)
 
-
 # Version
 set (project_VERSION_MAJOR "0")
 set (project_VERSION_MINOR "0")
@@ -25,9 +24,6 @@ set (project_VERSION "${project_VERSION}.${project_VERSION_PATCH}")
 
 # For custom modules
 set (CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-
-# Gather package information
-find_package (GTK2 2.12 REQUIRED gtk)
 
 # Test this machine
 include (CheckCSourceCompiles)
@@ -43,17 +39,22 @@ CHECK_C_SOURCE_COMPILES (
 int main (void) {return 0;}"
 HAVE_RESTRICT)
 
-include (CheckFunctionExists)
-
-CHECK_FUNCTION_EXISTS ("strtok_r" HAVE_STRTOK_R)
-CHECK_FUNCTION_EXISTS ("strtok_s" HAVE_STRTOK_S)
-
+# Automatic retrieval of dependencies
 if (WIN32)
-        set (HAVE_THREADSAFE_STRTOK true)
+	set (WIN32_DEPENDS_PATH ${CMAKE_CURRENT_SOURCE_DIR}/win32-depends)
+	list (APPEND CMAKE_PREFIX_PATH ${WIN32_DEPENDS_PATH})
+	list (APPEND CMAKE_INCLUDE_PATH ${WIN32_DEPENDS_PATH}/lib)
+	list (APPEND CMAKE_C_FLAGS "-mms-bitfields")
+
+	add_custom_target (win32-depends COMMAND ${CMAKE_COMMAND} -P
+		${CMAKE_CURRENT_SOURCE_DIR}/Win32Depends.cmake
+		WORKING_DIRECTORY ${WIN32_DEPENDS_PATH})
+	add_custom_target (win32-depends-clean COMMAND ${CMAKE_COMMAND} -E
+		remove_directory ${WIN32_DEPENDS_PATH})
 endif (WIN32)
 
-
 # Dependencies
+find_package (GTK2 2.12 REQUIRED gtk)
 find_package (Lua51 REQUIRED)
 find_package (JsonGlib REQUIRED)
 
@@ -167,7 +168,7 @@ add_library (liblogdiag STATIC ${liblogdiag_SOURCES} ${liblogdiag_HEADERS})
 set_target_properties (liblogdiag PROPERTIES OUTPUT_NAME logdiag)
 
 # Build the executable
-add_executable (logdiag ${logdiag_SOURCES} ${logdiag_HEADERS})
+add_executable (logdiag WIN32 ${logdiag_SOURCES} ${logdiag_HEADERS})
 target_link_libraries (logdiag liblogdiag ${GTK2_LIBRARIES}
 	${JSON_GLIB_LIBRARIES} ${LUA_LIBRARIES})
 
@@ -180,17 +181,35 @@ if (GTK_DOC_FOUND)
 endif (GTK_DOC_FOUND)
 
 # Installation
-install (TARGETS logdiag DESTINATION bin)
 install (DIRECTORY share/gui share/library
 	DESTINATION share/${CMAKE_PROJECT_NAME})
 
-if (NOT WIN32)
+if (WIN32)
+	install (TARGETS logdiag DESTINATION .)
+	install (DIRECTORY
+		${WIN32_DEPENDS_PATH}/bin/
+		DESTINATION .
+		FILES_MATCHING PATTERN "*.dll")
+	install (DIRECTORY
+		${WIN32_DEPENDS_PATH}/etc/
+		DESTINATION etc)
+	install (DIRECTORY
+		${WIN32_DEPENDS_PATH}/lib/glib-2.0
+		${WIN32_DEPENDS_PATH}/lib/gtk-2.0
+		${WIN32_DEPENDS_PATH}/lib/gdk-pixbuf-2.0
+		DESTINATION lib)
+	install (DIRECTORY
+		${WIN32_DEPENDS_PATH}/share/locale
+		${WIN32_DEPENDS_PATH}/share/themes
+		DESTINATION share)
+else (WIN32)
+	install (TARGETS logdiag DESTINATION bin)
 	install (FILES share/logdiag.desktop DESTINATION share/applications)
 	install (DIRECTORY share/icons DESTINATION share)
 	install (DIRECTORY "${project_DOC_DIR}/html/"
 		DESTINATION share/gtk-doc/${CMAKE_PROJECT_NAME})
 	install (FILES LICENSE DESTINATION share/doc/${CMAKE_PROJECT_NAME})
-endif (NOT WIN32)
+endif (WIN32)
 
 # CPack
 set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Schematic editor")
@@ -206,7 +225,7 @@ set (CPACK_PACKAGE_FILE_NAME
 set (CPACK_PACKAGE_INSTALL_DIRECTORY
 	"${PROJECT_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}")
 set (CPACK_SOURCE_GENERATOR "TGZ;ZIP")
-set (CPACK_SOURCE_IGNORE_FILES "/build;/.svn;/.git")
+set (CPACK_SOURCE_IGNORE_FILES "/build;/.svn;/.git;/win32-depends")
 set (CPACK_SOURCE_PACKAGE_FILE_NAME
 	"${PROJECT_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}")
 

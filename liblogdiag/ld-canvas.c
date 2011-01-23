@@ -284,6 +284,7 @@ ld_canvas_class_init (LdCanvasClass *klass)
 
 /**
  * LdCanvas::set-scroll-adjustments:
+ * @self: An #LdCanvas object.
  * @horizontal: The horizontal #GtkAdjustment.
  * @vertical: The vertical #GtkAdjustment.
  *
@@ -299,6 +300,7 @@ ld_canvas_class_init (LdCanvasClass *klass)
 
 /**
  * LdCanvas::cancel-operation:
+ * @self: An #LdCanvas object.
  *
  * Cancel any current operation.
  */

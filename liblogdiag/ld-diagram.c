@@ -94,7 +94,7 @@ ld_diagram_class_init (LdDiagramClass *klass)
 
 /**
  * LdDiagram::changed:
- * @diagram: The diagram object.
+ * @self: An #LdDiagram object.
  *
  * Contents of the diagram have changed.
  */
@@ -106,7 +106,7 @@ ld_diagram_class_init (LdDiagramClass *klass)
 
 /**
  * LdDiagram::selection-changed:
- * @diagram: The diagram object.
+ * @self: An #LdDiagram object.
  *
  * The current selection has changed.
  */

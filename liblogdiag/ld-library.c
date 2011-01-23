@@ -62,7 +62,7 @@ ld_library_class_init (LdLibraryClass *klass)
 
 /**
  * LdLibrary::changed:
- * @library: The library object.
+ * @self: An #LdLibrary object.
  *
  * Contents of the library have changed.
  */

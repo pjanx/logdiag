@@ -63,23 +63,27 @@ if (CONVERT_EXECUTABLE AND NOT WIN32)
 	set (icon_size_list 16x16 32x32 48x48)
 
 	set (icon_png_list)
+	set (icon_symbolic_list)
 	foreach (icon_size ${icon_size_list})
 		set (icon_png_path ${icon_base}/${icon_size}/apps)
 		set (icon_png ${icon_png_path}/logdiag.png)
 		list (APPEND icon_png_list ${icon_png})
+		set (icon_symbolic logdiag_icons_${icon_size})
+		list (APPEND icon_symbolic_list ${icon_symbolic})
 
-		add_custom_command (OUTPUT ${icon_png}
+		add_custom_command (OUTPUT ${icon_symbolic}
 			COMMAND ${CMAKE_COMMAND} -E make_directory ${icon_png_path}
 			COMMAND ${CONVERT_EXECUTABLE} -background none
 				-resize ${icon_size} ${icon_svg} ${icon_png}
-			DEPENDS ${icon_svg})
+			DEPENDS ${icon_svg} VERBATIM)
+		set_source_files_properties (${icon_symbolic}
+			PROPERTIES SYMBOLIC TRUE)
 	endforeach (icon_size)
 
 	set (icon_ico ${CMAKE_CURRENT_SOURCE_DIR}/share/logdiag.ico)
-	add_custom_command (OUTPUT ${icon_ico}
+	add_custom_target (logdiag_icons DEPENDS ${icon_symbolic_list}
 		COMMAND ${CONVERT_EXECUTABLE} ${icon_png_list} ${icon_ico}
-		DEPENDS ${icon_png_list})
-	add_custom_target (logdiag_icons DEPENDS ${icon_ico})
+		COMMENT "Generating logdiag.ico" VERBATIM)
 endif (CONVERT_EXECUTABLE AND NOT WIN32)
 
 # Dependencies

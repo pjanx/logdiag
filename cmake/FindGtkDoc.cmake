@@ -7,6 +7,7 @@
 #   [WORKING_DIR <working-dir>]
 #   SOURCE_DIRS <source-dir> ...
 #   [IGNORE_FILES <file> ...]
+#   [SCANGOBJ <library> [<link-libraries> ...]]
 #   [{SGML | XML} [<mkdb-output-dir> [<mkdb-options>]]
 #   [HTML <html-output-dir> <backend-options>]]
 # )
@@ -21,6 +22,7 @@
 #                  CMAKE_CURRENT_BINARY_DIR by default
 #   SOURCE_DIRS  - documentation sources
 #   IGNORE_FILES - ignore these files in the process
+#   SCANGOBJ     - build an object hierarchy scanner
 #   SGML         - make SGML output in the spec. directory
 #   XML          - make XML output in the spec. directory
 #   HTML         - make HTML output in the spec. directory
@@ -30,13 +32,14 @@
 #   <module-name>_gtkdocize_scan
 #   <module-name>_gtkdocize_scan_rebuild_types
 #   <module-name>_gtkdocize_scan_rebuild_sections
+#   <module-name>_gtkdocize_scan_gobject
 #   <module-name>_gtkdocize_mkdb
 #   <module-name>_gtkdocize_mkhtml
 #
 #
 
 #=============================================================================
-# Copyright Přemysl Janouch 2010
+# Copyright Přemysl Janouch 2010 - 2011
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -60,39 +63,13 @@
 # OF SUCH DAMAGE.
 #=============================================================================
 
-# Useful resources
-# ================
-#
-# /usr/share/cmake-2.8/Modules/readme.txt
-#
-# Autotools stack
-#  - /usr/share/aclocal/gtk-doc.m4
-#  - /usr/share/gtk-doc/data/gtk-doc{.notmpl}.make
-#
-# gtk+-2.0, glib-2.0, totem, ... packages -- docs subdir etc.
-#
-# Python wrapper -- useful resource
-#  - http://bjourne.webfactional.com/browser/gtkimageview/gtkdoc.py
-#
-# Overview of the process
-#  - http://library.gnome.org
-#         /devel/gtk-doc-manual/stable/howdoesgtkdocwork.html.en
-#
-# Documenting
-#  - http://live.gnome.org/DocumentationProject/GtkDoc
-#  - http://library.gnome.org
-#         /devel/gtk-doc-manual/stable/documenting_syntax.html.en
-#  - http://library.gnome.org
-#         /devel/gtk-doc-manual/stable/metafiles.html.en
-#
 # TODO
 # ====
 #  - Since it doesn't work without the full Unix environment,
 #    it might be actually proper to use pkg-config
 #
-#  - <module-name>_gtkdocize_scangobj
-#  - <module-name>_gtkdocize_mktmpl
 #  - <module-name>_gtkdocize_fixxref
+#  - gtkdoc-rebase
 #  - Content files (included by the main SGML file)
 #
 
@@ -104,6 +81,10 @@ find_program (GTK_DOC_MKDB_EXECUTABLE "gtkdoc-mkdb")
 find_program (GTK_DOC_MKHTML_EXECUTABLE "gtkdoc-mkhtml")
 find_program (GTK_DOC_FIXXREF_EXECUTABLE "gtkdoc-fixxref")
 
+mark_as_advanced (GTK_DOC_SCAN_EXECUTABLE GTK_DOC_SCANGOBJ_EXECUTABLE
+	GTK_DOC_MKTMPL_EXECUTABLE GTK_DOC_MKDB_EXECUTABLE
+	GTK_DOC_MKHTML_EXECUTABLE GTK_DOC_FIXXREF_EXECUTABLE)
+
 include (FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS (GTK_DOC DEFAULT_MSG GTK_DOC_SCAN_EXECUTABLE)
 
@@ -111,17 +92,17 @@ include (ProcessArguments)
 
 function (GTK_DOC_RUN)
 	# Parse arguments given to this function
-	set (__names  ALL  MODULE  WORKING_DIR)
-	set (__need   NO   NO      NO)
-	set (__want   0    1       1)
-	set (__more   NO   NO      NO)
-	set (__skip   0    0       0)
+	set (__names  ALL  MODULE  WORKING_DIR  SOURCE_DIRS  IGNORE_FILES)
+	set (__need   NO   NO      NO           YES          NO)
+	set (__want   0    1       1            1            1)
+	set (__more   NO   NO      NO           YES          YES)
+	set (__skip   0    0       0            0            0)
 
-	list (APPEND __names  SOURCE_DIRS  IGNORE_FILES  SGML  XML  HTML)
-	list (APPEND __need   YES          NO            NO    NO   NO)
-	list (APPEND __want   1            1             0     0    1)
-	list (APPEND __more   YES          YES           YES   YES  YES)
-	list (APPEND __skip   0            0             1     0    0)
+	list (APPEND __names  SCANGOBJ  SGML  XML  HTML)
+	list (APPEND __need   NO        NO    NO   NO)
+	list (APPEND __want   1         0     0    1)
+	list (APPEND __more   YES       YES   YES  YES)
+	list (APPEND __skip   0         1     0    0)
 
 	set (__argv ${ARGV})
 	PROCESS_ARGUMENTS (__argv __names __need __want __more __skip "_opt_")
@@ -148,13 +129,13 @@ function (GTK_DOC_RUN)
 	set (_source_dirs)
 	foreach (_dir ${_opt_source_dirs_param})
 		list (APPEND _source_dirs "--source-dir" "${_dir}")
-	endforeach (_dir ${_opt_source_dirs_param})
+	endforeach (_dir)
 
 	set (_ignores)
 	if (_opt_ignore_files)
 		foreach (_file ${_opt_ignore_files_param})
 			set (_ignores "${_ignores} ${_file}")
-		endforeach (_file ${_opt_ignore_files_param})
+		endforeach (_file)
 		string (STRIP "${_ignores}" _ignores)
 	endif (_opt_ignore_files)
 
@@ -220,36 +201,69 @@ function (GTK_DOC_RUN)
 		${_target_name}_scan_rebuild_types
 		${_target_name}_scan_rebuild_sections
 		PROPERTIES SYMBOLIC TRUE)
+	set (_top_output ${_target_name}_scan)
 
-	# gtkdoc-scangobj
-	#
-	# gtkdoc-scangobj builds and runs an inspection program. You must
-	# tell it how to do that by running it
-	#
-	# CC=..  CFLAGS=..  LD=..  LDFLAGS=..  RUN=..  gtkdoc-scangobj
-	#
-	# where the variables contain the right compiler, linker and their flags
-	# to build a program using your library.  See the source of
-	# gtkdoc-scangobj around line containing `Compiling scanner' if you want
-	# to know how exactly are the variables used.
+	# Scan the object hierarchy
+	# This is a terrible hack, but there's no other way around.
+	if (_opt_scangobj)
+		# Put all include directories into CFLAGS
+		set (_cflags)
+		get_directory_property (_include_dirs INCLUDE_DIRECTORIES)
+		foreach (_dir ${_include_dirs})
+			set (_cflags "${_cflags} -I${_dir}")
+		endforeach (_dir)
 
-	# gtkdoc-mktmpl
-	#
-	# See: cd /usr/share/gtk-doc/data/
-	#         && diff -u gtk-doc.make gtk-doc.notmpl.make
-	#
-	# add_custom_command (
-	#	OUTPUT ${_working_dir}/${_module_name}-unused.txt
-	#	       ${_working_dir}/tmpl.stamp
-	## This file is updated with unused templates
-	##	       ${_tmpl_dir}/${_module_name}-unused.sgml
-	## The directory is created if it didn't exist
-	##	       ${_tmpl_dir}
-	#	COMMAND ${GTK_DOC_MKTMPL_EXECUTABLE}
-	#	        --module=${_module_name}
-	#	        --output-dir=${_tmpl_dir}
-	#	WORKING_DIRECTORY ${_working_dir}
-	#	COMMENT "Calling gtkdoc-mktmpl" VERBATIM)
+		# Put all libraries to LDFLAGS
+		set (_ldflags "-L${CMAKE_CURRENT_BINARY_DIR}")
+		set (_lib_depends)
+		set (_lib_dir_used)
+		foreach (_lib ${_opt_scangobj_param} ${CMAKE_STANDARD_LIBRARIES})
+			get_filename_component (_lib_dir ${_lib} PATH)
+			get_filename_component (_lib_name ${_lib} NAME)
+
+			# If it's not a target, suppose it's a shared library
+			get_target_property (_target_type ${_lib_name} TYPE)
+			if (_target_type)
+				get_target_property (_lib_output_name ${_lib_name} OUTPUT_NAME)
+				if (_lib_output_name)
+					set (_lib_name ${_lib_output_name})
+				endif (_lib_output_name)
+				list (APPEND _lib_depends ${_lib_name})
+			else (_target_type)
+				list (FIND _lib_dir_used "${_lib_dir}" _lib_dir_found)
+				if (_lib_dir AND _lib_dir_found EQUAL "-1")
+					set (_ldflags "${_ldflags} -L${_lib_dir}")
+					list (APPEND _lib_dir_used ${_lib_dir})
+				endif (_lib_dir AND _lib_dir_found EQUAL "-1")
+
+				string (REGEX REPLACE "^${CMAKE_SHARED_LIBRARY_PREFIX}" ""
+					_lib_name "${_lib_name}")
+				string (REGEX REPLACE "${CMAKE_SHARED_LIBRARY_SUFFIX}\$" ""
+					_lib_name "${_lib_name}")
+			endif (_target_type)
+
+			set (_ldflags "${_ldflags} -l${_lib_name}")
+		endforeach (_lib)
+
+		add_custom_command (
+			OUTPUT ${_target_name}_scan_gobject
+			       ${_working_dir}/${_module_name}.signals
+			       ${_working_dir}/${_module_name}.hierarchy
+			       ${_working_dir}/${_module_name}.interfaces
+			       ${_working_dir}/${_module_name}.prerequisites
+			       ${_working_dir}/${_module_name}.args
+			COMMAND "CC=${CMAKE_C_COMPILER}" "CFLAGS=${_cflags}"
+			        "LD=${CMAKE_C_COMPILER}" "LDFLAGS=${_ldflags}"
+			        "RUN=" ${GTK_DOC_SCANGOBJ_EXECUTABLE}
+			        --module=${_module_name} --output-dir=${_working_dir}
+			DEPENDS ${_top_output} ${_lib_depends}
+			WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+			COMMENT "Calling gtkdoc-scangobj")
+
+		set_source_files_properties (${_target_name}_scan_gobject
+			PROPERTIES SYMBOLIC TRUE)
+		set (_top_output ${_target_name}_scan_gobject)
+	endif (_opt_scangobj)
 
 	# Create XML or SGML files
 	if (_mkdb_format)
@@ -263,21 +277,20 @@ function (GTK_DOC_RUN)
 		# --outputallsymbols --outputsymbolswithoutsince
 		#	       ${_working_dir}/${_module_name}-symbols.txt
 		#	       ${_working_dir}/${_module_name}-nosince.txt
+			COMMAND ${CMAKE_COMMAND} -E remove_directory ${_mkdb_output_dir}
 			COMMAND ${GTK_DOC_MKDB_EXECUTABLE}
 			        --module=${_module_name}
 			        ${_source_dirs} "--ignore-files=${_ignores}"
 			        --output-format=${_mkdb_format}
 			        --output-dir=${_mkdb_output_dir}
 			        ${_mkdb_options} --main-sgml-file=${_mkdb_driver}
-			DEPENDS ${_target_name}_scan
+			DEPENDS ${_top_output}
 			WORKING_DIRECTORY ${_working_dir}
 			COMMENT "Calling gtkdoc-mkdb" VERBATIM)
 
 		set_source_files_properties (${_target_name}_mkdb
 			PROPERTIES SYMBOLIC TRUE)
 		set (_top_output ${_target_name}_mkdb)
-	else (_mkdb_format)
-		set (_top_output ${_target_name}_scan)
 	endif (_mkdb_format)
 
 	# Create HTML documentation
@@ -294,11 +307,12 @@ function (GTK_DOC_RUN)
 			       ${_html_output_dir}/../html.stamp
 		# We probably don't want this to be removed either
 		#	       ${_html_output_dir}
+			COMMAND ${CMAKE_COMMAND} -E remove_directory ${_html_output_dir}
 			COMMAND ${CMAKE_COMMAND} -E make_directory ${_html_output_dir}
 			COMMAND ${CMAKE_COMMAND} -E chdir ${_html_output_dir}
 			        ${GTK_DOC_MKHTML_EXECUTABLE}
 			        ${_module_name} ${_mkdb_driver} ${_opt_html_param}
-			DEPENDS ${_target_name}_mkdb
+			DEPENDS ${_top_output}
 			COMMENT "Calling gtkdoc-mkhtml" VERBATIM)
 
 		set_source_files_properties (${_target_name}_mkhtml

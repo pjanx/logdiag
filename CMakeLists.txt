@@ -102,13 +102,7 @@ if (GETTEXT_FOUND)
 endif (GETTEXT_FOUND)
 
 # Documentation
-# TODO: Pregenerated docs
-
-#set (GTK_DOC_ENABLE OFF CACHE BOOL
-#	"Use gtk-doc to build documentation")
-#set (GTK_DOC_ENABLE_HTML ON CACHE BOOL
-#	"Build documentation in HTML format")
-
+# TODO: Add pregenerated docs to the tree
 find_package (GtkDoc)
 set (project_DOC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/docs/reference")
 
@@ -210,6 +204,8 @@ glib_genmarshal (${CMAKE_CURRENT_SOURCE_DIR}/liblogdiag/ld-marshal
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/liblogdiag)
 include_directories (${GTK2_INCLUDE_DIRS}
 	${JSON_GLIB_INCLUDE_DIRS} ${LUA_INCLUDE_DIR})
+set (logdiag_LIBS ${GTK2_LIBRARIES}
+	${JSON_GLIB_LIBRARIES} ${LUA_LIBRARIES})
 
 # Build the library
 add_library (liblogdiag STATIC ${liblogdiag_SOURCES} ${liblogdiag_HEADERS})
@@ -217,13 +213,13 @@ set_target_properties (liblogdiag PROPERTIES OUTPUT_NAME logdiag)
 
 # Build the executable
 add_executable (logdiag WIN32 ${logdiag_SOURCES} ${logdiag_HEADERS})
-target_link_libraries (logdiag liblogdiag ${GTK2_LIBRARIES}
-	${JSON_GLIB_LIBRARIES} ${LUA_LIBRARIES})
+target_link_libraries (logdiag liblogdiag ${logdiag_LIBS})
 
 # Generate documentation
 if (GTK_DOC_FOUND)
 	GTK_DOC_RUN (WORKING_DIR ${project_DOC_DIR}
 		SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/liblogdiag
+		SCANGOBJ liblogdiag ${logdiag_LIBS}
 		XML ${project_DOC_DIR}/xml --sgml-mode
 		HTML ${project_DOC_DIR}/html)
 endif (GTK_DOC_FOUND)

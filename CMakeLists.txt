@@ -201,7 +201,7 @@ endfunction (glib_genmarshal)
 glib_genmarshal (${CMAKE_CURRENT_SOURCE_DIR}/liblogdiag/ld-marshal
 	g_cclosure_user_marshal)
 
-include_directories (${CMAKE_CURRENT_SOURCE_DIR}/liblogdiag)
+include_directories (${CMAKE_CURRENT_SOURCE_DIR})
 include_directories (${GTK2_INCLUDE_DIRS}
 	${JSON_GLIB_INCLUDE_DIRS} ${LUA_INCLUDE_DIR})
 set (logdiag_LIBS ${GTK2_LIBRARIES}

@@ -10,7 +10,7 @@
 
 #include <gtk/gtk.h>
 
-#include "liblogdiag.h"
+#include <liblogdiag/liblogdiag.h>
 #include "config.h"
 
 #include "ld-window-main.h"

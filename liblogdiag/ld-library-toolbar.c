@@ -166,7 +166,7 @@ ld_library_toolbar_class_init (LdLibraryToolbarClass *klass)
 	klass->symbol_chosen_signal = g_signal_new
 		("symbol-chosen", G_TYPE_FROM_CLASS (klass),
 		G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-		g_cclosure_user_marshal_VOID__OBJECT_STRING,
+		ld_marshal_VOID__OBJECT_STRING,
 		G_TYPE_NONE, 2, LD_TYPE_SYMBOL,
 		G_TYPE_STRING | G_SIGNAL_TYPE_STATIC_SCOPE);
 
@@ -181,7 +181,7 @@ ld_library_toolbar_class_init (LdLibraryToolbarClass *klass)
 	klass->symbol_selected_signal = g_signal_new
 		("symbol-selected", G_TYPE_FROM_CLASS (klass),
 		G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-		g_cclosure_user_marshal_VOID__OBJECT_STRING,
+		ld_marshal_VOID__OBJECT_STRING,
 		G_TYPE_NONE, 2, LD_TYPE_SYMBOL,
 		G_TYPE_STRING | G_SIGNAL_TYPE_STATIC_SCOPE);
 
@@ -196,7 +196,7 @@ ld_library_toolbar_class_init (LdLibraryToolbarClass *klass)
 	klass->symbol_deselected_signal = g_signal_new
 		("symbol-deselected", G_TYPE_FROM_CLASS (klass),
 		G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-		g_cclosure_user_marshal_VOID__OBJECT_STRING,
+		ld_marshal_VOID__OBJECT_STRING,
 		G_TYPE_NONE, 2, LD_TYPE_SYMBOL,
 		G_TYPE_STRING | G_SIGNAL_TYPE_STATIC_SCOPE);
 

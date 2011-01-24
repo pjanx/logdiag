@@ -201,7 +201,7 @@ function (glib_genmarshal base prefix)
 endfunction (glib_genmarshal)
 
 glib_genmarshal (${CMAKE_CURRENT_SOURCE_DIR}/liblogdiag/ld-marshal
-	g_cclosure_user_marshal)
+	ld_marshal)
 
 include_directories (${CMAKE_CURRENT_SOURCE_DIR})
 include_directories (${GTK2_INCLUDE_DIRS}

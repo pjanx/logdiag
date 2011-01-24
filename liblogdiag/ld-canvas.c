@@ -560,7 +560,7 @@ update_adjustments (LdCanvas *self)
  *
  * Create an instance.
  */
-LdCanvas *
+GtkWidget *
 ld_canvas_new (void)
 {
 	return g_object_new (LD_TYPE_CANVAS, NULL);

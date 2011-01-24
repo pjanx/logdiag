@@ -66,7 +66,7 @@ struct _LdCanvasClass
 
 GType ld_canvas_get_type (void) G_GNUC_CONST;
 
-LdCanvas *ld_canvas_new (void);
+GtkWidget *ld_canvas_new (void);
 
 void ld_canvas_set_diagram (LdCanvas *self, LdDiagram *diagram);
 LdDiagram *ld_canvas_get_diagram (LdCanvas *self);

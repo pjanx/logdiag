@@ -227,7 +227,7 @@ ld_window_main_init (LdWindowMain *self)
 	gtk_toolbar_set_orientation (GTK_TOOLBAR (priv->library_toolbar),
 		GTK_ORIENTATION_VERTICAL);
 
-	priv->canvas = ld_canvas_new ();
+	priv->canvas = LD_CANVAS (ld_canvas_new ());
 	priv->canvas_window = gtk_scrolled_window_new (NULL, NULL);
 	gtk_container_add (GTK_CONTAINER (priv->canvas_window),
 		GTK_WIDGET (priv->canvas));

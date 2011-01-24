@@ -26,6 +26,7 @@
 #include "ld-diagram.h"
 
 #include "ld-canvas.h"
+#include "ld-library-toolbar.h"
 
 #include "ld-lua.h"
 #include "ld-lua-symbol.h"

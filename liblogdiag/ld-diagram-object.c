@@ -113,7 +113,7 @@ ld_diagram_object_get_property (GObject *object, guint property_id,
 		break;
 	case PROP_X:
 	case PROP_Y:
-		ld_diagram_object_get_data (self, value, pspec);
+		ld_diagram_object_get_data_for_param (self, value, pspec);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -134,7 +134,7 @@ ld_diagram_object_set_property (GObject *object, guint property_id,
 		break;
 	case PROP_X:
 	case PROP_Y:
-		ld_diagram_object_set_data (self, value, pspec);
+		ld_diagram_object_set_data_for_param (self, value, pspec);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -212,16 +212,16 @@ ld_diagram_object_set_storage (LdDiagramObject *self, JsonObject *storage)
 }
 
 /**
- * ld_diagram_object_get_data:
+ * ld_diagram_object_get_data_for_param:
  * @self: An #LdDiagramObject object.
- * @value: (out): Where the data will be stored.
+ * @data: (out): Where the data will be stored.
  * @pspec: The parameter to read data for.
  *
- * Retrieve data from internal storage.
+ * Retrieve data for a parameter from internal storage.
  */
 void
-ld_diagram_object_get_data (LdDiagramObject *self,
-	GValue *value, GParamSpec *pspec)
+ld_diagram_object_get_data_for_param (LdDiagramObject *self,
+	GValue *data, GParamSpec *pspec)
 {
 	JsonObject *storage;
 	JsonNode *node;
@@ -230,7 +230,7 @@ ld_diagram_object_get_data (LdDiagramObject *self,
 	gboolean result;
 
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (self));
-	g_return_if_fail (G_IS_VALUE (value));
+	g_return_if_fail (G_IS_VALUE (data));
 	g_return_if_fail (G_IS_PARAM_SPEC (pspec));
 
 	storage = ld_diagram_object_get_storage (self);
@@ -243,48 +243,47 @@ ld_diagram_object_get_data (LdDiagramObject *self,
 
 	memset (&json_value, 0, sizeof (json_value));
 	json_node_get_value (node, &json_value);
-	result = g_param_value_convert (pspec, &json_value, value, FALSE);
+	result = g_param_value_convert (pspec, &json_value, data, FALSE);
 	g_value_unset (&json_value);
-	if (!result)
-		goto ld_diagram_object_get_data_warn;
-	return;
+	if (result)
+		return;
 
 ld_diagram_object_get_data_warn:
-	g_warning ("%s: unable to set property `%s' of type `%s'"
-		" from node of type `%s'; setting the property to it's default value",
+	g_warning ("%s: unable to get parameter `%s' of type `%s'"
+		" from node of type `%s'; setting the parameter to it's default value",
 		G_STRFUNC, name, G_PARAM_SPEC_TYPE_NAME (pspec),
 		json_node_type_name (node));
 
 ld_diagram_object_get_data_default:
-	g_param_value_set_default (pspec, value);
-	g_object_set_property (G_OBJECT (self), name, value);
+	g_param_value_set_default (pspec, data);
+	g_object_set_property (G_OBJECT (self), name, data);
 }
 
 /**
- * ld_diagram_object_set_data:
+ * ld_diagram_object_set_data_for_param:
  * @self: An #LdDiagramObject object.
- * @value: The data.
- * @pspec: The parameter to set data for.
+ * @data: The data.
+ * @pspec: The parameter to put data for.
  *
- * Set data in internal storage.
+ * Put data for a parameter into internal storage.
  */
 void
-ld_diagram_object_set_data (LdDiagramObject *self,
-	const GValue *value, GParamSpec *pspec)
+ld_diagram_object_set_data_for_param (LdDiagramObject *self,
+	const GValue *data, GParamSpec *pspec)
 {
 	JsonObject *storage;
 	const gchar *name;
 	JsonNode *node;
 
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (self));
-	g_return_if_fail (G_IS_VALUE (value));
+	g_return_if_fail (G_IS_VALUE (data));
 	g_return_if_fail (G_IS_PARAM_SPEC (pspec));
 
 	storage = ld_diagram_object_get_storage (self);
 	name = g_param_spec_get_name (pspec);
 
 	node = json_node_new (JSON_NODE_VALUE);
-	json_node_set_value (node, value);
+	json_node_set_value (node, data);
 	/* We have to remove it first due to a bug in json-glib. */
 	json_object_remove_member (storage, name);
 	json_object_set_member (storage, name, node);

@@ -56,10 +56,11 @@ GType ld_diagram_object_get_type (void) G_GNUC_CONST;
 LdDiagramObject *ld_diagram_object_new (JsonObject *storage);
 JsonObject *ld_diagram_object_get_storage (LdDiagramObject *self);
 void ld_diagram_object_set_storage (LdDiagramObject *self, JsonObject *storage);
-void ld_diagram_object_get_data (LdDiagramObject *self,
-	GValue *value, GParamSpec *pspec);
-void ld_diagram_object_set_data (LdDiagramObject *self,
-	const GValue *value, GParamSpec *pspec);
+void ld_diagram_object_get_data_for_param (LdDiagramObject *self,
+	GValue *data, GParamSpec *pspec);
+void ld_diagram_object_set_data_for_param (LdDiagramObject *self,
+	const GValue *data, GParamSpec *pspec);
+
 gdouble ld_diagram_object_get_x (LdDiagramObject *self);
 gdouble ld_diagram_object_get_y (LdDiagramObject *self);
 void ld_diagram_object_set_x (LdDiagramObject *self, gdouble x);

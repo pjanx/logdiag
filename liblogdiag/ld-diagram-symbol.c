@@ -70,7 +70,7 @@ ld_diagram_symbol_get_property (GObject *object, guint property_id,
 	switch (property_id)
 	{
 	case PROP_CLASS:
-		ld_diagram_object_get_data (self, value, pspec);
+		ld_diagram_object_get_data_for_param (self, value, pspec);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -87,7 +87,7 @@ ld_diagram_symbol_set_property (GObject *object, guint property_id,
 	switch (property_id)
 	{
 	case PROP_CLASS:
-		ld_diagram_object_set_data (self, value, pspec);
+		ld_diagram_object_set_data_for_param (self, value, pspec);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);

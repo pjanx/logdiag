@@ -166,38 +166,37 @@ configure_file (${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 include_directories (${CMAKE_CURRENT_BINARY_DIR})
 
 # Generate marshallers
+find_program (GLIB_GENMARSHAL_EXECUTABLE glib-genmarshal)
+if (NOT GLIB_GENMARSHAL_EXECUTABLE)
+	message (FATAL_ERROR "glib-genmarshal not found")
+endif (NOT GLIB_GENMARSHAL_EXECUTABLE)
+
 function (glib_genmarshal base prefix)
-	find_program (GLIB_GENMARSHAL_EXECUTABLE glib-genmarshal)
+	get_filename_component (base_path "${base}" PATH)
+	get_filename_component (base_name "${base}" NAME)
+	set (command_base ${GLIB_GENMARSHAL_EXECUTABLE}
+		--prefix ${prefix} "${base_name}.list")
 
-	if (GLIB_GENMARSHAL_EXECUTABLE)
-		get_filename_component (base_path "${base}" PATH)
-		get_filename_component (base_name "${base}" NAME)
-		set (command_base ${GLIB_GENMARSHAL_EXECUTABLE}
-			--prefix ${prefix} "${base_name}.list")
+	# On Windows, the final makefile may contain:
+	#   cd e:\abc && ...
+	# That won't actually change the directory. We have to do:
+	#   cd e:\abc && e: && ...
+	if (WIN32 AND "${base_path}" MATCHES "^.:[/\\\\]")
+		string (SUBSTRING "${base_path}" 0 2 base_drive)
+		set (command_base "${base_drive}" && "${command_base}")
+	endif (WIN32 AND "${base_path}" MATCHES "^.:[/\\\\]")
 
-		# On Windows, the final makefile may contain:
-		#   cd e:\abc && ...
-		# That won't actually change the directory. We have to do:
-		#   cd e:\abc && e: && ...
-		if (WIN32 AND "${base_path}" MATCHES "^.:[/\\\\]")
-			string (SUBSTRING "${base_path}" 0 2 base_drive)
-			set (command_base "${base_drive}" && "${command_base}")
-		endif (WIN32 AND "${base_path}" MATCHES "^.:[/\\\\]")
-
-		# NOTE: VERBATIM would cause problems, so it is not used here
-		add_custom_command (OUTPUT ${base}.c
-			COMMAND ${command_base} --body   > "${base_name}.c"
-			DEPENDS "${base}.list"
-			WORKING_DIRECTORY "${base_path}"
-			COMMENT "Generating marshallers source file")
-		add_custom_command (OUTPUT ${base}.h
-			COMMAND ${command_base} --header > "${base_name}.h"
-			DEPENDS "${base}.list"
-			WORKING_DIRECTORY "${base_path}"
-			COMMENT "Generating marshallers header file")
-	else (GLIB_GENMARSHAL_EXECUTABLE)
-		message (WARNING "glib-genmarshal is not present on this system")
-	endif (GLIB_GENMARSHAL_EXECUTABLE)
+	# NOTE: VERBATIM would cause problems, so it is not used here
+	add_custom_command (OUTPUT ${base}.c
+		COMMAND ${command_base} --body   > "${base_name}.c"
+		DEPENDS "${base}.list"
+		WORKING_DIRECTORY "${base_path}"
+		COMMENT "Generating marshallers source file")
+	add_custom_command (OUTPUT ${base}.h
+		COMMAND ${command_base} --header > "${base_name}.h"
+		DEPENDS "${base}.list"
+		WORKING_DIRECTORY "${base_path}"
+		COMMENT "Generating marshallers header file")
 endfunction (glib_genmarshal)
 
 glib_genmarshal (${CMAKE_CURRENT_SOURCE_DIR}/liblogdiag/ld-marshal
@@ -283,7 +282,7 @@ set (CPACK_NSIS_DELETE_ICONS_EXTRA
 	Delete '\$SMPROGRAMS\\\\$SM_FOLDER\\\\logdiag.lnk'")
 
 set (CPACK_SOURCE_GENERATOR "TGZ;ZIP")
-set (CPACK_SOURCE_IGNORE_FILES "/build;/.svn;/.git;/win32-depends")
+set (CPACK_SOURCE_IGNORE_FILES "/.git;/build;/win32-depends;/liblogdiag/ld-marshal.[ch]")
 set (CPACK_SOURCE_PACKAGE_FILE_NAME
 	"${PROJECT_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}")
 

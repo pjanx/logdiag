@@ -17,7 +17,7 @@
 
 /**
  * SECTION:ld-lua-symbol
- * @short_description: A symbol.
+ * @short_description: A symbol
  * @see_also: #LdSymbol
  *
  * #LdLuaSymbol is an implementation of #LdSymbol.

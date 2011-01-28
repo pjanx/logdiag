@@ -14,15 +14,6 @@
 G_BEGIN_DECLS
 
 
-/**
- * SECTION:ld-types
- * @short_description: Simple data types.
- *
- * #LdPoint defines coordinates of a point.
- *
- * #LdRectangle defines the position and size of a rectangle.
- */
-
 #define LD_TYPE_POINT (ld_point_get_type ())
 #define LD_TYPE_POINT_ARRAY (ld_point_array_get_type ())
 #define LD_TYPE_RECTANGLE (ld_rectangle_get_type ())
@@ -34,8 +25,8 @@ typedef struct _LdRectangle LdRectangle;
 
 /**
  * LdPoint:
- * @x: The X coordinate.
- * @y: The Y coordinate.
+ * @x: the X coordinate.
+ * @y: the Y coordinate.
  *
  * Defines a point.
  */
@@ -53,10 +44,10 @@ gdouble ld_point_distance (LdPoint *self, gdouble x, gdouble y);
 
 /**
  * LdPointArray:
- * @points: An array of #LdPoint structures.
- * @num_points: Count of points in @points.
+ * @points: an array of #LdPoint structures.
+ * @num_points: count of points in @points.
  *
- * Moves quickly.
+ * Defines an array of points.
  */
 struct _LdPointArray
 {
@@ -73,10 +64,10 @@ void ld_point_array_free (LdPointArray *self);
 
 /**
  * LdRectangle:
- * @x: Left-top X coordinate.
- * @y: Left-top Y coordinate.
- * @width: Width of the area, must be positive.
- * @height: Height of the area, must be positive.
+ * @x: left-top X coordinate.
+ * @y: left-top Y coordinate.
+ * @width: width of the area, must be positive.
+ * @height: height of the area, must be positive.
  *
  * Defines a rectangle.
  */

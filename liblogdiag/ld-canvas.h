@@ -39,8 +39,6 @@ struct _LdCanvas
 /*< private >*/
 	GtkDrawingArea parent_instance;
 	LdCanvasPrivate *priv;
-
-/*< public >*/
 };
 
 struct _LdCanvasClass
@@ -57,7 +55,7 @@ struct _LdCanvasClass
 
 
 /**
- * LD_CANVAS_BASE_UNIT:
+ * LD_CANVAS_BASE_UNIT_LENGTH:
  *
  * Length of the base unit in milimetres.
  */

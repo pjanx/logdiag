@@ -40,17 +40,18 @@ struct _LdSymbol
 
 /**
  * LdSymbolClass:
- * @parent_class: The parent class.
- * @get_name: Get the name of the symbol.
- * @get_human_name: Get the localized human name of the symbol.
- * @get_area: Get the area of the symbol.
- * @get_terminals: Get a list of symbol terminals.
- * @draw: Draw the symbol on a Cairo surface.
+ * @get_name: get the name of the symbol.
+ * @get_human_name: get the localized human name of the symbol.
+ * @get_area: get the area of the symbol.
+ * @get_terminals: get a list of symbol terminals.
+ * @draw: draw the symbol on a Cairo surface.
  */
 struct _LdSymbolClass
 {
+/*< private >*/
 	GObjectClass parent_class;
 
+/*< public >*/
 	const gchar *(*get_name) (LdSymbol *self);
 	const gchar *(*get_human_name) (LdSymbol *self);
 	void (*get_area) (LdSymbol *self, LdRectangle *area);

@@ -16,7 +16,7 @@
 
 /**
  * SECTION:ld-library
- * @short_description: A symbol library.
+ * @short_description: A symbol library
  * @see_also: #LdSymbol, #LdSymbolCategory
  *
  * #LdLibrary is used for loading symbols from their files.
@@ -24,8 +24,8 @@
 
 /*
  * LdLibraryPrivate:
- * @lua: State of the scripting language.
- * @children: Child objects of the library.
+ * @lua: state of the scripting language.
+ * @children: child objects of the library.
  */
 struct _LdLibraryPrivate
 {
@@ -62,7 +62,7 @@ ld_library_class_init (LdLibraryClass *klass)
 
 /**
  * LdLibrary::changed:
- * @self: An #LdLibrary object.
+ * @self: an #LdLibrary object.
  *
  * Contents of the library have changed.
  */
@@ -158,9 +158,9 @@ LoadCategoryData;
 
 /*
  * load_category:
- * @self: An #LdLibrary object.
- * @path: The path to the category.
- * @name: The default name of the category.
+ * @self: an #LdLibrary object.
+ * @path: the path to the category.
+ * @name: the default name of the category.
  *
  * Loads a category into the library.
  */
@@ -182,7 +182,7 @@ load_category (LdLibrary *self, const gchar *path, const gchar *name)
 	icon_file = g_build_filename (path, "icon.svg", NULL);
 	if (!g_file_test (icon_file, G_FILE_TEST_IS_REGULAR))
 	{
-		g_warning ("The category in %s has no icon.", path);
+		g_warning ("the category in `%s' has no icon", path);
 		goto load_category_fail_2;
 	}
 
@@ -257,8 +257,8 @@ load_category_symbol_cb (LdSymbol *symbol, gpointer user_data)
 			continue;
 		if (!strcmp (name, ld_symbol_get_name (LD_SYMBOL (iter->data))))
 		{
-			g_warning ("Attempted to insert multiple '%s' symbols into"
-				" category '%s'.", name, ld_symbol_category_get_name (cat));
+			g_warning ("attempted to insert multiple `%s' symbols into"
+				" category `%s'", name, ld_symbol_category_get_name (cat));
 			return;
 		}
 	}
@@ -267,7 +267,7 @@ load_category_symbol_cb (LdSymbol *symbol, gpointer user_data)
 
 /*
  * read_human_name_from_file:
- * @filename: Location of the JSON file.
+ * @filename: location of the JSON file.
  *
  * Read the human name of the processed category.
  */
@@ -294,7 +294,7 @@ read_human_name_from_file (const gchar *filename)
 	root = json_parser_get_root (parser);
 	if (!JSON_NODE_HOLDS_OBJECT (root))
 	{
-		g_warning ("Failed to parse '%s': %s", filename,
+		g_warning ("failed to parse `%s': %s", filename,
 			"The root node is not an object.");
 		goto read_human_name_from_file_end;
 	}
@@ -337,8 +337,8 @@ LibraryLoadData;
 
 /**
  * ld_library_load:
- * @self: An #LdLibrary object.
- * @directory: A directory to be loaded.
+ * @self: an #LdLibrary object.
+ * @directory: a directory to be loaded.
  *
  * Load the contents of a directory into the library.
  */
@@ -387,12 +387,12 @@ ld_library_load_cb (const gchar *base, const gchar *filename, gpointer userdata)
 
 /**
  * ld_library_find_symbol:
- * @self: An #LdLibrary object.
- * @identifier: An identifier of the symbol to be searched for.
+ * @self: an #LdLibrary object.
+ * @identifier: an identifier of the symbol to be searched for.
  *
  * Search for a symbol in the library.
  *
- * Return value: A symbol object if found, NULL otherwise.
+ * Return value: a symbol object if found, %NULL otherwise.
  */
 /* XXX: With this level of indentation, this function is really ugly. */
 LdSymbol *
@@ -453,7 +453,7 @@ ld_library_find_symbol (LdLibrary *self, const gchar *identifier)
 
 /**
  * ld_library_clear:
- * @self: An #LdLibrary object.
+ * @self: an #LdLibrary object.
  *
  * Clear all the contents.
  */
@@ -472,9 +472,9 @@ ld_library_clear (LdLibrary *self)
 
 /**
  * ld_library_insert_child:
- * @self: An #LdLibrary object.
- * @child: The child to be inserted.
- * @pos: The position at which the child will be inserted.
+ * @self: an #LdLibrary object.
+ * @child: the child to be inserted.
+ * @pos: the position at which the child will be inserted.
  *       Negative values will append to the end of list.
  *
  * Insert a child into the library.
@@ -491,8 +491,8 @@ ld_library_insert_child (LdLibrary *self, GObject *child, gint pos)
 
 /**
  * ld_library_remove_child:
- * @self: An #LdLibrary object.
- * @child: The child to be removed.
+ * @self: an #LdLibrary object.
+ * @child: the child to be removed.
  *
  * Remove a child from the library.
  */
@@ -511,9 +511,9 @@ ld_library_remove_child (LdLibrary *self, GObject *child)
 
 /**
  * ld_library_get_children:
- * @self: An #LdLibrary object.
+ * @self: an #LdLibrary object.
  *
- * Return value: The internal list of children. Do not modify.
+ * Return value: the internal list of children. Do not modify.
  */
 const GSList *
 ld_library_get_children (LdLibrary *self)

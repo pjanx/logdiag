@@ -14,6 +14,17 @@
 #include "config.h"
 
 
+/**
+ * SECTION:ld-types
+ * @short_description: Simple data types
+ *
+ * #LdPoint defines coordinates of a point.
+ *
+ * #LdPointArray defines an array of points.
+ *
+ * #LdRectangle defines the position and size of a rectangle.
+ */
+
 #define DEFINE_BOXED_TYPE(TypeName, type_name) \
 GType \
 type_name ## _get_type (void) \
@@ -52,18 +63,18 @@ type_name ## _free (TypeName *self) \
 
 /**
  * ld_point_copy:
- * @self: An #LdPoint structure.
+ * @self: an #LdPoint structure.
  *
  * Makes a copy of the structure.
  * The result must be freed by ld_point_free().
  *
- * Return value: A copy of @self.
+ * Return value: a copy of @self.
  */
 DEFINE_BOXED_TRIVIAL_COPY (LdPoint, ld_point)
 
 /**
  * ld_point_free:
- * @self: An #LdPoint structure.
+ * @self: an #LdPoint structure.
  *
  * Frees the structure created with ld_point_copy().
  */
@@ -71,9 +82,9 @@ DEFINE_BOXED_TRIVIAL_FREE (LdPoint, ld_point)
 
 /**
  * ld_point_distance:
- * @self: An #LdPoint structure.
- * @x: The X coordinate of the second point.
- * @y: The Y coordinate of the second point.
+ * @self: an #LdPoint structure.
+ * @x: the X coordinate of the second point.
+ * @y: the Y coordinate of the second point.
  *
  * Compute the distance between two points.
  */
@@ -91,11 +102,11 @@ ld_point_distance (LdPoint *self, gdouble x, gdouble y)
 
 /**
  * ld_point_array_new:
- * @num_points: The number of points the array can store.
+ * @num_points: the number of points the array can store.
  *
  * Create a new array of points and initialize.
  *
- * Return value: An #LdPointArray structure.
+ * Return value: an #LdPointArray structure.
  */
 LdPointArray *
 ld_point_array_new (gint num_points)
@@ -112,12 +123,12 @@ ld_point_array_new (gint num_points)
 
 /**
  * ld_point_array_copy:
- * @self: An #LdPointArray structure.
+ * @self: an #LdPointArray structure.
  *
  * Makes a copy of the structure.
  * The result must be freed by ld_point_array_free().
  *
- * Return value: A copy of @self.
+ * Return value: a copy of @self.
  */
 LdPointArray *
 ld_point_array_copy (const LdPointArray *self)
@@ -135,7 +146,7 @@ ld_point_array_copy (const LdPointArray *self)
 
 /**
  * ld_point_array_free:
- * @self: An #LdPointArray structure.
+ * @self: an #LdPointArray structure.
  *
  * Frees the structure created with ld_point_array_copy().
  */
@@ -150,18 +161,18 @@ ld_point_array_free (LdPointArray *self)
 
 /**
  * ld_rectangle_copy:
- * @self: An #LdRectangle structure.
+ * @self: an #LdRectangle structure.
  *
  * Makes a copy of the structure.
  * The result must be freed by ld_rectangle_free().
  *
- * Return value: A copy of @self.
+ * Return value: a copy of @self.
  */
 DEFINE_BOXED_TRIVIAL_COPY (LdRectangle, ld_rectangle)
 
 /**
  * ld_rectangle_free:
- * @self: An #LdRectangle structure.
+ * @self: an #LdRectangle structure.
  *
  * Frees the structure created with ld_rectangle_copy().
  */
@@ -169,11 +180,11 @@ DEFINE_BOXED_TRIVIAL_FREE (LdRectangle, ld_rectangle)
 
 /**
  * ld_rectangle_contains:
- * @self: An #LdRectangle structure.
- * @x: The X coordinate of the point to be checked.
- * @y: The Y coordinate of the point to be checked.
+ * @self: an #LdRectangle structure.
+ * @x: the X coordinate of the point to be checked.
+ * @y: the Y coordinate of the point to be checked.
  *
- * Return value: TRUE if the rectangle contains the specified point.
+ * Return value: %TRUE if the rectangle contains the specified point.
  */
 gboolean
 ld_rectangle_contains (LdRectangle *self, gdouble x, gdouble y)
@@ -185,10 +196,10 @@ ld_rectangle_contains (LdRectangle *self, gdouble x, gdouble y)
 
 /**
  * ld_rectangle_intersects:
- * @self: An #LdRectangle structure.
- * @rect: An #LdRectangle to be checked for intersection.
+ * @self: an #LdRectangle structure.
+ * @rect: an #LdRectangle to be checked for intersection.
  *
- * Return value: TRUE if the two rectangles intersect.
+ * Return value: %TRUE if the two rectangles intersect.
  */
 gboolean
 ld_rectangle_intersects (LdRectangle *self, LdRectangle *rect)
@@ -204,8 +215,8 @@ ld_rectangle_intersects (LdRectangle *self, LdRectangle *rect)
 
 /**
  * ld_rectangle_extend:
- * @self: An #LdRectangle structure.
- * @border: The border by which the rectangle should be extended.
+ * @self: an #LdRectangle structure.
+ * @border: the border by which the rectangle should be extended.
  *
  * Extend a rectangle on all sides.
  */

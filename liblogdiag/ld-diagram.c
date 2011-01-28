@@ -14,7 +14,7 @@
 
 /**
  * SECTION:ld-diagram
- * @short_description: A diagram object.
+ * @short_description: A model for diagrams
  * @see_also: #LdCanvas
  *
  * #LdDiagram is a model used for storing diagrams.
@@ -22,10 +22,10 @@
 
 /*
  * LdDiagramPrivate:
- * @modified: Whether the diagram has been modified.
- * @objects: All objects in the diagram.
- * @selection: All currently selected objects.
- * @connections: Connections between objects.
+ * @modified: whether the diagram has been modified.
+ * @objects: all objects in the diagram.
+ * @selection: all currently selected objects.
+ * @connections: connections between objects.
  */
 struct _LdDiagramPrivate
 {
@@ -94,7 +94,7 @@ ld_diagram_class_init (LdDiagramClass *klass)
 
 /**
  * LdDiagram::changed:
- * @self: An #LdDiagram object.
+ * @self: an #LdDiagram object.
  *
  * Contents of the diagram have changed.
  */
@@ -106,7 +106,7 @@ ld_diagram_class_init (LdDiagramClass *klass)
 
 /**
  * LdDiagram::selection-changed:
- * @self: An #LdDiagram object.
+ * @self: an #LdDiagram object.
  *
  * The current selection has changed.
  */
@@ -193,7 +193,7 @@ ld_diagram_real_changed (LdDiagram *self)
  *
  * Registers an error quark for #LdDiagram if necessary.
  *
- * Return value: The error quark used for #LdDiagram errors.
+ * Return value: the error quark used for #LdDiagram errors.
  */
 GQuark
 ld_diagram_error_quark (void)
@@ -214,7 +214,7 @@ ld_diagram_new (void)
 
 /**
  * ld_diagram_clear:
- * @self: An #LdDiagram object.
+ * @self: an #LdDiagram object.
  *
  * Clear the whole diagram with it's objects and selection.
  */
@@ -233,7 +233,7 @@ ld_diagram_clear (LdDiagram *self)
 
 /*
  * ld_diagram_clear_internal:
- * @self: An #LdDiagram object.
+ * @self: an #LdDiagram object.
  *
  * Do the same as ld_diagram_clear() does but don't emit signals.
  */
@@ -252,13 +252,13 @@ ld_diagram_clear_internal (LdDiagram *self)
 
 /**
  * ld_diagram_load_from_file:
- * @self: An #LdDiagram object.
- * @filename: A filename.
- * @error: Return location for a GError, or NULL.
+ * @self: an #LdDiagram object.
+ * @filename: a filename.
+ * @error: (allow-none): return location for a #GError, or %NULL.
  *
  * Load a file into the diagram.
  *
- * Return value: TRUE if the file could be loaded, FALSE otherwise.
+ * Return value: %TRUE if the file could be loaded, %FALSE otherwise.
  */
 gboolean
 ld_diagram_load_from_file (LdDiagram *self,
@@ -296,13 +296,13 @@ ld_diagram_load_from_file (LdDiagram *self,
 
 /**
  * ld_diagram_save_to_file:
- * @self: An #LdDiagram object.
- * @filename: A filename.
- * @error: Return location for a GError, or NULL.
+ * @self: an #LdDiagram object.
+ * @filename: a filename.
+ * @error: (allow-none): return location for a #GError, or %NULL.
  *
  * Save the diagram into a file.
  *
- * Return value: TRUE if the diagram could be saved, FALSE otherwise.
+ * Return value: %TRUE if the diagram could be saved, %FALSE otherwise.
  */
 gboolean
 ld_diagram_save_to_file (LdDiagram *self,
@@ -503,9 +503,9 @@ get_object_class_string (GType type)
 
 /**
  * ld_diagram_get_modified:
- * @self: An #LdDiagram object.
+ * @self: an #LdDiagram object.
  *
- * Return value: The modification status of diagram.
+ * Return value: the modification status of diagram.
  */
 gboolean
 ld_diagram_get_modified (LdDiagram *self)
@@ -516,8 +516,8 @@ ld_diagram_get_modified (LdDiagram *self)
 
 /**
  * ld_diagram_set_modified:
- * @self: An #LdDiagram object.
- * @value: Whether the diagram has been modified.
+ * @self: an #LdDiagram object.
+ * @value: whether the diagram has been modified.
  *
  * Set the modification status of diagram.
  */
@@ -532,7 +532,7 @@ ld_diagram_set_modified (LdDiagram *self, gboolean value)
 
 /**
  * ld_diagram_get_objects:
- * @self: An #LdDiagram object.
+ * @self: an #LdDiagram object.
  *
  * Get a list of objects in the diagram. Do not modify.
  */
@@ -545,9 +545,9 @@ ld_diagram_get_objects (LdDiagram *self)
 
 /**
  * ld_diagram_insert_object:
- * @self: An #LdDiagram object.
- * @object: The object to be inserted.
- * @pos: The position at which the object is to be inserted.
+ * @self: an #LdDiagram object.
+ * @object: the object to be inserted.
+ * @pos: the position at which the object is to be inserted.
  *       Negative values will append to the end.
  *
  * Insert an object into the diagram.
@@ -571,8 +571,8 @@ ld_diagram_insert_object (LdDiagram *self, LdDiagramObject *object, gint pos)
 
 /**
  * ld_diagram_remove_object:
- * @self: An #LdDiagram object.
- * @object: The object to be removed.
+ * @self: an #LdDiagram object.
+ * @object: the object to be removed.
  *
  * Remove an object from the diagram.
  */
@@ -596,7 +596,7 @@ ld_diagram_remove_object (LdDiagram *self, LdDiagramObject *object)
 
 /**
  * ld_diagram_get_selection:
- * @self: An #LdDiagram object.
+ * @self: an #LdDiagram object.
  *
  * Get a list of objects that are currently selected in the diagram.
  * Do not modify.
@@ -610,7 +610,7 @@ ld_diagram_get_selection (LdDiagram *self)
 
 /**
  * ld_diagram_remove_selection:
- * @self: An #LdDiagram object.
+ * @self: an #LdDiagram object.
  *
  * Remove selected objects from the diagram.
  */
@@ -647,8 +647,8 @@ ld_diagram_remove_selection (LdDiagram *self)
 
 /**
  * ld_diagram_select:
- * @self: An #LdDiagram object.
- * @object: The object to be added to the selection.
+ * @self: an #LdDiagram object.
+ * @object: the object to be added to the selection.
  *
  * Add an object to selection.
  */
@@ -673,8 +673,8 @@ ld_diagram_select (LdDiagram *self, LdDiagramObject *object)
 
 /**
  * ld_diagram_unselect:
- * @self: An #LdDiagram object.
- * @object: The object to be removed from the selection.
+ * @self: an #LdDiagram object.
+ * @object: the object to be removed from the selection.
  *
  * Remove an object from the selection.
  */
@@ -696,7 +696,7 @@ ld_diagram_unselect (LdDiagram *self, LdDiagramObject *object)
 
 /**
  * ld_diagram_select_all:
- * @self: An #LdDiagram object.
+ * @self: an #LdDiagram object.
  *
  * Include all objects in the document to the selection.
  */
@@ -716,7 +716,7 @@ ld_diagram_select_all (LdDiagram *self)
 
 /**
  * ld_diagram_unselect_all:
- * @self: An #LdDiagram object.
+ * @self: an #LdDiagram object.
  *
  * Remove all objects from the current selection.
  */

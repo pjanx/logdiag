@@ -14,7 +14,7 @@
 
 /**
  * SECTION:ld-symbol-category
- * @short_description: A category of symbols.
+ * @short_description: A category of symbols
  * @see_also: #LdSymbol, #LdLibrary
  *
  * #LdSymbolCategory represents a category of #LdSymbol objects.
@@ -22,9 +22,9 @@
 
 /*
  * LdSymbolCategoryPrivate:
- * @name: The name of this category.
- * @image_path: Path to the image for this category.
- * @children: Children of this category.
+ * @name: the name of this category.
+ * @image_path: path to the image for this category.
+ * @children: children of this category.
  */
 struct _LdSymbolCategoryPrivate
 {
@@ -172,8 +172,8 @@ ld_symbol_category_finalize (GObject *gobject)
 
 /**
  * ld_symbol_category_new:
- * @name: The name of the new category.
- * @human_name: The localized human name of the new category.
+ * @name: the name of the new category.
+ * @human_name: the localized human name of the new category.
  *
  * Create an instance.
  */
@@ -194,8 +194,8 @@ ld_symbol_category_new (const gchar *name, const gchar *human_name)
 
 /**
  * ld_symbol_category_set_name:
- * @self: An #LdSymbolCategory object.
- * @name: The new name for this category.
+ * @self: an #LdSymbolCategory object.
+ * @name: the new name for this category.
  */
 void
 ld_symbol_category_set_name (LdSymbolCategory *self, const gchar *name)
@@ -212,7 +212,7 @@ ld_symbol_category_set_name (LdSymbolCategory *self, const gchar *name)
 
 /**
  * ld_symbol_category_get_name:
- * @self: An #LdSymbolCategory object.
+ * @self: an #LdSymbolCategory object.
  *
  * Return the name of this category.
  */
@@ -225,8 +225,8 @@ ld_symbol_category_get_name (LdSymbolCategory *self)
 
 /**
  * ld_symbol_category_set_human_name:
- * @self: An #LdSymbolCategory object.
- * @human_name: The new localized human name for this category.
+ * @self: an #LdSymbolCategory object.
+ * @human_name: the new localized human name for this category.
  */
 void
 ld_symbol_category_set_human_name (LdSymbolCategory *self,
@@ -244,7 +244,7 @@ ld_symbol_category_set_human_name (LdSymbolCategory *self,
 
 /**
  * ld_symbol_category_get_human_name:
- * @self: An #LdSymbolCategory object.
+ * @self: an #LdSymbolCategory object.
  *
  * Return the localized human name of this category.
  */
@@ -257,8 +257,8 @@ ld_symbol_category_get_human_name (LdSymbolCategory *self)
 
 /**
  * ld_symbol_category_set_image_path:
- * @self: An #LdSymbolCategory object.
- * @image_path: The new path to the image for this category. May be NULL.
+ * @self: an #LdSymbolCategory object.
+ * @image_path: (allow-none): The new path to the image for this category.
  */
 void
 ld_symbol_category_set_image_path (LdSymbolCategory *self,
@@ -275,9 +275,9 @@ ld_symbol_category_set_image_path (LdSymbolCategory *self,
 
 /**
  * ld_symbol_category_get_image_path:
- * @self: An #LdSymbolCategory object.
+ * @self: an #LdSymbolCategory object.
  *
- * Return the filesystem path to the image for this category. May be NULL.
+ * Return value: (allow-none): filesystem path to the image for this category.
  */
 const gchar *
 ld_symbol_category_get_image_path (LdSymbolCategory *self)
@@ -288,9 +288,9 @@ ld_symbol_category_get_image_path (LdSymbolCategory *self)
 
 /**
  * ld_symbol_category_insert_child:
- * @self: An #LdSymbolCategory object.
- * @child: The child to be inserted.
- * @pos: The position at which the child will be inserted.
+ * @self: an #LdSymbolCategory object.
+ * @child: the child to be inserted.
+ * @pos: the position at which the child will be inserted.
  *       Negative values will append to the end of list.
  *
  * Insert a child into the category.
@@ -308,8 +308,8 @@ ld_symbol_category_insert_child (LdSymbolCategory *self,
 
 /**
  * ld_symbol_category_remove_child:
- * @self: An #LdSymbolCategory object.
- * @child: The child to be removed.
+ * @self: an #LdSymbolCategory object.
+ * @child: the child to be removed.
  *
  * Removes a child from the category.
  */
@@ -326,9 +326,9 @@ ld_symbol_category_remove_child (LdSymbolCategory *self,
 
 /**
  * ld_symbol_category_get_children:
- * @self: An #LdSymbolCategory object.
+ * @self: an #LdSymbolCategory object.
  *
- * Return value: The internal list of children. Do not modify.
+ * Return value: the internal list of children. Do not modify.
  */
 const GSList *
 ld_symbol_category_get_children (LdSymbolCategory *self)

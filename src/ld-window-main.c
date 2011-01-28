@@ -16,13 +16,6 @@
 #include "ld-window-main.h"
 
 
-/**
- * SECTION:ld-window-main
- * @short_description: The main application window.
- *
- * #LdWindowMain is the main window of the application.
- */
-
 struct _LdWindowMainPrivate
 {
 	GtkUIManager *ui_manager;
@@ -361,7 +354,7 @@ update_title (LdWindowMain *self)
 
 /*
  * action_set_sensitive:
- * @sensitive: The sensitivity state.
+ * @sensitive: the sensitivity state.
  *
  * Set sensitivity of an action.
  */
@@ -461,7 +454,7 @@ diagram_get_name (LdWindowMain *self)
 
 /*
  * diagram_set_filename:
- * @filename: The new filename. May be NULL for a new, yet unsaved, file.
+ * @filename: (allow-none): the new filename. %NULL for a new file.
  *
  * Set the filename corresponding to the currently opened diagram.
  * The function takes ownership of the string.
@@ -524,7 +517,7 @@ diagram_save (LdWindowMain *self)
 	{
 		GtkWidget *message_dialog;
 
-		g_warning ("Saving failed: %s", error->message);
+		g_warning ("saving failed: %s", error->message);
 		g_error_free (error);
 
 		message_dialog = gtk_message_dialog_new (GTK_WINDOW (self),
@@ -546,7 +539,7 @@ diagram_save (LdWindowMain *self)
 /*
  * diagram_get_file_filter:
  *
- * Return value: A new #GtkFileFilter object for diagrams.
+ * Return value: a new #GtkFileFilter object for diagrams.
  */
 static GtkFileFilter *
 diagram_get_file_filter (void)
@@ -596,7 +589,7 @@ diagram_show_open_dialog (LdWindowMain *self)
 		{
 			GtkWidget *message_dialog;
 
-			g_warning ("Loading failed: %s", error->message);
+			g_warning ("loading failed: %s", error->message);
 			g_error_free (error);
 
 			message_dialog = gtk_message_dialog_new (GTK_WINDOW (self),
@@ -649,15 +642,15 @@ diagram_show_save_as_dialog (LdWindowMain *self)
 
 /*
  * may_close_diagram:
- * @dialog_message: The dialog message to display to the user if the diagram
+ * @dialog_message: the dialog message to display to the user if the diagram
  *                  has been modified.
  *
  * When no changes have been made to the current diagram, the function
  * lets the caller proceed. Otherwise the user is asked for further actions.
  * If he chooses to save the diagram, the function will handle this action.
  *
- * Return value: FALSE if the current action should be cancelled.
- *               TRUE if the caller may proceed.
+ * Return value: %FALSE if the current action should be cancelled.
+ *               %TRUE if the caller may proceed.
  */
 static gboolean
 may_close_diagram (LdWindowMain *self, const gchar *dialog_message)
@@ -714,7 +707,7 @@ may_close_diagram (LdWindowMain *self, const gchar *dialog_message)
  * A variant on may_close_diagram() for the occasion of closing
  * the whole application.
  *
- * Return value: TRUE if the application may quit, FALSE otherwise.
+ * Return value: %TRUE if the application may quit, %FALSE otherwise.
  */
 static gboolean
 may_quit (LdWindowMain *self)

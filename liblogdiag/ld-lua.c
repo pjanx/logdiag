@@ -21,7 +21,7 @@
 
 /**
  * SECTION:ld-lua
- * @short_description: Lua symbol engine.
+ * @short_description: Lua symbol engine
  * @see_also: #LdLuaSymbol
  *
  * #LdLua is a symbol engine that uses Lua scripts to manage symbols.
@@ -50,9 +50,9 @@ struct _LdLuaPrivate
 
 /*
  * LdLuaData:
- * @self: A reference to self.
- * @load_callback: A callback for newly registered symbols.
- * @load_user_data: User data to be passed to the callback.
+ * @self: a reference to self.
+ * @load_callback: a callback for newly registered symbols.
+ * @load_user_data: user data to be passed to the callback.
  *
  * Full user data to be stored in Lua registry.
  */
@@ -232,8 +232,8 @@ ld_lua_alloc (void *ud, void *ptr, size_t osize, size_t nsize)
 
 /**
  * ld_lua_check_file:
- * @self: An #LdLua object.
- * @filename: The file to be checked.
+ * @self: an #LdLua object.
+ * @filename: the file to be checked.
  *
  * Check if the given filename can be loaded by #LdLua.
  */
@@ -249,15 +249,15 @@ ld_lua_check_file (LdLua *self, const gchar *filename)
 
 /**
  * ld_lua_load_file:
- * @self: An #LdLua object.
- * @filename: The file to be loaded.
- * @callback: A callback for newly registered symbols.
+ * @self: an #LdLua object.
+ * @filename: the file to be loaded.
+ * @callback: a callback for newly registered symbols.
  * The callee is responsible for referencing the symbol.
- * @user_data: User data to be passed to the callback.
+ * @user_data: user data to be passed to the callback.
  *
  * Loads a file and creates #LdLuaSymbol objects for contained symbols.
  *
- * Returns: TRUE if no error has occured, FALSE otherwise.
+ * Returns: %TRUE if no error has occured, %FALSE otherwise.
  */
 gboolean
 ld_lua_load_file (LdLua *self, const gchar *filename,
@@ -304,9 +304,9 @@ ld_lua_lftc_fail:
 
 /**
  * ld_lua_private_draw:
- * @self: An #LdLua object.
- * @symbol: A symbol to be drawn.
- * @cr: A Cairo context to be drawn onto.
+ * @self: an #LdLua object.
+ * @symbol: a symbol to be drawn.
+ * @cr: a Cairo context to be drawn onto.
  *
  * Draw a symbol onto a Cairo context.
  */
@@ -357,8 +357,8 @@ ld_lua_private_draw_cb (lua_State *L)
 
 /**
  * ld_lua_private_unregister:
- * @self: An #LdLua object.
- * @symbol: A symbol to be unregistered.
+ * @self: an #LdLua object.
+ * @symbol: a symbol to be unregistered.
  *
  * Unregister a symbol from the internal Lua state.
  */
@@ -437,7 +437,7 @@ ld_lua_logdiag_register (lua_State *L)
 
 /*
  * process_registration:
- * @L: A Lua state.
+ * @L: a Lua state.
  *
  * Parse arguments, write them to a symbol object and register the object.
  */
@@ -486,13 +486,13 @@ process_registration (lua_State *L)
 
 /*
  * get_translation:
- * @L: A Lua state.
- * @index: Stack index of the table.
+ * @L: a Lua state.
+ * @index: stack index of the table.
  *
  * Select an applicable translation from a table.
  * The return value has to be freed with g_free().
  *
- * Return value: The translation, if found. If none was found, returns NULL.
+ * Return value: the translation, if found. If none was found, returns %NULL.
  */
 static gchar *
 get_translation (lua_State *L, int index)
@@ -516,13 +516,13 @@ get_translation (lua_State *L, int index)
 
 /*
  * read_symbol_area:
- * @L: A Lua state.
- * @index: Stack index of the table.
- * @area: Where the area will be returned.
+ * @L: a Lua state.
+ * @index: stack index of the table.
+ * @area: where the area will be returned.
  *
  * Read a symbol area from a Lua table.
  *
- * Return value: TRUE on success, FALSE on failure.
+ * Return value: %TRUE on success, %FALSE on failure.
  */
 static gboolean
 read_symbol_area (lua_State *L, int index, LdRectangle *area)
@@ -563,13 +563,13 @@ read_symbol_area (lua_State *L, int index, LdRectangle *area)
 
 /*
  * read_terminals:
- * @L: A Lua state.
- * @index: Stack index of the table.
- * @area: Where the point array will be returned.
+ * @L: a Lua state.
+ * @index: stack index of the table.
+ * @area: where the point array will be returned.
  *
  * Read symbol terminals from a Lua table.
  *
- * Return value: TRUE on success, FALSE on failure.
+ * Return value: %TRUE on success, %FALSE on failure.
  */
 static gboolean
 read_terminals (lua_State *L, int index, LdPointArray **terminals)

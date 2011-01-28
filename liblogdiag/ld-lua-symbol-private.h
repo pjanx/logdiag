@@ -18,11 +18,11 @@ G_BEGIN_DECLS
 
 /*
  * LdLuaSymbolPrivate:
- * @lua: Parent #LdLua object.
- * @name: Name of this symbol.
- * @human_name: Localized human name of this symbol.
- * @area: Area of this symbol.
- * @terminals: Terminals of this symbol.
+ * @lua: parent #LdLua object.
+ * @name: name of this symbol.
+ * @human_name: localized human name of this symbol.
+ * @area: area of this symbol.
+ * @terminals: terminals of this symbol.
  */
 struct _LdLuaSymbolPrivate
 {

@@ -18,7 +18,7 @@
 
 /**
  * SECTION:ld-canvas
- * @short_description: A canvas.
+ * @short_description: A canvas
  * @see_also: #LdDiagram
  *
  * #LdCanvas displays and enables the user to manipulate with an #LdDiagram.
@@ -93,17 +93,17 @@ struct _LdCanvasColor
 
 /*
  * LdCanvasPrivate:
- * @diagram: A diagram object assigned to this canvas as a model.
- * @library: A library object assigned to this canvas as a model.
- * @adjustment_h: An adjustment object for the horizontal axis, if any.
- * @adjustment_v: An adjustment object for the vertical axis, if any.
- * @x: The X coordinate of the center of view.
- * @y: The Y coordinate of the center of view.
- * @zoom: The current zoom of the canvas.
- * @operation: The current operation.
- * @operation_data: Data related to the current operation.
- * @operation_end: A callback to end the operation.
- * @palette: Colors used by the widget.
+ * @diagram: a diagram object assigned to this canvas as a model.
+ * @library: a library object assigned to this canvas as a model.
+ * @adjustment_h: an adjustment object for the horizontal axis, if any.
+ * @adjustment_v: an adjustment object for the vertical axis, if any.
+ * @x: the X coordinate of the center of view.
+ * @y: the Y coordinate of the center of view.
+ * @zoom: the current zoom of the canvas.
+ * @operation: the current operation.
+ * @operation_data: data related to the current operation.
+ * @operation_end: a callback to end the operation.
+ * @palette: colors used by the widget.
  */
 struct _LdCanvasPrivate
 {
@@ -136,10 +136,10 @@ struct _LdCanvasPrivate
 
 /*
  * DrawData:
- * @self: Our #LdCanvas.
- * @cr: A cairo context to draw on.
- * @exposed_rect: The area that is to be redrawn.
- * @scale: Computed size of one diagram unit in pixels.
+ * @self: our #LdCanvas.
+ * @cr: a cairo context to draw on.
+ * @exposed_rect: the area that is to be redrawn.
+ * @scale: computed size of one diagram unit in pixels.
  */
 typedef struct _DrawData DrawData;
 
@@ -284,9 +284,9 @@ ld_canvas_class_init (LdCanvasClass *klass)
 
 /**
  * LdCanvas::set-scroll-adjustments:
- * @self: An #LdCanvas object.
- * @horizontal: The horizontal #GtkAdjustment.
- * @vertical: The vertical #GtkAdjustment.
+ * @self: an #LdCanvas object.
+ * @horizontal: the horizontal #GtkAdjustment.
+ * @vertical: the vertical #GtkAdjustment.
  *
  * Set scroll adjustments for the canvas.
  */
@@ -300,7 +300,7 @@ ld_canvas_class_init (LdCanvasClass *klass)
 
 /**
  * LdCanvas::cancel-operation:
- * @self: An #LdCanvas object.
+ * @self: an #LdCanvas object.
  *
  * Cancel any current operation.
  */
@@ -568,8 +568,8 @@ ld_canvas_new (void)
 
 /**
  * ld_canvas_set_diagram:
- * @self: An #LdCanvas object.
- * @diagram: The #LdDiagram to be assigned to the canvas.
+ * @self: an #LdCanvas object.
+ * @diagram: the #LdDiagram to be assigned to the canvas.
  *
  * Assign an #LdDiagram object to the canvas.
  */
@@ -594,7 +594,7 @@ ld_canvas_set_diagram (LdCanvas *self, LdDiagram *diagram)
 
 /**
  * ld_canvas_get_diagram:
- * @self: An #LdCanvas object.
+ * @self: an #LdCanvas object.
  *
  * Get the #LdDiagram object assigned to this canvas.
  * The reference count on the diagram is not incremented.
@@ -629,8 +629,8 @@ diagram_disconnect_signals (LdCanvas *self)
 
 /**
  * ld_canvas_set_library:
- * @self: An #LdCanvas object.
- * @library: The #LdLibrary to be assigned to the canvas.
+ * @self: an #LdCanvas object.
+ * @library: the #LdLibrary to be assigned to the canvas.
  *
  * Assign an #LdLibrary object to the canvas.
  */
@@ -651,7 +651,7 @@ ld_canvas_set_library (LdCanvas *self, LdLibrary *library)
 
 /**
  * ld_canvas_get_library:
- * @self: An #LdCanvas object.
+ * @self: an #LdCanvas object.
  *
  * Get the #LdLibrary object assigned to this canvas.
  * The reference count on the library is not incremented.
@@ -665,9 +665,9 @@ ld_canvas_get_library (LdCanvas *self)
 
 /*
  * ld_canvas_get_base_unit_in_px:
- * @self: A #GtkWidget object to retrieve DPI from (indirectly).
+ * @self: a #GtkWidget object to retrieve DPI from (indirectly).
  *
- * Return value: Length of the base unit in pixels.
+ * Return value: length of the base unit in pixels.
  */
 static gdouble
 ld_canvas_get_base_unit_in_px (GtkWidget *self)
@@ -686,9 +686,9 @@ ld_canvas_get_base_unit_in_px (GtkWidget *self)
 
 /*
  * ld_canvas_get_scale_in_px:
- * @self: An #LdCanvas object.
+ * @self: an #LdCanvas object.
  *
- * Return value: Displayed length of the base unit in pixels.
+ * Return value: displayed length of the base unit in pixels.
  */
 static gdouble
 ld_canvas_get_scale_in_px (LdCanvas *self)
@@ -701,11 +701,11 @@ ld_canvas_get_scale_in_px (LdCanvas *self)
 
 /**
  * ld_canvas_widget_to_diagram_coords:
- * @self: An #LdCanvas object.
- * @wx: The X coordinate to be translated.
- * @wy: The Y coordinate to be translated.
- * @dx: (out): The translated X coordinate.
- * @dy: (out): The translated Y coordinate.
+ * @self: an #LdCanvas object.
+ * @wx: the X coordinate to be translated.
+ * @wy: the Y coordinate to be translated.
+ * @dx: (out): the translated X coordinate.
+ * @dy: (out): the translated Y coordinate.
  *
  * Translate coordinates located inside the canvas window
  * into diagram coordinates.
@@ -734,11 +734,11 @@ ld_canvas_widget_to_diagram_coords (LdCanvas *self,
 
 /**
  * ld_canvas_diagram_to_widget_coords:
- * @self: An #LdCanvas object.
- * @dx: The X coordinate to be translated.
- * @dy: The Y coordinate to be translated.
- * @wx: (out): The translated X coordinate.
- * @wy: (out): The translated Y coordinate.
+ * @self: an #LdCanvas object.
+ * @dx: the X coordinate to be translated.
+ * @dy: the Y coordinate to be translated.
+ * @wx: (out): the translated X coordinate.
+ * @wy: (out): the translated Y coordinate.
  *
  * Translate diagram coordinates into canvas coordinates.
  */
@@ -763,9 +763,9 @@ ld_canvas_diagram_to_widget_coords (LdCanvas *self,
 
 /**
  * ld_canvas_get_zoom:
- * @self: An #LdCanvas object.
+ * @self: an #LdCanvas object.
  *
- * Return value: Zoom of the canvas.
+ * Return value: zoom of the canvas.
  */
 gdouble
 ld_canvas_get_zoom (LdCanvas *self)
@@ -776,8 +776,8 @@ ld_canvas_get_zoom (LdCanvas *self)
 
 /**
  * ld_canvas_set_zoom:
- * @self: An #LdCanvas object.
- * @zoom: The zoom.
+ * @self: an #LdCanvas object.
+ * @zoom: the zoom.
  *
  * Set zoom of the canvas.
  */
@@ -820,8 +820,8 @@ ld_canvas_real_cancel_operation (LdCanvas *self)
 
 /**
  * ld_canvas_add_object_begin:
- * @self: An #LdCanvas object.
- * @object: (transfer full): The object to be added to the diagram.
+ * @self: an #LdCanvas object.
+ * @object: (transfer full): the object to be added to the diagram.
  *
  * Begin an operation for adding an object into the diagram.
  */
@@ -1386,7 +1386,7 @@ draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data)
 	/* TODO: Resolve this better; draw a cross or whatever. */
 	if (!symbol)
 	{
-		g_warning ("Cannot find symbol %s in the library.",
+		g_warning ("cannot find symbol `%s' in the library",
 			ld_diagram_symbol_get_class (diagram_symbol));
 		return;
 	}

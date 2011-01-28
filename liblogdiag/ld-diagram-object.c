@@ -16,7 +16,7 @@
 
 /**
  * SECTION:ld-diagram-object
- * @short_description: A diagram object.
+ * @short_description: A diagram object
  * @see_also: #LdDiagram, #LdCanvas
  *
  * #LdDiagramObject represents an object in an #LdDiagram.
@@ -24,7 +24,7 @@
 
 /*
  * LdDiagramObjectPrivate:
- * @storage: Storage for object parameters.
+ * @storage: storage for object parameters.
  */
 struct _LdDiagramObjectPrivate
 {
@@ -93,10 +93,10 @@ ld_diagram_object_class_init (LdDiagramObjectClass *klass)
 
 /**
  * LdDiagramObject::data-changed:
- * @self: An #LdDiagramObject object.
- * @path: Path to the data.
- * @old_value: (allow-none): The old value of data.
- * @new_value: (allow-none): The new value of data.
+ * @self: an #LdDiagramObject object.
+ * @path: path to the data.
+ * @old_value: (allow-none): the old value of data.
+ * @new_value: (allow-none): the new value of data.
  *
  * Some data have been changed in internal storage.
  */
@@ -181,9 +181,9 @@ ld_diagram_object_dispose (GObject *gobject)
 
 /**
  * ld_diagram_object_new:
- * @storage: A storage backend.
+ * @storage: a storage backend.
  *
- * Return value: A new #LdDiagramObject object.
+ * Return value: a new #LdDiagramObject object.
  */
 LdDiagramObject *
 ld_diagram_object_new (JsonObject *storage)
@@ -196,11 +196,11 @@ ld_diagram_object_new (JsonObject *storage)
 
 /**
  * ld_diagram_object_get_storage:
- * @self: An #LdDiagramObject object.
+ * @self: an #LdDiagramObject object.
  *
  * Get the storage for object parameters.
  *
- * Return value: (transfer none): A #JsonObject boxed type.
+ * Return value: (transfer none): a #JsonObject boxed type.
  */
 JsonObject *
 ld_diagram_object_get_storage (LdDiagramObject *self)
@@ -213,8 +213,8 @@ ld_diagram_object_get_storage (LdDiagramObject *self)
 
 /**
  * ld_diagram_object_set_storage:
- * @self: An #LdDiagramObject object.
- * @storage: (transfer none): A #JsonObject boxed type.
+ * @self: an #LdDiagramObject object.
+ * @storage: (transfer none): a #JsonObject boxed type.
  *
  * Set the storage for object parameters.
  */
@@ -234,11 +234,11 @@ ld_diagram_object_set_storage (LdDiagramObject *self, JsonObject *storage)
 
 /**
  * ld_diagram_object_get_data:
- * @self: An #LdDiagramObject object.
- * @data: (out): An uninitialized storage for the data.
- * @type: Requested type of data. %G_TYPE_NONE for any.
- * @first_element: The first element of path to the data.
- * @...: Optional remaining elements, followed by %NULL.
+ * @self: an #LdDiagramObject object.
+ * @data: (out): an uninitialized storage for the data.
+ * @type: requested type of data. %G_TYPE_NONE for any.
+ * @first_element: the first element of path to the data.
+ * @...: optional remaining elements, followed by %NULL.
  *
  * Retrieve data from internal storage.
  *
@@ -260,10 +260,10 @@ ld_diagram_object_get_data (LdDiagramObject *self,
 
 /**
  * ld_diagram_object_set_data:
- * @self: An #LdDiagramObject object.
- * @data: (allow-none): The data. %NULL just removes the current data.
- * @first_element: The first element of path where the data will be stored.
- * @...: Optional remaining elements, followed by %NULL.
+ * @self: an #LdDiagramObject object.
+ * @data: (allow-none): the data. %NULL just removes the current data.
+ * @first_element: the first element of path where the data will be stored.
+ * @...: optional remaining elements, followed by %NULL.
  *
  * Put data into internal storage.
  */
@@ -280,11 +280,11 @@ ld_diagram_object_set_data (LdDiagramObject *self,
 
 /**
  * ld_diagram_object_get_data_valist:
- * @self: An #LdDiagramObject object.
- * @data: (out): An uninitialized storage for the data.
- * @type: Requested type of data. %G_TYPE_NONE for any.
- * @first_element: The first element of path to the data.
- * @var_args: Optional remaining elements, followed by %NULL.
+ * @self: an #LdDiagramObject object.
+ * @data: (out): an uninitialized storage for the data.
+ * @type: requested type of data. %G_TYPE_NONE for any.
+ * @first_element: the first element of path to the data.
+ * @var_args: optional remaining elements, followed by %NULL.
  *
  * Retrieve data from internal storage.
  *
@@ -305,10 +305,10 @@ ld_diagram_object_get_data_valist (LdDiagramObject *self,
 
 /**
  * ld_diagram_object_set_data_valist:
- * @self: An #LdDiagramObject object.
- * @data: (allow-none): The data. %NULL just removes the current data.
- * @first_element: The first element of path where the data will be stored.
- * @var_args: Optional remaining elements, followed by %NULL.
+ * @self: an #LdDiagramObject object.
+ * @data: (allow-none): the data. %NULL just removes the current data.
+ * @first_element: the first element of path where the data will be stored.
+ * @var_args: optional remaining elements, followed by %NULL.
  *
  * Put data into internal storage.
  */
@@ -344,10 +344,10 @@ args_to_strv (const gchar *first_arg, va_list args)
 
 /**
  * ld_diagram_object_get_datav:
- * @self: An #LdDiagramObject object.
- * @data: (out): An uninitialized storage for the data.
- * @type: Requested type of data. %G_TYPE_NONE for any.
- * @elements: An array of elements of path to the data, terminated by %NULL.
+ * @self: an #LdDiagramObject object.
+ * @data: (out): an uninitialized storage for the data.
+ * @type: requested type of data. %G_TYPE_NONE for any.
+ * @elements: an array of elements of path to the data, terminated by %NULL.
  *
  * Retrieve data from internal storage.
  *
@@ -411,9 +411,9 @@ ld_diagram_object_get_datav (LdDiagramObject *self,
 
 /**
  * ld_diagram_object_set_datav:
- * @self: An #LdDiagramObject object.
- * @data: (allow-none): The data. %NULL just removes the current data.
- * @elements: An array of elements of path where the data will be stored,
+ * @self: an #LdDiagramObject object.
+ * @data: (allow-none): the data. %NULL just removes the current data.
+ * @elements: an array of elements of path where the data will be stored,
  *            terminated by %NULL.
  *
  * Put data into internal storage.
@@ -489,9 +489,9 @@ void ld_diagram_object_set_datav (LdDiagramObject *self,
 
 /**
  * ld_diagram_object_get_data_for_param:
- * @self: An #LdDiagramObject object.
- * @data: (out): An uninitialized storage for the data.
- * @pspec: The parameter to read data for. This must be a property of @self.
+ * @self: an #LdDiagramObject object.
+ * @data: (out): an uninitialized storage for the data.
+ * @pspec: the parameter to read data for. This must be a property of @self.
  *
  * Retrieve data for a parameter from internal storage. If there's no data
  * corresponding to this parameter, the value is set to the default.
@@ -519,9 +519,9 @@ ld_diagram_object_get_data_for_param (LdDiagramObject *self,
 
 /**
  * ld_diagram_object_set_data_for_param:
- * @self: An #LdDiagramObject object.
- * @data: The data.
- * @pspec: The parameter to put data for.
+ * @self: an #LdDiagramObject object.
+ * @data: the data.
+ * @pspec: the parameter to put data for.
  *
  * Put data for a parameter into internal storage.
  */
@@ -542,9 +542,9 @@ ld_diagram_object_set_data_for_param (LdDiagramObject *self,
 
 /**
  * ld_diagram_object_get_x:
- * @self: An #LdDiagramObject object.
+ * @self: an #LdDiagramObject object.
  *
- * Return value: The X coordinate of the object.
+ * Return value: the X coordinate of the object.
  */
 gdouble
 ld_diagram_object_get_x (LdDiagramObject *self)
@@ -558,9 +558,9 @@ ld_diagram_object_get_x (LdDiagramObject *self)
 
 /**
  * ld_diagram_object_get_y:
- * @self: An #LdDiagramObject object.
+ * @self: an #LdDiagramObject object.
  *
- * Return value: The Y coordinate of the object.
+ * Return value: the Y coordinate of the object.
  */
 gdouble
 ld_diagram_object_get_y (LdDiagramObject *self)
@@ -574,8 +574,8 @@ ld_diagram_object_get_y (LdDiagramObject *self)
 
 /**
  * ld_diagram_object_set_x:
- * @self: An #LdDiagramObject object.
- * @x: The new X coordinate.
+ * @self: an #LdDiagramObject object.
+ * @x: the new X coordinate.
  *
  * Set the X coordinate of the object.
  */
@@ -588,8 +588,8 @@ ld_diagram_object_set_x (LdDiagramObject *self, gdouble x)
 
 /**
  * ld_diagram_object_set_y:
- * @self: An #LdDiagramObject object.
- * @y: The new Y coordinate.
+ * @self: an #LdDiagramObject object.
+ * @y: the new Y coordinate.
  *
  * Set the Y coordinate of the object.
  */

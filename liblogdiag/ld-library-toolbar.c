@@ -14,7 +14,7 @@
 
 /**
  * SECTION:ld-library-toolbar
- * @short_description: A library toolbar.
+ * @short_description: A library toolbar
  * @see_also: #LdLibrary
  *
  * #LdLibraryToolbar enables the user to choose symbols from an #LdLibrary.
@@ -70,10 +70,10 @@ enum
 
 /*
  * LdLibraryToolbarPrivate:
- * @library: A library object assigned to this canvas as a model.
- * @canvas: A canvas object for showing symbol menus.
- * @canvas_handlers: Signal handlers that hook the canvas.
- * @symbol_menu: Data related to menus.
+ * @library: a library object assigned to this canvas as a model.
+ * @canvas: a canvas object for showing symbol menus.
+ * @canvas_handlers: signal handlers that hook the canvas.
+ * @symbol_menu: data related to menus.
  */
 struct _LdLibraryToolbarPrivate
 {
@@ -157,9 +157,9 @@ ld_library_toolbar_class_init (LdLibraryToolbarClass *klass)
 
 /**
  * LdLibraryToolbar::symbol-chosen:
- * @self: An #LdLibraryToolbar object.
- * @symbol: The chosen #LdSymbol object.
- * @klass: Location of the symbol within the library.
+ * @self: an #LdLibraryToolbar object.
+ * @symbol: the chosen #LdSymbol object.
+ * @klass: location of the symbol within the library.
  *
  * A symbol has been chosen.
  */
@@ -172,9 +172,9 @@ ld_library_toolbar_class_init (LdLibraryToolbarClass *klass)
 
 /**
  * LdLibraryToolbar::symbol-selected:
- * @self: An #LdLibraryToolbar object.
- * @symbol: The selected #LdSymbol object.
- * @klass: Location of the symbol within the library.
+ * @self: an #LdLibraryToolbar object.
+ * @symbol: the selected #LdSymbol object.
+ * @klass: location of the symbol within the library.
  *
  * A symbol has been selected.
  */
@@ -187,9 +187,9 @@ ld_library_toolbar_class_init (LdLibraryToolbarClass *klass)
 
 /**
  * LdLibraryToolbar::symbol-deselected:
- * @self: An #LdLibraryToolbar object.
- * @symbol: The deselected #LdSymbol object.
- * @klass: Location of the symbol within the library.
+ * @self: an #LdLibraryToolbar object.
+ * @symbol: the deselected #LdSymbol object.
+ * @klass: location of the symbol within the library.
  *
  * A symbol has been deselected.
  */
@@ -280,8 +280,8 @@ ld_library_toolbar_new (void)
 
 /**
  * ld_library_toolbar_set_library:
- * @self: An #LdLibraryToolbar object.
- * @library: (allow-none): The #LdLibrary to be assigned to the toolbar.
+ * @self: an #LdLibraryToolbar object.
+ * @library: (allow-none): the #LdLibrary to be assigned to the toolbar.
  *
  * Assign an #LdLibrary object to the toolbar.
  */
@@ -313,7 +313,7 @@ ld_library_toolbar_set_library (LdLibraryToolbar *self, LdLibrary *library)
 
 /**
  * ld_library_toolbar_get_library:
- * @self: An #LdLibraryToolbar object.
+ * @self: an #LdLibraryToolbar object.
  *
  * Get the #LdLibrary object assigned to this toolbar.
  * The reference count on the library is not incremented.
@@ -327,8 +327,8 @@ ld_library_toolbar_get_library (LdLibraryToolbar *self)
 
 /**
  * ld_library_toolbar_set_canvas:
- * @self: An #LdLibraryToolbar object.
- * @canvas: (allow-none): The #LdCanvas to be assigned to the toolbar.
+ * @self: an #LdLibraryToolbar object.
+ * @canvas: (allow-none): the #LdCanvas to be assigned to the toolbar.
  *
  * Assign an #LdCanvas object to the toolbar.
  */
@@ -369,7 +369,7 @@ ld_library_toolbar_set_canvas (LdLibraryToolbar *self, LdCanvas *canvas)
 
 /**
  * ld_library_toolbar_get_canvas:
- * @self: An #LdLibraryToolbar object.
+ * @self: an #LdLibraryToolbar object.
  *
  * Get the #LdLibrary object assigned to this toolbar.
  * The reference count on the canvas is not incremented.

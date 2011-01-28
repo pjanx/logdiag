@@ -16,7 +16,7 @@
 
 /**
  * SECTION:ld-diagram-symbol
- * @short_description: A symbol object.
+ * @short_description: A symbol object
  * @see_also: #LdDiagramObject
  *
  * #LdDiagramSymbol is an implementation of #LdDiagramObject.
@@ -103,9 +103,9 @@ ld_diagram_symbol_set_property (GObject *object, guint property_id,
 
 /**
  * ld_diagram_symbol_new:
- * @storage: A storage backend.
+ * @storage: a storage backend.
  *
- * Return value: A new #LdDiagramSymbol object.
+ * Return value: a new #LdDiagramSymbol object.
  */
 LdDiagramSymbol *
 ld_diagram_symbol_new (JsonObject *storage)
@@ -118,9 +118,9 @@ ld_diagram_symbol_new (JsonObject *storage)
 
 /**
  * ld_diagram_symbol_get_class:
- * @self: An #LdDiagramSymbol object.
+ * @self: an #LdDiagramSymbol object.
  *
- * Return value: The class of the symbol.
+ * Return value: the class of the symbol.
  */
 const gchar *
 ld_diagram_symbol_get_class (LdDiagramSymbol *self)
@@ -134,8 +134,8 @@ ld_diagram_symbol_get_class (LdDiagramSymbol *self)
 
 /**
  * ld_diagram_symbol_set_class:
- * @self: An #LdDiagramSymbol object.
- * @klass: The class.
+ * @self: an #LdDiagramSymbol object.
+ * @klass: the class.
  *
  * Set the class of the symbol.
  */

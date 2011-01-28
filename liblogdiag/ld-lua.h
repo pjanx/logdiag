@@ -48,8 +48,8 @@ struct _LdLuaClass
 
 /**
  * LdLuaLoadCallback:
- * @symbol: The symbol that has been created.
- * @user_data: User data passed to ld_lua_load_file().
+ * @symbol: the symbol that has been created.
+ * @user_data: user data passed to ld_lua_load_file().
  *
  * A callback function that is called when a symbol is created.
  */

@@ -31,11 +31,6 @@ typedef struct _LdWindowMainPrivate LdWindowMainPrivate;
 typedef struct _LdWindowMainClass LdWindowMainClass;
 
 
-/**
- * LdWindowMain:
- *
- * Object structure.
- */
 struct _LdWindowMain
 {
 /*< private >*/

@@ -43,10 +43,10 @@ struct _LdLuaSymbol
 
 /**
  * LdLuaSymbolClass:
- * @parent_class: The parent class.
  */
 struct _LdLuaSymbolClass
 {
+/*< private >*/
 	LdSymbolClass parent_class;
 };
 

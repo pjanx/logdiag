@@ -14,7 +14,7 @@
 
 /**
  * SECTION:ld-symbol
- * @short_description: A symbol.
+ * @short_description: A symbol
  * @see_also: #LdDiagramSymbol, #LdCanvas
  *
  * #LdSymbol represents a symbol to be drawn onto a #LdCanvas.
@@ -137,9 +137,9 @@ ld_symbol_set_property (GObject *object, guint property_id,
 
 /**
  * ld_symbol_get_name:
- * @self: An #LdSymbol object.
+ * @self: an #LdSymbol object.
  *
- * Return value: The name of the symbol.
+ * Return value: the name of the symbol.
  */
 const gchar *
 ld_symbol_get_name (LdSymbol *self)
@@ -155,9 +155,9 @@ ld_symbol_get_name (LdSymbol *self)
 
 /**
  * ld_symbol_get_human_name:
- * @self: An #LdSymbol object.
+ * @self: an #LdSymbol object.
  *
- * Return value: The localised human name of the symbol.
+ * Return value: the localised human name of the symbol.
  */
 const gchar *
 ld_symbol_get_human_name (LdSymbol *self)
@@ -173,8 +173,8 @@ ld_symbol_get_human_name (LdSymbol *self)
 
 /**
  * ld_symbol_get_area:
- * @self: An #LdSymbol object.
- * @area: Where the area of the symbol will be returned.
+ * @self: an #LdSymbol object.
+ * @area: where the area of the symbol will be returned.
  *
  * Get the area of the symbol.
  */
@@ -193,11 +193,11 @@ ld_symbol_get_area (LdSymbol *self, LdRectangle *area)
 
 /**
  * ld_symbol_get_terminals:
- * @self: An #LdSymbol object.
+ * @self: an #LdSymbol object.
  *
  * Get a list of symbol terminals.
  *
- * Return value: An #LdPointArray structure.
+ * Return value: an #LdPointArray structure.
  */
 const LdPointArray *
 ld_symbol_get_terminals (LdSymbol *self)
@@ -213,8 +213,8 @@ ld_symbol_get_terminals (LdSymbol *self)
 
 /**
  * ld_symbol_draw:
- * @self: An #LdSymbol object.
- * @cr: A cairo surface to be drawn on.
+ * @self: an #LdSymbol object.
+ * @cr: a cairo surface to be drawn on.
  *
  * Draw the symbol onto a Cairo surface.
  */

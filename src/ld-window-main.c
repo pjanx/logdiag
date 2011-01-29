@@ -510,6 +510,7 @@ diagram_save (LdWindowMain *self)
 		return;
 	}
 
+	/* FIXME: If this fails, we still retain the filename. */
 	error = NULL;
 	ld_diagram_save_to_file (self->priv->diagram,
 		self->priv->filename, &error);

@@ -443,6 +443,9 @@ load_category_cb (gpointer data, gpointer user_data)
 	g_object_set (button, "can-focus", FALSE, NULL);
 
 	/* Assign the category to the toggle button. */
+	/* TODO: Move this to the data parameter for the signal handler.
+	 *       Use g_signal_connect_data() to set up destroy notification.
+	 */
 	g_object_ref (cat);
 	g_object_set_data_full (G_OBJECT (button),
 		"category", cat, (GDestroyNotify) g_object_unref);

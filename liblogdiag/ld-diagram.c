@@ -49,6 +49,9 @@ static void ld_diagram_set_property (GObject *object, guint property_id,
 static void ld_diagram_dispose (GObject *gobject);
 static void ld_diagram_finalize (GObject *gobject);
 
+static void on_object_data_changed (LdDiagramObject *self,
+	gchar **path, GValue *old_value, GValue *new_value, gpointer user_data);
+
 static gboolean write_signature (GOutputStream *stream, GError **error);
 
 static gboolean check_node (JsonNode *node, JsonNodeType type,
@@ -61,8 +64,9 @@ static JsonNode *serialize_diagram (LdDiagram *self);
 static JsonNode *serialize_object (LdDiagramObject *object);
 static const gchar *get_object_class_string (GType type);
 
+static void install_object (LdDiagramObject *object, LdDiagram *self);
+static void uninstall_object (LdDiagramObject *object, LdDiagram *self);
 static void ld_diagram_real_changed (LdDiagram *self);
-static void ld_diagram_clear_internal (LdDiagram *self);
 static void ld_diagram_unselect_all_internal (LdDiagram *self);
 
 
@@ -166,7 +170,7 @@ ld_diagram_dispose (GObject *gobject)
 	LdDiagram *self;
 
 	self = LD_DIAGRAM (gobject);
-	ld_diagram_clear_internal (self);
+	ld_diagram_clear (self);
 
 	/* Chain up to the parent class. */
 	G_OBJECT_CLASS (ld_diagram_parent_class)->dispose (gobject);
@@ -221,33 +225,37 @@ ld_diagram_new (void)
 void
 ld_diagram_clear (LdDiagram *self)
 {
+	gboolean changed = FALSE;
+	gboolean selection_changed = FALSE;
+
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 
-	ld_diagram_clear_internal (self);
+	if (self->priv->selection)
+	{
+		ld_diagram_unselect_all_internal (self);
+		selection_changed = TRUE;
+	}
 
-	g_signal_emit (self,
-		LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
-	g_signal_emit (self,
-		LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
-}
+	if (self->priv->connections)
+	{
+		g_list_free (self->priv->connections);
+		self->priv->connections = NULL;
+		changed = TRUE;
+	}
+	if (self->priv->objects)
+	{
+		g_list_foreach (self->priv->objects, (GFunc) uninstall_object, self);
+		g_list_free (self->priv->objects);
+		self->priv->objects = NULL;
+		changed = TRUE;
+	}
 
-/*
- * ld_diagram_clear_internal:
- * @self: an #LdDiagram object.
- *
- * Do the same as ld_diagram_clear() does but don't emit signals.
- */
-static void
-ld_diagram_clear_internal (LdDiagram *self)
-{
-	ld_diagram_unselect_all_internal (self);
-
-	g_list_free (self->priv->connections);
-	self->priv->connections = NULL;
-
-	g_list_foreach (self->priv->objects, (GFunc) g_object_unref, NULL);
-	g_list_free (self->priv->objects);
-	self->priv->objects = NULL;
+	if (changed)
+		g_signal_emit (self,
+			LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
+	if (selection_changed)
+		g_signal_emit (self,
+			LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
 }
 
 /**
@@ -530,6 +538,27 @@ ld_diagram_set_modified (LdDiagram *self, gboolean value)
 	g_object_notify (G_OBJECT (self), "modified");
 }
 
+static void
+on_object_data_changed (LdDiagramObject *self, gchar **path,
+	GValue *old_value, GValue *new_value, gpointer user_data)
+{
+}
+
+static void
+install_object (LdDiagramObject *object, LdDiagram *self)
+{
+	g_signal_connect (object, "data-changed",
+		G_CALLBACK (on_object_data_changed), self);
+	g_object_ref (object);
+}
+
+static void
+uninstall_object (LdDiagramObject *object, LdDiagram *self)
+{
+	g_signal_handlers_disconnect_by_func (object, on_object_data_changed, self);
+	g_object_unref (object);
+}
+
 /**
  * ld_diagram_get_objects:
  * @self: an #LdDiagram object.
@@ -558,15 +587,14 @@ ld_diagram_insert_object (LdDiagram *self, LdDiagramObject *object, gint pos)
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (object));
 
-	if (!g_list_find (self->priv->objects, object))
-	{
-		self->priv->objects =
-			g_list_insert (self->priv->objects, object, pos);
-		g_object_ref (object);
+	if (g_list_find (self->priv->objects, object))
+		return;
 
-		g_signal_emit (self,
-			LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
-	}
+	self->priv->objects = g_list_insert (self->priv->objects, object, pos);
+	install_object (object, self);
+
+	g_signal_emit (self,
+		LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
 }
 
 /**
@@ -582,16 +610,16 @@ ld_diagram_remove_object (LdDiagram *self, LdDiagramObject *object)
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (object));
 
-	if (g_list_find (self->priv->objects, object))
-	{
-		ld_diagram_unselect (self, object);
+	if (!g_list_find (self->priv->objects, object))
+		return;
 
-		self->priv->objects = g_list_remove (self->priv->objects, object);
-		g_object_unref (object);
+	ld_diagram_unselect (self, object);
 
-		g_signal_emit (self,
-			LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
-	}
+	self->priv->objects = g_list_remove (self->priv->objects, object);
+	uninstall_object (object, self);
+
+	g_signal_emit (self,
+		LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
 }
 
 /**
@@ -617,22 +645,22 @@ ld_diagram_get_selection (LdDiagram *self)
 void
 ld_diagram_remove_selection (LdDiagram *self)
 {
-	gboolean changed = FALSE;
+	LdDiagramObject *object;
+	gboolean changed;
 	GList *iter;
 
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 
 	for (iter = self->priv->selection; iter; iter = g_list_next (iter))
 	{
-		LdDiagramObject *object;
-
-		changed = TRUE;
 		object = LD_DIAGRAM_OBJECT (iter->data);
+		g_object_unref (object);
 
 		self->priv->objects = g_list_remove (self->priv->objects, object);
-		g_object_unref (object);
-		g_object_unref (object);
+		uninstall_object (object, self);
 	}
+
+	changed = self->priv->selection != NULL;
 	g_list_free (self->priv->selection);
 	self->priv->selection = NULL;
 
@@ -657,18 +685,16 @@ ld_diagram_select (LdDiagram *self, LdDiagramObject *object)
 {
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (object));
-
 	g_return_if_fail (g_list_find (self->priv->objects, object) != NULL);
 
-	if (!g_list_find (self->priv->selection, object))
-	{
-		self->priv->selection =
-			g_list_insert (self->priv->selection, object, 0);
-		g_object_ref (object);
+	if (g_list_find (self->priv->selection, object))
+		return;
 
-		g_signal_emit (self,
-			LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
-	}
+	self->priv->selection = g_list_insert (self->priv->selection, object, 0);
+	g_object_ref (object);
+
+	g_signal_emit (self,
+		LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
 }
 
 /**
@@ -684,14 +710,14 @@ ld_diagram_unselect (LdDiagram *self, LdDiagramObject *object)
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (object));
 
-	if (g_list_find (self->priv->selection, object))
-	{
-		self->priv->selection = g_list_remove (self->priv->selection, object);
-		g_object_unref (object);
+	if (!g_list_find (self->priv->selection, object))
+		return;
 
-		g_signal_emit (self,
-			LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
-	}
+	self->priv->selection = g_list_remove (self->priv->selection, object);
+	g_object_unref (object);
+
+	g_signal_emit (self,
+		LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
 }
 
 /**
@@ -706,7 +732,6 @@ ld_diagram_select_all (LdDiagram *self)
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 
 	ld_diagram_unselect_all_internal (self);
-
 	self->priv->selection = g_list_copy (self->priv->objects);
 	g_list_foreach (self->priv->selection, (GFunc) g_object_ref, NULL);
 
@@ -725,12 +750,13 @@ ld_diagram_unselect_all (LdDiagram *self)
 {
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 
-	if (self->priv->selection)
-	{
-		ld_diagram_unselect_all_internal (self);
-		g_signal_emit (self,
-			LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
-	}
+	if (!self->priv->selection)
+		return;
+
+	ld_diagram_unselect_all_internal (self);
+
+	g_signal_emit (self,
+		LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
 }
 
 static void

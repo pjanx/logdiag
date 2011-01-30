@@ -250,6 +250,7 @@ if (WIN32)
 else (WIN32)
 	install (TARGETS logdiag DESTINATION bin)
 	install (FILES share/logdiag.desktop DESTINATION share/applications)
+	install (FILES share/logdiag.xml DESTINATION share/mime/packages)
 	install (DIRECTORY share/icons DESTINATION share)
 	install (DIRECTORY "${project_DOC_DIR}/html/"
 		DESTINATION share/gtk-doc/html/${CMAKE_PROJECT_NAME})

@@ -5,5 +5,5 @@ GenericName=Schematic Editor
 GenericName[cs]=Editor schémat
 Icon=logdiag
 Exec=logdiag %f
+MimeType=application/x-logdiag-diagram;
 Categories=Graphics;VectorGraphics;Electricity;Engineering;GTK;
-

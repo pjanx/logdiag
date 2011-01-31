@@ -21,6 +21,7 @@
 #include "ld-symbol-category.h"
 #include "ld-library.h"
 
+#include "ld-undo-action.h"
 #include "ld-diagram-object.h"
 #include "ld-diagram-symbol.h"
 #include "ld-diagram.h"

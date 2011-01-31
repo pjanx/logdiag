@@ -110,6 +110,7 @@ set (project_DOC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/docs/reference")
 set (liblogdiag_SOURCES
 	liblogdiag/ld-marshal.c
 	liblogdiag/ld-types.c
+	liblogdiag/ld-undo-action.c
 	liblogdiag/ld-diagram.c
 	liblogdiag/ld-diagram-object.c
 	liblogdiag/ld-diagram-symbol.c
@@ -125,6 +126,7 @@ set (liblogdiag_HEADERS
 	liblogdiag/liblogdiag.h
 	liblogdiag/ld-marshal.h
 	liblogdiag/ld-types.h
+	liblogdiag/ld-undo-action.h
 	liblogdiag/ld-diagram.h
 	liblogdiag/ld-diagram-object.h
 	liblogdiag/ld-diagram-symbol.h

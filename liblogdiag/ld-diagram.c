@@ -23,6 +23,12 @@
 /*
  * LdDiagramPrivate:
  * @modified: whether the diagram has been modified.
+ * @lock_history: whether the history stacks are currently locked.
+ * @in_user_action: how many times a user action has been initiated.
+ * @undo_stack: a stack of actions that can be undone,
+ *              each containing a #GList of #LdUndoAction subactions.
+ * @redo_stack: a stack of undone actions that can be redone,
+ *              each containing a #GList of #LdUndoAction subactions.
  * @objects: all objects in the diagram.
  * @selection: all currently selected objects.
  * @connections: connections between objects.
@@ -30,16 +36,37 @@
 struct _LdDiagramPrivate
 {
 	gboolean modified;
+	gboolean lock_history;
+	guint in_user_action;
+	GList *undo_stack;
+	GList *redo_stack;
 
 	GList *objects;
 	GList *selection;
 	GList *connections;
 };
 
+typedef struct _ObjectActionData ObjectActionData;
+
+/*
+ * ObjectActionData:
+ * @self: an #LdDiagram object.
+ * @object: an #LdDiagramObject object.
+ * @pos: the position at which the object has been inserted or removed.
+ */
+struct _ObjectActionData
+{
+	LdDiagram *self;
+	LdDiagramObject *object;
+	gint pos;
+};
+
 enum
 {
 	PROP_0,
-	PROP_MODIFIED
+	PROP_MODIFIED,
+	PROP_CAN_UNDO,
+	PROP_CAN_REDO
 };
 
 static void ld_diagram_get_property (GObject *object, guint property_id,
@@ -48,9 +75,7 @@ static void ld_diagram_set_property (GObject *object, guint property_id,
 	const GValue *value, GParamSpec *pspec);
 static void ld_diagram_dispose (GObject *gobject);
 static void ld_diagram_finalize (GObject *gobject);
-
-static void on_object_data_changed (LdDiagramObject *self,
-	gchar **path, GValue *old_value, GValue *new_value, gpointer user_data);
+static void ld_diagram_real_changed (LdDiagram *self);
 
 static gboolean write_signature (GOutputStream *stream, GError **error);
 
@@ -64,9 +89,20 @@ static JsonNode *serialize_diagram (LdDiagram *self);
 static JsonNode *serialize_object (LdDiagramObject *object);
 static const gchar *get_object_class_string (GType type);
 
+static void push_undo_action (LdDiagram *self, LdUndoAction *action);
+static void destroy_action_stack (GList **stack);
+
+static void on_object_changed (LdDiagramObject *object,
+	LdUndoAction *action, gpointer user_data);
+static void on_object_notify_storage (LdDiagramObject *object,
+	GParamSpec *pspec, gpointer user_data);
+
+static void on_object_action_insert (gpointer user_data);
+static void on_object_action_remove (gpointer user_data);
+static void on_object_action_destroy (gpointer user_data);
+
 static void install_object (LdDiagramObject *object, LdDiagram *self);
 static void uninstall_object (LdDiagramObject *object, LdDiagram *self);
-static void ld_diagram_real_changed (LdDiagram *self);
 static void ld_diagram_unselect_all_internal (LdDiagram *self);
 
 
@@ -95,6 +131,26 @@ ld_diagram_class_init (LdDiagramClass *klass)
 		"Whether the diagram has been modified.",
 		FALSE, G_PARAM_READWRITE);
 	g_object_class_install_property (object_class, PROP_MODIFIED, pspec);
+
+/**
+ * LdDiagram:can-undo:
+ *
+ * Whether any action can be undone.
+ */
+	pspec = g_param_spec_boolean ("can-undo", "Can undo",
+		"Whether any action can be undone.",
+		FALSE, G_PARAM_READABLE);
+	g_object_class_install_property (object_class, PROP_CAN_UNDO, pspec);
+
+/**
+ * LdDiagram:can-redo:
+ *
+ * Whether any undone action can be redone.
+ */
+	pspec = g_param_spec_boolean ("can-redo", "Can redo",
+		"Whether any undone action can be redone.",
+		FALSE, G_PARAM_READABLE);
+	g_object_class_install_property (object_class, PROP_CAN_REDO, pspec);
 
 /**
  * LdDiagram::changed:
@@ -141,6 +197,12 @@ ld_diagram_get_property (GObject *object, guint property_id,
 	{
 	case PROP_MODIFIED:
 		g_value_set_boolean (value, ld_diagram_get_modified (self));
+		break;
+	case PROP_CAN_UNDO:
+		g_value_set_boolean (value, ld_diagram_can_undo (self));
+		break;
+	case PROP_CAN_REDO:
+		g_value_set_boolean (value, ld_diagram_can_redo (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -220,7 +282,7 @@ ld_diagram_new (void)
  * ld_diagram_clear:
  * @self: an #LdDiagram object.
  *
- * Clear the whole diagram with it's objects and selection.
+ * Clear the whole diagram, including it's objects and history.
  */
 void
 ld_diagram_clear (LdDiagram *self)
@@ -250,6 +312,12 @@ ld_diagram_clear (LdDiagram *self)
 		changed = TRUE;
 	}
 
+	destroy_action_stack (&self->priv->undo_stack);
+	destroy_action_stack (&self->priv->redo_stack);
+
+	g_object_notify (G_OBJECT (self), "can-undo");
+	g_object_notify (G_OBJECT (self), "can-redo");
+
 	if (changed)
 		g_signal_emit (self,
 			LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
@@ -264,7 +332,7 @@ ld_diagram_clear (LdDiagram *self)
  * @filename: a filename.
  * @error: (allow-none): return location for a #GError, or %NULL.
  *
- * Load a file into the diagram.
+ * Clear the diagram and load a file into it.
  *
  * Return value: %TRUE if the file could be loaded, %FALSE otherwise.
  */
@@ -291,8 +359,13 @@ ld_diagram_load_from_file (LdDiagram *self,
 
 	ld_diagram_clear (self);
 
+	self->priv->lock_history = TRUE;
+
 	local_error = NULL;
 	deserialize_diagram (self, json_parser_get_root (parser), &local_error);
+
+	self->priv->lock_history = FALSE;
+
 	g_object_unref (parser);
 	if (local_error)
 	{
@@ -539,23 +612,235 @@ ld_diagram_set_modified (LdDiagram *self, gboolean value)
 }
 
 static void
-on_object_data_changed (LdDiagramObject *self, gchar **path,
-	GValue *old_value, GValue *new_value, gpointer user_data)
+on_object_changed (LdDiagramObject *object,
+	LdUndoAction *action, gpointer user_data)
 {
+	LdDiagram *self;
+
+	self = LD_DIAGRAM (user_data);
+	push_undo_action (self, action);
+
+	g_signal_emit (self,
+		LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
+}
+
+static void
+on_object_notify_storage (LdDiagramObject *object,
+	GParamSpec *pspec, gpointer user_data)
+{
+	g_warning ("storage of a diagram object has changed");
+}
+
+/**
+ * ld_diagram_can_undo:
+ * @self: an #LdDiagram object.
+ *
+ * Return value: whether any action can be undone.
+ */
+gboolean
+ld_diagram_can_undo (LdDiagram *self)
+{
+	return self->priv->undo_stack != NULL;
+}
+
+/**
+ * ld_diagram_can_redo:
+ * @self: an #LdDiagram object.
+ *
+ * Return value: whether any undone action can be redone.
+ */
+gboolean
+ld_diagram_can_redo (LdDiagram *self)
+{
+	return self->priv->redo_stack != NULL;
+}
+
+static void
+push_undo_action (LdDiagram *self, LdUndoAction *action)
+{
+	GList **undo_list;
+
+	if (self->priv->lock_history)
+		return;
+	if (self->priv->redo_stack)
+		destroy_action_stack (&self->priv->redo_stack);
+
+	if (!self->priv->in_user_action)
+		self->priv->undo_stack = g_list_prepend (self->priv->undo_stack, NULL);
+	undo_list = (GList **) &self->priv->undo_stack->data;
+
+	g_object_ref (action);
+	*undo_list = g_list_prepend (*undo_list, action);
+
+	g_object_notify (G_OBJECT (self), "can-undo");
+	g_object_notify (G_OBJECT (self), "can-redo");
+}
+
+static void
+destroy_action_stack (GList **stack)
+{
+	GList *action, *sub;
+
+	for (action = *stack; action; action = g_list_next (action))
+	{
+		for (sub = action->data; sub; sub = g_list_next (sub))
+			g_object_unref (sub->data);
+		g_list_free (action->data);
+	}
+	g_list_free (*stack);
+	*stack = NULL;
+}
+
+/**
+ * ld_diagram_undo:
+ * @self: an #LdDiagram object.
+ *
+ * Undo the last action.
+ */
+void
+ld_diagram_undo (LdDiagram *self)
+{
+	GList *action, *sub;
+
+	g_return_if_fail (LD_IS_DIAGRAM (self));
+	g_return_if_fail (self->priv->in_user_action == 0);
+
+	if (!self->priv->undo_stack)
+		return;
+
+	self->priv->lock_history = TRUE;
+
+	action = self->priv->undo_stack;
+	self->priv->undo_stack = g_list_remove_link (action, action);
+	for (sub = g_list_last (action->data); sub; sub = g_list_previous (sub))
+		ld_undo_action_undo (sub->data);
+	self->priv->redo_stack = g_list_concat (action, self->priv->redo_stack);
+
+	self->priv->lock_history = FALSE;
+
+	g_object_notify (G_OBJECT (self), "can-undo");
+	g_object_notify (G_OBJECT (self), "can-redo");
+
+	g_signal_emit (self,
+		LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
+}
+
+/**
+ * ld_diagram_redo:
+ * @self: an #LdDiagram object.
+ *
+ * Redo the last undone action.
+ */
+void
+ld_diagram_redo (LdDiagram *self)
+{
+	GList *action, *sub;
+
+	g_return_if_fail (LD_IS_DIAGRAM (self));
+	g_return_if_fail (self->priv->in_user_action == 0);
+
+	if (!self->priv->redo_stack)
+		return;
+
+	self->priv->lock_history = TRUE;
+
+	action = self->priv->redo_stack;
+	self->priv->redo_stack = g_list_remove_link (action, action);
+	for (sub = g_list_last (action->data); sub; sub = g_list_previous (sub))
+		ld_undo_action_redo (sub->data);
+	self->priv->undo_stack = g_list_concat (action, self->priv->undo_stack);
+
+	self->priv->lock_history = FALSE;
+
+	g_object_notify (G_OBJECT (self), "can-undo");
+	g_object_notify (G_OBJECT (self), "can-redo");
+
+	g_signal_emit (self,
+		LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
+}
+
+/**
+ * ld_diagram_begin_user_action:
+ * @self: an #LdDiagram object.
+ *
+ * Begin an indivisible user action. This function can be called
+ * multiple times. Each call has to be ended with a call to
+ * ld_diagram_end_user_action().
+ */
+void
+ld_diagram_begin_user_action (LdDiagram *self)
+{
+	g_return_if_fail (LD_IS_DIAGRAM (self));
+
+	/* Push an empty action on the stack. */
+	if (!self->priv->in_user_action++)
+		self->priv->undo_stack = g_list_prepend (self->priv->undo_stack, NULL);
+}
+
+/**
+ * ld_diagram_end_user_action:
+ * @self: an #LdDiagram object.
+ *
+ * End an indivisible user action.
+ */
+void
+ld_diagram_end_user_action (LdDiagram *self)
+{
+	g_return_if_fail (LD_IS_DIAGRAM (self));
+	g_return_if_fail (self->priv->in_user_action > 0);
+
+	/* If the action on the stack is empty, discard it. */
+	if (!--self->priv->in_user_action && !self->priv->undo_stack->data)
+		self->priv->undo_stack = g_list_delete_link
+			(self->priv->undo_stack, self->priv->undo_stack);
+}
+
+static void
+on_object_action_remove (gpointer user_data)
+{
+	ObjectActionData *data;
+
+	data = user_data;
+	ld_diagram_remove_object (data->self, data->object);
+}
+
+static void
+on_object_action_insert (gpointer user_data)
+{
+	ObjectActionData *data;
+
+	data = user_data;
+	ld_diagram_insert_object (data->self, data->object, data->pos);
+}
+
+static void
+on_object_action_destroy (gpointer user_data)
+{
+	ObjectActionData *data;
+
+	data = user_data;
+	g_object_unref (data->self);
+	g_object_unref (data->object);
+	g_slice_free (ObjectActionData, data);
 }
 
 static void
 install_object (LdDiagramObject *object, LdDiagram *self)
 {
-	g_signal_connect (object, "data-changed",
-		G_CALLBACK (on_object_data_changed), self);
+	g_signal_connect (object, "changed",
+		G_CALLBACK (on_object_changed), self);
+	g_signal_connect (object, "notify::storage",
+		G_CALLBACK (on_object_notify_storage), self);
 	g_object_ref (object);
 }
 
 static void
 uninstall_object (LdDiagramObject *object, LdDiagram *self)
 {
-	g_signal_handlers_disconnect_by_func (object, on_object_data_changed, self);
+	g_signal_handlers_disconnect_by_func (object,
+		on_object_changed, self);
+	g_signal_handlers_disconnect_by_func (object,
+		on_object_notify_storage, self);
 	g_object_unref (object);
 }
 
@@ -584,6 +869,9 @@ ld_diagram_get_objects (LdDiagram *self)
 void
 ld_diagram_insert_object (LdDiagram *self, LdDiagramObject *object, gint pos)
 {
+	LdUndoAction *action;
+	ObjectActionData *action_data;
+
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (object));
 
@@ -592,6 +880,16 @@ ld_diagram_insert_object (LdDiagram *self, LdDiagramObject *object, gint pos)
 
 	self->priv->objects = g_list_insert (self->priv->objects, object, pos);
 	install_object (object, self);
+
+	action_data = g_slice_new (ObjectActionData);
+	action_data->self = g_object_ref (self);
+	action_data->object = g_object_ref (object);
+	action_data->pos = pos;
+
+	action = ld_undo_action_new (on_object_action_remove,
+		on_object_action_insert, on_object_action_destroy, action_data);
+	push_undo_action (self, action);
+	g_object_unref (action);
 
 	g_signal_emit (self,
 		LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
@@ -607,16 +905,38 @@ ld_diagram_insert_object (LdDiagram *self, LdDiagramObject *object, gint pos)
 void
 ld_diagram_remove_object (LdDiagram *self, LdDiagramObject *object)
 {
+	LdUndoAction *action;
+	ObjectActionData *action_data;
+	guint pos;
+	GList *link;
+
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (object));
 
-	if (!g_list_find (self->priv->objects, object))
+	pos = 0;
+	for (link = self->priv->objects; link; link = g_list_next (link))
+	{
+		if (link->data == object)
+			break;
+		pos++;
+	}
+	if (!link)
 		return;
 
 	ld_diagram_unselect (self, object);
 
-	self->priv->objects = g_list_remove (self->priv->objects, object);
+	self->priv->objects = g_list_delete_link (self->priv->objects, link);
 	uninstall_object (object, self);
+
+	action_data = g_slice_new (ObjectActionData);
+	action_data->self = g_object_ref (self);
+	action_data->object = g_object_ref (object);
+	action_data->pos = pos;
+
+	action = ld_undo_action_new (on_object_action_insert,
+		on_object_action_remove, on_object_action_destroy, action_data);
+	push_undo_action (self, action);
+	g_object_unref (action);
 
 	g_signal_emit (self,
 		LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
@@ -645,32 +965,20 @@ ld_diagram_get_selection (LdDiagram *self)
 void
 ld_diagram_remove_selection (LdDiagram *self)
 {
-	LdDiagramObject *object;
-	gboolean changed;
-	GList *iter;
+	GList *selection_copy, *iter;
 
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 
-	for (iter = self->priv->selection; iter; iter = g_list_next (iter))
-	{
-		object = LD_DIAGRAM_OBJECT (iter->data);
-		g_object_unref (object);
+	/* We still retain references in the object list. */
+	selection_copy = g_list_copy (self->priv->selection);
+	ld_diagram_unselect_all (self);
 
-		self->priv->objects = g_list_remove (self->priv->objects, object);
-		uninstall_object (object, self);
-	}
+	ld_diagram_begin_user_action (self);
+	for (iter = selection_copy; iter; iter = g_list_next (iter))
+		ld_diagram_remove_object (self, LD_DIAGRAM_OBJECT (iter->data));
+	ld_diagram_end_user_action (self);
 
-	changed = self->priv->selection != NULL;
-	g_list_free (self->priv->selection);
-	self->priv->selection = NULL;
-
-	if (changed)
-	{
-		g_signal_emit (self,
-			LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
-		g_signal_emit (self,
-			LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
-	}
+	g_list_free (selection_copy);
 }
 
 /**

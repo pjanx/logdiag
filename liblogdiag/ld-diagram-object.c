@@ -31,6 +31,23 @@ struct _LdDiagramObjectPrivate
 	JsonObject *storage;
 };
 
+typedef struct _SetParamActionData SetParamActionData;
+
+/*
+ * SetParamActionData:
+ * @self: the object this action has happened on.
+ * @param_name: the name of the parameter that has been changed.
+ * @old_node: the old node.
+ * @new_node: the new node.
+ */
+struct _SetParamActionData
+{
+	LdDiagramObject *self;
+	gchar *param_name;
+	JsonNode *old_node;
+	JsonNode *new_node;
+};
+
 enum
 {
 	PROP_0,
@@ -45,7 +62,9 @@ static void ld_diagram_object_set_property (GObject *object, guint property_id,
 	const GValue *value, GParamSpec *pspec);
 static void ld_diagram_object_dispose (GObject *gobject);
 
-static const gchar **args_to_strv (const gchar *first_arg, va_list args);
+static void on_set_param_undo (gpointer user_data);
+static void on_set_param_redo (gpointer user_data);
+static void on_set_param_destroy (gpointer user_data);
 
 
 G_DEFINE_TYPE (LdDiagramObject, ld_diagram_object, G_TYPE_OBJECT);
@@ -92,19 +111,17 @@ ld_diagram_object_class_init (LdDiagramObjectClass *klass)
 	g_object_class_install_property (object_class, PROP_Y, pspec);
 
 /**
- * LdDiagramObject::data-changed:
+ * LdDiagramObject::changed:
  * @self: an #LdDiagramObject object.
- * @path: path to the data.
- * @old_value: (allow-none): the old value of data.
- * @new_value: (allow-none): the new value of data.
+ * @action: an #LdUndoAction object.
  *
- * Some data have been changed in internal storage.
+ * The object has been changed.
  */
-	klass->data_changed_signal = g_signal_new
-		("data-changed", G_TYPE_FROM_CLASS (klass),
+	klass->changed_signal = g_signal_new
+		("changed", G_TYPE_FROM_CLASS (klass),
 		G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-		ld_marshal_VOID__BOXED_BOXED_BOXED, G_TYPE_NONE, 3,
-		G_TYPE_STRV, G_TYPE_VALUE, G_TYPE_VALUE);
+		g_cclosure_marshal_VOID__OBJECT,
+		G_TYPE_NONE, 1, LD_TYPE_UNDO_ACTION);
 
 	g_type_class_add_private (klass, sizeof (LdDiagramObjectPrivate));
 }
@@ -121,7 +138,6 @@ ld_diagram_object_get_property (GObject *object, guint property_id,
 	GValue *value, GParamSpec *pspec)
 {
 	LdDiagramObject *self;
-	GValue tmp_value;
 
 	self = LD_DIAGRAM_OBJECT (object);
 	switch (property_id)
@@ -131,10 +147,7 @@ ld_diagram_object_get_property (GObject *object, guint property_id,
 		break;
 	case PROP_X:
 	case PROP_Y:
-		memset (&tmp_value, 0, sizeof (GValue));
-		ld_diagram_object_get_data_for_param (self, &tmp_value, pspec);
-		g_value_copy (&tmp_value, value);
-		g_value_unset (&tmp_value);
+		ld_diagram_object_get_data_for_param (self, value, pspec);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -233,289 +246,80 @@ ld_diagram_object_set_storage (LdDiagramObject *self, JsonObject *storage)
 }
 
 /**
- * ld_diagram_object_get_data:
+ * ld_diagram_object_changed:
  * @self: an #LdDiagramObject object.
- * @data: (out): an uninitialized storage for the data.
- * @type: requested type of data. %G_TYPE_NONE for any.
- * @first_element: the first element of path to the data.
- * @...: optional remaining elements, followed by %NULL.
+ * @action: an #LdUndoAction object specifying the change.
  *
- * Retrieve data from internal storage.
- *
- * Return value: %TRUE if successful.
- */
-gboolean
-ld_diagram_object_get_data (LdDiagramObject *self,
-	GValue *data, GType type, const gchar *first_element, ...)
-{
-	va_list args;
-	gboolean result;
-
-	va_start (args, first_element);
-	result = ld_diagram_object_get_data_valist (self,
-		data, type, first_element, args);
-	va_end (args);
-	return result;
-}
-
-/**
- * ld_diagram_object_set_data:
- * @self: an #LdDiagramObject object.
- * @data: (allow-none): the data. %NULL just removes the current data.
- * @first_element: the first element of path where the data will be stored.
- * @...: optional remaining elements, followed by %NULL.
- *
- * Put data into internal storage.
+ * Emit the #LdDiagramObject::changed signal.
  */
 void
-ld_diagram_object_set_data (LdDiagramObject *self,
-	const GValue *data, const gchar *first_element, ...)
+ld_diagram_object_changed (LdDiagramObject *self, LdUndoAction *action)
 {
-	va_list args;
-
-	va_start (args, first_element);
-	ld_diagram_object_set_data_valist (self, data, first_element, args);
-	va_end (args);
-}
-
-/**
- * ld_diagram_object_get_data_valist:
- * @self: an #LdDiagramObject object.
- * @data: (out): an uninitialized storage for the data.
- * @type: requested type of data. %G_TYPE_NONE for any.
- * @first_element: the first element of path to the data.
- * @var_args: optional remaining elements, followed by %NULL.
- *
- * Retrieve data from internal storage.
- *
- * Return value: %TRUE if successful.
- */
-gboolean
-ld_diagram_object_get_data_valist (LdDiagramObject *self,
-	GValue *data, GType type, const gchar *first_element, va_list var_args)
-{
-	const gchar **elements;
-	gboolean result;
-
-	elements = args_to_strv (first_element, var_args);
-	result = ld_diagram_object_get_datav (self, data, type, elements);
-	g_free (elements);
-	return result;
-}
-
-/**
- * ld_diagram_object_set_data_valist:
- * @self: an #LdDiagramObject object.
- * @data: (allow-none): the data. %NULL just removes the current data.
- * @first_element: the first element of path where the data will be stored.
- * @var_args: optional remaining elements, followed by %NULL.
- *
- * Put data into internal storage.
- */
-void
-ld_diagram_object_set_data_valist (LdDiagramObject *self,
-	const GValue *data, const gchar *first_element, va_list var_args)
-{
-	const gchar **elements;
-
-	elements = args_to_strv (first_element, var_args);
-	ld_diagram_object_set_datav (self, data, elements);
-	g_free (elements);
-}
-
-static const gchar **
-args_to_strv (const gchar *first_arg, va_list args)
-{
-	const gchar **strv, *arg;
-	size_t strv_len = 0, strv_size = 8;
-
-	strv = g_malloc (strv_size * sizeof (gchar *));
-	for (arg = first_arg; ; arg = va_arg (args, const gchar *))
-	{
-		if (strv_len == strv_size)
-			strv = g_realloc (strv, (strv_size <<= 1) * sizeof (gchar *));
-		strv[strv_len++] = arg;
-
-		if (!arg)
-			break;
-	}
-	return strv;
-}
-
-/**
- * ld_diagram_object_get_datav:
- * @self: an #LdDiagramObject object.
- * @data: (out): an uninitialized storage for the data.
- * @type: requested type of data. %G_TYPE_NONE for any.
- * @elements: an array of elements of path to the data, terminated by %NULL.
- *
- * Retrieve data from internal storage.
- *
- * Return value: %TRUE if successful.
- */
-gboolean
-ld_diagram_object_get_datav (LdDiagramObject *self,
-	GValue *data, GType type, const gchar **elements)
-{
-	JsonObject *object;
-	JsonNode *node;
-	guint i;
-
-	g_return_val_if_fail (LD_IS_DIAGRAM_OBJECT (self), FALSE);
-	g_return_val_if_fail (data != NULL, FALSE);
-	g_return_val_if_fail (elements != NULL && *elements, FALSE);
-
-	object = ld_diagram_object_get_storage (self);
-	node = json_object_get_member (object, elements[0]);
-	for (i = 1; elements[i]; i++)
-	{
-		if (!node)
-			return FALSE;
-		if (!JSON_NODE_HOLDS_OBJECT (node))
-		{
-			g_warning ("%s: unable to get a member of a non-object node",
-				G_STRFUNC);
-			return FALSE;
-		}
-		object = json_node_get_object (node);
-		node = json_object_get_member (object, elements[i]);
-	}
-	if (!node)
-		return FALSE;
-	if (!JSON_NODE_HOLDS_VALUE (node))
-	{
-		g_warning ("%s: unable to read from a non-value node", G_STRFUNC);
-		return FALSE;
-	}
-
-	if (type == G_TYPE_NONE)
-	{
-		json_node_get_value (node, data);
-		return TRUE;
-	}
-	if (g_value_type_transformable (json_node_get_value_type (node), type))
-	{
-		GValue json_value;
-
-		memset (&json_value, 0, sizeof (GValue));
-		json_node_get_value (node, &json_value);
-		g_value_init (data, type);
-		g_value_transform (&json_value, data);
-		g_value_unset (&json_value);
-		return TRUE;
-	}
-	g_warning ("%s: unable to get value of type `%s' from node of type `%s'",
-		G_STRFUNC, g_type_name (type), json_node_type_name (node));
-	return FALSE;
-}
-
-/**
- * ld_diagram_object_set_datav:
- * @self: an #LdDiagramObject object.
- * @data: (allow-none): the data. %NULL just removes the current data.
- * @elements: an array of elements of path where the data will be stored,
- *            terminated by %NULL.
- *
- * Put data into internal storage.
- */
-void ld_diagram_object_set_datav (LdDiagramObject *self,
-	const GValue *data, const gchar **elements)
-{
-	GValue tmp_value, *old_value;
-	JsonObject *object, *new_object;
-	JsonNode *node, *new_node;
-	const gchar *last_element;
-	guint i;
-
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (self));
-	g_return_if_fail (!data || G_IS_VALUE (data));
-	g_return_if_fail (elements != NULL && *elements);
+	g_return_if_fail (LD_IS_UNDO_ACTION (action));
 
-	object = ld_diagram_object_get_storage (self);
-	node = json_object_get_member (object, elements[0]);
-	last_element = elements[0];
-	for (i = 1; elements[i]; i++)
-	{
-		if (!node || JSON_NODE_HOLDS_NULL (node))
-		{
-			new_object = json_object_new ();
-			json_object_set_object_member (object, last_element, new_object);
-			object = new_object;
-			node = NULL;
-		}
-		else if (!JSON_NODE_HOLDS_OBJECT (node))
-		{
-			g_warning ("%s: unable to get a member of a non-object node",
-				G_STRFUNC);
-			return;
-		}
-		else
-		{
-			object = json_node_get_object (node);
-			node = json_object_get_member (object, elements[i]);
-		}
-		last_element = elements[i];
-	}
-
-	if (!node || JSON_NODE_HOLDS_NULL (node))
-		old_value = NULL;
-	else if (!JSON_NODE_HOLDS_VALUE (node))
-	{
-		g_warning ("%s: unable to replace a non-value node", G_STRFUNC);
-		return;
-	}
-	else
-	{
-		memset (&tmp_value, 0, sizeof (GValue));
-		json_node_get_value (node, &tmp_value);
-		old_value = &tmp_value;
-	}
-
-	/* We have to remove it first due to a bug in json-glib. */
-	json_object_remove_member (object, last_element);
-	if (data)
-	{
-		new_node = json_node_new (JSON_NODE_VALUE);
-		json_node_set_value (new_node, data);
-		json_object_set_member (object, last_element, new_node);
-	}
-
-	if (old_value || data)
-		g_signal_emit (self, LD_DIAGRAM_OBJECT_GET_CLASS (self)
-			->data_changed_signal, 0, old_value, data);
-	if (old_value)
-		g_value_unset (old_value);
+	g_signal_emit (self, LD_DIAGRAM_OBJECT_GET_CLASS (self)->changed_signal, 0,
+		action);
 }
 
 /**
  * ld_diagram_object_get_data_for_param:
  * @self: an #LdDiagramObject object.
- * @data: (out): an uninitialized storage for the data.
+ * @data: (out): where the data will be stored.
  * @pspec: the parameter to read data for. This must be a property of @self.
  *
  * Retrieve data for a parameter from internal storage. If there's no data
  * corresponding to this parameter, the value is set to the default.
+ * This method invokes ld_diagram_object_changed().
  */
 void
 ld_diagram_object_get_data_for_param (LdDiagramObject *self,
 	GValue *data, GParamSpec *pspec)
 {
-	const gchar *elements[2];
+	JsonObject *storage;
+	JsonNode *node;
+	const gchar *name;
+	GValue json_value;
+	gboolean result;
 
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (self));
-	g_return_if_fail (data != NULL);
+	g_return_if_fail (G_IS_VALUE (data));
 	g_return_if_fail (G_IS_PARAM_SPEC (pspec));
-	g_return_if_fail (g_type_is_a (pspec->owner_type, LD_TYPE_DIAGRAM_OBJECT));
 
-	elements[0] = g_param_spec_get_name (pspec);
-	elements[1] = NULL;
-	if (!ld_diagram_object_get_datav (self, data, pspec->value_type, elements))
-	{
-		g_value_init (data, pspec->value_type);
-		g_param_value_set_default (pspec, data);
-		g_object_set_property (G_OBJECT (self), elements[0], data);
-	}
+	storage = ld_diagram_object_get_storage (self);
+	name = g_param_spec_get_name (pspec);
+	node = json_object_get_member (storage, name);
+	if (!node || json_node_is_null (node))
+		goto ld_diagram_object_get_data_default;
+	if (!JSON_NODE_HOLDS_VALUE (node))
+		goto ld_diagram_object_get_data_warn;
+
+	memset (&json_value, 0, sizeof (json_value));
+	json_node_get_value (node, &json_value);
+	result = g_param_value_convert (pspec, &json_value, data, FALSE);
+	g_value_unset (&json_value);
+	if (result)
+		return;
+
+ld_diagram_object_get_data_warn:
+	g_warning ("%s: unable to get parameter `%s' of type `%s'"
+		" from node of type `%s'; setting the parameter to it's default value",
+		G_STRFUNC, name, G_PARAM_SPEC_TYPE_NAME (pspec),
+		json_node_type_name (node));
+
+ld_diagram_object_get_data_default:
+	g_param_value_set_default (pspec, data);
+	g_object_set_property (G_OBJECT (self), name, data);
 }
+
+/* We have to remove it first due to a bug in json-glib. */
+#define json_object_set_member(object, name, node) \
+	G_STMT_START \
+	{ \
+		json_object_remove_member (object, name); \
+		json_object_set_member (object, name, node); \
+	} \
+	G_STMT_END
 
 /**
  * ld_diagram_object_set_data_for_param:
@@ -529,15 +333,77 @@ void
 ld_diagram_object_set_data_for_param (LdDiagramObject *self,
 	const GValue *data, GParamSpec *pspec)
 {
-	const gchar *elements[2];
+	LdUndoAction *action;
+	SetParamActionData *action_data;
+	JsonObject *storage;
+	const gchar *name;
+	JsonNode *node;
 
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (self));
 	g_return_if_fail (G_IS_VALUE (data));
 	g_return_if_fail (G_IS_PARAM_SPEC (pspec));
 
-	elements[0] = g_param_spec_get_name (pspec);
-	elements[1] = NULL;
-	ld_diagram_object_set_datav (self, data, elements);
+	storage = ld_diagram_object_get_storage (self);
+	name = g_param_spec_get_name (pspec);
+
+	action_data = g_slice_new (SetParamActionData);
+	action_data->self = g_object_ref (self);
+	action_data->param_name = g_strdup (g_param_spec_get_name (pspec));
+
+	node = json_object_get_member (storage, name);
+	action_data->old_node = node ? json_node_copy (node) : NULL;
+
+	node = json_node_new (JSON_NODE_VALUE);
+	json_node_set_value (node, data);
+	action_data->new_node = json_node_copy (node);
+
+	json_object_set_member (storage, name, node);
+
+	action = ld_undo_action_new (on_set_param_undo, on_set_param_redo,
+		on_set_param_destroy, action_data);
+	ld_diagram_object_changed (self, action);
+	g_object_unref (action);
+}
+
+static void
+on_set_param_undo (gpointer user_data)
+{
+	SetParamActionData *data;
+	JsonObject *storage;
+
+	data = user_data;
+	storage = ld_diagram_object_get_storage (data->self);
+
+	json_object_set_member (storage, data->param_name,
+		json_node_copy (data->old_node));
+}
+
+static void
+on_set_param_redo (gpointer user_data)
+{
+	SetParamActionData *data;
+	JsonObject *storage;
+
+	data = user_data;
+	storage = ld_diagram_object_get_storage (data->self);
+
+	json_object_set_member (storage, data->param_name,
+		json_node_copy (data->new_node));
+}
+
+static void
+on_set_param_destroy (gpointer user_data)
+{
+	SetParamActionData *data;
+
+	data = user_data;
+	g_object_unref (data->self);
+	g_free (data->param_name);
+	if (data->old_node)
+		json_node_free (data->old_node);
+	if (data->new_node)
+		json_node_free (data->new_node);
+	g_slice_free (SetParamActionData, data);
 }
 
 /**

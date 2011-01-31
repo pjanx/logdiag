@@ -90,6 +90,13 @@ gboolean ld_diagram_save_to_file (LdDiagram *self,
 gboolean ld_diagram_get_modified (LdDiagram *self);
 void ld_diagram_set_modified (LdDiagram *self, gboolean value);
 
+gboolean ld_diagram_can_undo (LdDiagram *self);
+gboolean ld_diagram_can_redo (LdDiagram *self);
+void ld_diagram_undo (LdDiagram *self);
+void ld_diagram_redo (LdDiagram *self);
+void ld_diagram_begin_user_action (LdDiagram *self);
+void ld_diagram_end_user_action (LdDiagram *self);
+
 GList *ld_diagram_get_objects (LdDiagram *self);
 void ld_diagram_insert_object (LdDiagram *self,
 	LdDiagramObject *object, gint pos);

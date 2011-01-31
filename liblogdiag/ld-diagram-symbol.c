@@ -8,8 +8,6 @@
  *
  */
 
-#include <string.h>
-
 #include "liblogdiag.h"
 #include "config.h"
 
@@ -67,16 +65,12 @@ ld_diagram_symbol_get_property (GObject *object, guint property_id,
 	GValue *value, GParamSpec *pspec)
 {
 	LdDiagramObject *self;
-	GValue tmp_value;
 
 	self = LD_DIAGRAM_OBJECT (object);
 	switch (property_id)
 	{
 	case PROP_CLASS:
-		memset (&tmp_value, 0, sizeof (GValue));
-		ld_diagram_object_get_data_for_param (self, &tmp_value, pspec);
-		g_value_copy (&tmp_value, value);
-		g_value_unset (&tmp_value);
+		ld_diagram_object_get_data_for_param (self, value, pspec);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);

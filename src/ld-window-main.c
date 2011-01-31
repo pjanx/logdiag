@@ -59,6 +59,9 @@ static void update_title (LdWindowMain *self);
 static void action_set_sensitive (LdWindowMain *self, const gchar *name,
 	gboolean sensitive);
 
+static void on_diagram_changed (LdDiagram *diagram, LdWindowMain *self);
+static void on_diagram_history_changed (LdDiagram *diagram,
+	GParamSpec *pspec, LdWindowMain *self);
 static void on_diagram_selection_changed (LdDiagram *diagram,
 	LdWindowMain *self);
 
@@ -89,6 +92,8 @@ static void on_action_save_as (GtkAction *action, LdWindowMain *self);
 static void on_action_quit (GtkAction *action, LdWindowMain *self);
 static void on_action_about (GtkAction *action, LdWindowMain *self);
 
+static void on_action_undo (GtkAction *action, LdWindowMain *self);
+static void on_action_redo (GtkAction *action, LdWindowMain *self);
 static void on_action_delete (GtkAction *action, LdWindowMain *self);
 static void on_action_select_all (GtkAction *action, LdWindowMain *self);
 
@@ -111,19 +116,26 @@ static GtkActionEntry wm_action_entries[] =
 		{"SaveAs", GTK_STOCK_SAVE_AS, Q_("Save _As..."), "<Shift><Ctrl>S",
 			Q_("Save the current diagram with another name"),
 			G_CALLBACK (on_action_save_as)},
-		{"Export", NULL, Q_("_Export"), NULL,
-			Q_("Export the diagram"),
-			NULL},
+/*
+ *		{"Export", NULL, Q_("_Export"), NULL,
+ *			Q_("Export the diagram"),
+ *			NULL},
+ */
 		{"Quit", GTK_STOCK_QUIT, Q_("_Quit"), "<Ctrl>Q",
 			Q_("Quit the application"),
 			G_CALLBACK (on_action_quit)},
 
 	{"EditMenu", NULL, Q_("_Edit"), NULL, NULL, NULL},
-		/* XXX: Don't implement these yet: */
+		{"Undo", GTK_STOCK_UNDO, Q_("_Undo"), "<Ctrl>Z",
+			Q_("Undo the last action"),
+			G_CALLBACK (on_action_undo)},
+		{"Redo", GTK_STOCK_REDO, Q_("_Redo"), "<Shift><Ctrl>Z",
+			Q_("Redo the last undone action"),
+			G_CALLBACK (on_action_redo)},
 /*
-		{"Cut", GTK_STOCK_CUT, Q_("Cu_t"), "<Ctrl>X", NULL, NULL},
-		{"Copy", GTK_STOCK_COPY, Q_("_Copy"), "<Ctrl>C", NULL, NULL},
-		{"Paste", GTK_STOCK_PASTE, Q_("_Paste"), "<Ctrl>V", NULL, NULL},
+ *		{"Cut", GTK_STOCK_CUT, Q_("Cu_t"), "<Ctrl>X", NULL, NULL},
+ *		{"Copy", GTK_STOCK_COPY, Q_("_Copy"), "<Ctrl>C", NULL, NULL},
+ *		{"Paste", GTK_STOCK_PASTE, Q_("_Paste"), "<Ctrl>V", NULL, NULL},
  */
 		{"Delete", GTK_STOCK_DELETE, Q_("_Delete"), "Delete",
 			Q_("Delete the contents of the selection"),
@@ -258,9 +270,12 @@ ld_window_main_init (LdWindowMain *self)
 	/* Initialize the backend. */
 	priv->diagram = ld_diagram_new ();
 
-	g_signal_connect_data (priv->diagram, "changed",
-		G_CALLBACK (update_title), self,
-		NULL, G_CONNECT_AFTER | G_CONNECT_SWAPPED);
+	g_signal_connect_after (priv->diagram, "changed",
+		G_CALLBACK (on_diagram_changed), self);
+	g_signal_connect (priv->diagram, "notify::can-undo",
+		G_CALLBACK (on_diagram_history_changed), self);
+	g_signal_connect (priv->diagram, "notify::can-redo",
+		G_CALLBACK (on_diagram_history_changed), self);
 	g_signal_connect_after (priv->diagram, "selection-changed",
 		G_CALLBACK (on_diagram_selection_changed), self);
 
@@ -284,7 +299,8 @@ ld_window_main_init (LdWindowMain *self)
 
 	diagram_set_filename (self, NULL);
 
-	action_set_sensitive (self, "Export", FALSE);
+	action_set_sensitive (self, "Undo", FALSE);
+	action_set_sensitive (self, "Redo", FALSE);
 	action_set_sensitive (self, "Delete", FALSE);
 	action_set_sensitive (self, "ZoomIn", FALSE);
 	action_set_sensitive (self, "ZoomOut", FALSE);
@@ -426,6 +442,20 @@ on_menu_item_deselected (GtkItem *item, LdWindowMain *window)
 
 
 /* ===== Diagram handling ================================================== */
+
+static void
+on_diagram_changed (LdDiagram *diagram, LdWindowMain *self)
+{
+	update_title (self);
+}
+
+static void
+on_diagram_history_changed (LdDiagram *diagram,
+	GParamSpec *pspec, LdWindowMain *self)
+{
+	action_set_sensitive (self, "Undo", ld_diagram_can_undo (diagram));
+	action_set_sensitive (self, "Redo", ld_diagram_can_redo (diagram));
+}
 
 static void
 on_diagram_selection_changed (LdDiagram *diagram, LdWindowMain *self)
@@ -793,6 +823,18 @@ on_action_about (GtkAction *action, LdWindowMain *self)
 		"version", PROJECT_VERSION,
 		"copyright", "Copyright Přemysl Janouch 2010 - 2011",
 		NULL);
+}
+
+static void
+on_action_undo (GtkAction *action, LdWindowMain *self)
+{
+	ld_diagram_undo (self->priv->diagram);
+}
+
+static void
+on_action_redo (GtkAction *action, LdWindowMain *self)
+{
+	ld_diagram_redo (self->priv->diagram);
 }
 
 static void

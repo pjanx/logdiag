@@ -6,11 +6,16 @@
 			<menuitem action="Save" />
 			<menuitem action="SaveAs" />
 			<separator />
+<!--
 			<menuitem action="Export" />
 			<separator />
+-->
 			<menuitem action="Quit" />
 		</menu>
 		<menu name="EditMenu" action="EditMenu">
+			<menuitem action="Undo" />
+			<menuitem action="Redo" />
+			<separator />
 <!--
 			<menuitem action="Cut" />
 			<menuitem action="Copy" />
@@ -34,6 +39,8 @@
 		<toolitem action="Open" />
 		<toolitem action="Save" />
 		<separator />
+		<toolitem action="Undo" />
+		<toolitem action="Redo" />
 	</toolbar>
 </ui>
 

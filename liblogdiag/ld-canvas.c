@@ -1339,12 +1339,17 @@ static void
 draw_grid (GtkWidget *widget, DrawData *data)
 {
 	gdouble grid_step;
+	gint grid_factor;
 	gdouble x_init, y_init;
 	gdouble x, y;
 
 	grid_step = data->scale;
+	grid_factor = 1;
 	while (grid_step < 5)
+	{
 		grid_step *= 5;
+		grid_factor *= 5;
+	}
 
 	ld_canvas_color_apply (COLOR_GET (data->self, COLOR_GRID), data->cr);
 	cairo_set_line_width (data->cr, 1);
@@ -1353,8 +1358,14 @@ draw_grid (GtkWidget *widget, DrawData *data)
 	/* Get coordinates of the top-left point. */
 	ld_canvas_widget_to_diagram_coords (data->self,
 		data->exposed_rect.x, data->exposed_rect.y, &x_init, &y_init);
+
+	x_init = ceil (x_init);
+	x_init = x_init - (gint) x_init % grid_factor;
+	y_init = ceil (y_init);
+	y_init = y_init - (gint) y_init % grid_factor;
+
 	ld_canvas_diagram_to_widget_coords (data->self,
-		ceil (x_init), ceil (y_init), &x_init, &y_init);
+		x_init, y_init, &x_init, &y_init);
 
 	/* Iterate over all the points. */
 	for     (x = x_init; x <= data->exposed_rect.x + data->exposed_rect.width;

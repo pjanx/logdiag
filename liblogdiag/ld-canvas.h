@@ -2,7 +2,7 @@
  * ld-canvas.h
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010. All rights reserved.
+ * Copyright Přemysl Janouch 2010 - 2011. All rights reserved.
  *
  * See the file LICENSE for licensing information.
  *
@@ -47,10 +47,12 @@ struct _LdCanvasClass
 	GtkDrawingAreaClass parent_class;
 
 	guint cancel_operation_signal;
+	guint move_signal;
 
 	void (*set_scroll_adjustments) (LdCanvas *self,
 		GtkAdjustment *horizontal, GtkAdjustment *vertical);
 	void (*cancel_operation) (LdCanvas *self);
+	void (*move) (LdCanvas *self, gdouble dx, gdouble dy);
 };
 
 

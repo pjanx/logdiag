@@ -172,6 +172,7 @@ static void on_adjustment_value_changed
 static void on_size_allocate (GtkWidget *widget, GtkAllocation *allocation,
 	gpointer user_data);
 static void update_adjustments (LdCanvas *self);
+static void ld_canvas_real_move (LdCanvas *self, gdouble dx, gdouble dy);
 
 static void diagram_connect_signals (LdCanvas *self);
 static void diagram_disconnect_signals (LdCanvas *self);
@@ -247,10 +248,19 @@ ld_canvas_class_init (LdCanvasClass *klass)
 
 	klass->set_scroll_adjustments = ld_canvas_real_set_scroll_adjustments;
 	klass->cancel_operation = ld_canvas_real_cancel_operation;
+	klass->move = ld_canvas_real_move;
 
 	binding_set = gtk_binding_set_by_class (klass);
 	gtk_binding_entry_add_signal (binding_set, GDK_Escape, 0,
 		"cancel-operation", 0);
+	gtk_binding_entry_add_signal (binding_set, GDK_Left, 0,
+		"move", 2, G_TYPE_DOUBLE, (gdouble) -1, G_TYPE_DOUBLE, (gdouble) 0);
+	gtk_binding_entry_add_signal (binding_set, GDK_Right, 0,
+		"move", 2, G_TYPE_DOUBLE, (gdouble) 1, G_TYPE_DOUBLE, (gdouble) 0);
+	gtk_binding_entry_add_signal (binding_set, GDK_Up, 0,
+		"move", 2, G_TYPE_DOUBLE, (gdouble) 0, G_TYPE_DOUBLE, (gdouble) -1);
+	gtk_binding_entry_add_signal (binding_set, GDK_Down, 0,
+		"move", 2, G_TYPE_DOUBLE, (gdouble) 0, G_TYPE_DOUBLE, (gdouble) 1);
 
 /**
  * LdCanvas:diagram:
@@ -310,6 +320,21 @@ ld_canvas_class_init (LdCanvasClass *klass)
 		G_STRUCT_OFFSET (LdCanvasClass, cancel_operation), NULL, NULL,
 		g_cclosure_marshal_VOID__VOID,
 		G_TYPE_NONE, 0);
+
+/**
+ * LdCanvas::move:
+ * @self: an #LdCanvas object.
+ * @dx: The difference by which to move on the horizontal axis.
+ * @dy: The difference by which to move on the vertical axis.
+ *
+ * Move the selection, if any, or the document.
+ */
+	klass->move_signal = g_signal_new
+		("move", G_TYPE_FROM_CLASS (klass),
+		G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
+		G_STRUCT_OFFSET (LdCanvasClass, move), NULL, NULL,
+		ld_marshal_VOID__DOUBLE_DOUBLE,
+		G_TYPE_NONE, 2, G_TYPE_DOUBLE, G_TYPE_DOUBLE);
 
 	g_type_class_add_private (klass, sizeof (LdCanvasPrivate));
 }
@@ -550,6 +575,42 @@ update_adjustments (LdCanvas *self)
 			= self->priv->y - self->priv->adjustment_v->page_size / 2;
 		gtk_adjustment_changed (self->priv->adjustment_v);
 	}
+}
+
+static void
+ld_canvas_real_move (LdCanvas *self, gdouble dx, gdouble dy)
+{
+	LdDiagram *diagram;
+	GList *selection, *iter;
+
+	/* TODO: Check/move boundaries, also implement normal
+	 *       getters and setters for priv->x and priv->y.
+	 */
+	diagram = self->priv->diagram;
+	selection = ld_diagram_get_selection (diagram);
+	if (selection)
+	{
+		ld_diagram_begin_user_action (diagram);
+		for (iter = selection; iter; iter = g_list_next (iter))
+		{
+			gdouble x, y;
+
+			g_object_get (iter->data, "x", &x, "y", &y, NULL);
+			x += dx;
+			y += dy;
+			g_object_set (iter->data, "x", x, "y", y, NULL);
+		}
+		ld_diagram_end_user_action (diagram);
+	}
+	else
+	{
+		self->priv->x += dx;
+		self->priv->y += dy;
+
+		simulate_motion (self);
+		update_adjustments (self);
+	}
+	gtk_widget_queue_draw (GTK_WIDGET (self));
 }
 
 

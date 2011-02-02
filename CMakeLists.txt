@@ -142,6 +142,9 @@ set (liblogdiag_HEADERS
 	liblogdiag/ld-lua-symbol.h
 	liblogdiag/ld-lua-symbol-private.h)
 
+set (logdiag_TESTS
+	point-array)
+
 set (logdiag_SOURCES
 	src/ld-window-main.c
 	src/logdiag.c)
@@ -219,6 +222,20 @@ set_target_properties (liblogdiag PROPERTIES OUTPUT_NAME logdiag)
 # Build the executable
 add_executable (logdiag WIN32 ${logdiag_SOURCES} ${logdiag_HEADERS})
 target_link_libraries (logdiag liblogdiag ${logdiag_LIBS})
+
+# Testing
+option (BUILD_TESTING "Build tests" OFF)
+
+if (BUILD_TESTING)
+	enable_testing ()
+
+	foreach (name ${logdiag_TESTS})
+		add_executable (test-${name} tests/${name}.c)
+		target_link_libraries (test-${name} liblogdiag ${logdiag_LIBS})
+
+		add_test (test-${name} test-${name})
+	endforeach (name)
+endif (BUILD_TESTING)
 
 # Generate documentation
 if (GTK_DOC_FOUND)

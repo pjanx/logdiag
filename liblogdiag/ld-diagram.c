@@ -852,7 +852,8 @@ uninstall_object (LdDiagramObject *object, LdDiagram *self)
  * ld_diagram_get_objects:
  * @self: an #LdDiagram object.
  *
- * Get a list of objects in the diagram. Do not modify.
+ * Return value: (element-type LdDiagramObject): a list of all objects
+ *               in the diagram. Do not modify.
  */
 GList *
 ld_diagram_get_objects (LdDiagram *self)
@@ -950,8 +951,8 @@ ld_diagram_remove_object (LdDiagram *self, LdDiagramObject *object)
  * ld_diagram_get_selection:
  * @self: an #LdDiagram object.
  *
- * Get a list of objects that are currently selected in the diagram.
- * Do not modify.
+ * Return value: (element-type LdDiagramObject): a list of objects that
+ *               are currently selected in the diagram. Do not modify.
  */
 GList *
 ld_diagram_get_selection (LdDiagram *self)

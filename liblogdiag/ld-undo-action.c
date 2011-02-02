@@ -16,7 +16,7 @@
 
 /**
  * SECTION:ld-undo-action
- * @short_description: An action that can be undone.
+ * @short_description: An action that can be undone
  * @see_also: #LdDiagram, #LdDiagramObject
  *
  * #LdUndoAction represents an action that can be reverted.

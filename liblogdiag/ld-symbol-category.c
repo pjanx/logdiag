@@ -328,7 +328,7 @@ ld_symbol_category_remove_child (LdSymbolCategory *self,
  * ld_symbol_category_get_children:
  * @self: an #LdSymbolCategory object.
  *
- * Return value: the internal list of children. Do not modify.
+ * Return value: (element-type GObject): a list of children. Do not modify.
  */
 const GSList *
 ld_symbol_category_get_children (LdSymbolCategory *self)

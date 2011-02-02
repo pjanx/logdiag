@@ -513,7 +513,7 @@ ld_library_remove_child (LdLibrary *self, GObject *child)
  * ld_library_get_children:
  * @self: an #LdLibrary object.
  *
- * Return value: the internal list of children. Do not modify.
+ * Return value: (element-type GObject): a list of children. Do not modify.
  */
 const GSList *
 ld_library_get_children (LdLibrary *self)

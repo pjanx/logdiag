@@ -50,5 +50,12 @@
 	#endif
 #endif /* ! HAVE_SANE___RESTRICT */
 
+/* We have to remove nodes first due to a bug in json-glib. */
+#define json_object_set_member(object, name, node) \
+	G_STMT_START { \
+		json_object_remove_member ((object), (name)); \
+		json_object_set_member ((object), (name), (node)); \
+	} G_STMT_END
+
 #endif /* __CONFIG_H__ */
 

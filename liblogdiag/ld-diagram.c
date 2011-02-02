@@ -525,6 +525,8 @@ deserialize_object (JsonObject *object_storage)
 	type = json_node_get_string (object_type_node);
 	if (!g_strcmp0 ("symbol", type))
 		return LD_DIAGRAM_OBJECT (ld_diagram_symbol_new (object_storage));
+	if (!g_strcmp0 ("connection", type))
+		return LD_DIAGRAM_OBJECT (ld_diagram_connection_new (object_storage));
 
 deserialize_object_default:
 	/* Anything we can't identify is just an indefinite object. */
@@ -576,6 +578,8 @@ get_object_class_string (GType type)
 {
 	if (type == LD_TYPE_DIAGRAM_SYMBOL)
 		return "symbol";
+	if (type == LD_TYPE_DIAGRAM_CONNECTION)
+		return "connection";
 	if (type != LD_TYPE_DIAGRAM_OBJECT)
 		/* We don't know our own type, that's just plain wrong. */
 		g_warn_if_reached ();

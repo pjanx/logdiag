@@ -114,6 +114,7 @@ set (liblogdiag_SOURCES
 	liblogdiag/ld-diagram.c
 	liblogdiag/ld-diagram-object.c
 	liblogdiag/ld-diagram-symbol.c
+	liblogdiag/ld-diagram-connection.c
 	liblogdiag/ld-canvas.c
 	liblogdiag/ld-library.c
 	liblogdiag/ld-library-toolbar.c
@@ -130,6 +131,7 @@ set (liblogdiag_HEADERS
 	liblogdiag/ld-diagram.h
 	liblogdiag/ld-diagram-object.h
 	liblogdiag/ld-diagram-symbol.h
+	liblogdiag/ld-diagram-connection.h
 	liblogdiag/ld-canvas.h
 	liblogdiag/ld-library.h
 	liblogdiag/ld-library-toolbar.h

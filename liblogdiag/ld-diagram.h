@@ -110,14 +110,6 @@ void ld_diagram_select_all (LdDiagram *self);
 void ld_diagram_unselect (LdDiagram *self, LdDiagramObject *object);
 void ld_diagram_unselect_all (LdDiagram *self);
 
-/*
-GList *ld_diagram_get_connections (LdDiagram *self);
-void ld_diagram_connection_add (LdDiagram *self,
-	LdConnection *connection, gint pos);
-void ld_diagram_connection_remove (LdDiagram *self,
-	LdConnection *connection);
-*/
-
 
 G_END_DECLS
 

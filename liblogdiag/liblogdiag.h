@@ -24,6 +24,7 @@
 #include "ld-undo-action.h"
 #include "ld-diagram-object.h"
 #include "ld-diagram-symbol.h"
+#include "ld-diagram-connection.h"
 #include "ld-diagram.h"
 
 #include "ld-canvas.h"

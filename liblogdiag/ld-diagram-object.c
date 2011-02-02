@@ -312,15 +312,6 @@ ld_diagram_object_get_data_default:
 	g_object_set_property (G_OBJECT (self), name, data);
 }
 
-/* We have to remove it first due to a bug in json-glib. */
-#define json_object_set_member(object, name, node) \
-	G_STMT_START \
-	{ \
-		json_object_remove_member (object, name); \
-		json_object_set_member (object, name, node); \
-	} \
-	G_STMT_END
-
 /**
  * ld_diagram_object_set_data_for_param:
  * @self: an #LdDiagramObject object.

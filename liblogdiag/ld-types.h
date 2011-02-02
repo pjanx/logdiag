@@ -45,21 +45,28 @@ gdouble ld_point_distance (LdPoint *self, gdouble x, gdouble y);
 /**
  * LdPointArray:
  * @points: an array of #LdPoint structures.
- * @num_points: count of points in @points.
+ * @length: count of points in @points.
+ * @size: how many points can be stored in @points.
  *
  * Defines an array of points.
  */
 struct _LdPointArray
 {
 	LdPoint *points;
-	gint num_points;
+	guint length;
+	guint size;
 };
 
 GType ld_point_array_get_type (void) G_GNUC_CONST;
 
-LdPointArray *ld_point_array_new (gint num_points);
+LdPointArray *ld_point_array_new (void);
+LdPointArray *ld_point_array_sized_new (guint preallocated);
 LdPointArray *ld_point_array_copy (const LdPointArray *self);
 void ld_point_array_free (LdPointArray *self);
+void ld_point_array_insert (LdPointArray *self, LdPoint *points,
+	gint pos, guint length);
+void ld_point_array_remove (LdPointArray *self, gint pos, guint length);
+void ld_point_array_set_size (LdPointArray *self, guint size);
 
 
 /**

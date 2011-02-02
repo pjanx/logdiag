@@ -1064,7 +1064,7 @@ check_terminals (LdCanvas *self, gdouble x, gdouble y)
 		LdDiagramSymbol *diagram_symbol;
 		LdSymbol *symbol;
 		const LdPointArray *terminals;
-		gint i;
+		guint i;
 
 		if (!LD_IS_DIAGRAM_SYMBOL (iter->data))
 			continue;
@@ -1079,7 +1079,7 @@ check_terminals (LdCanvas *self, gdouble x, gdouble y)
 
 		terminals = ld_symbol_get_terminals (symbol);
 
-		for (i = 0; i < terminals->num_points; i++)
+		for (i = 0; i < terminals->length; i++)
 		{
 			LdPoint cur_term;
 			gdouble distance;

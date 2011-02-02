@@ -576,15 +576,14 @@ read_terminals (lua_State *L, int index, LdPointArray **terminals)
 {
 	LdPointArray *points;
 	size_t num_points;
-	unsigned i = 0;
 
 	num_points = lua_objlen (L, index);
-	points = ld_point_array_new (num_points);
+	points = ld_point_array_sized_new (num_points);
 
 	lua_pushnil (L);
 	while (lua_next (L, index) != 0)
 	{
-		g_assert (i < num_points);
+		g_assert (points->length < points->size);
 
 		if (!lua_istable (L, -1) || lua_objlen (L, -1) != 2)
 			goto read_terminals_fail;
@@ -592,16 +591,16 @@ read_terminals (lua_State *L, int index, LdPointArray **terminals)
 		lua_rawgeti (L, -1, 1);
 		if (!lua_isnumber (L, -1))
 			goto read_terminals_fail;
-		points->points[i].x = lua_tonumber (L, -1);
+		points->points[points->length].x = lua_tonumber (L, -1);
 		lua_pop (L, 1);
 
 		lua_rawgeti (L, -1, 2);
 		if (!lua_isnumber (L, -1))
 			goto read_terminals_fail;
-		points->points[i].y = lua_tonumber (L, -1);
+		points->points[points->length].y = lua_tonumber (L, -1);
 
 		lua_pop (L, 2);
-		i++;
+		points->length++;
 	}
 	*terminals = points;
 	return TRUE;

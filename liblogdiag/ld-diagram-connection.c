@@ -168,22 +168,23 @@ ld_diagram_connection_get_points (LdDiagramConnection *self)
 	storage = ld_diagram_object_get_storage (LD_DIAGRAM_OBJECT (self));
 	node = json_object_get_member (storage, "points");
 	if (!node || json_node_is_null (node))
-		return ld_point_array_new (0);
+		return ld_point_array_new ();
 	if (!JSON_NODE_HOLDS_ARRAY (node))
 	{
 		WARN_NODE_TYPE (node, LD_TYPE_POINT_ARRAY);
-		return ld_point_array_new (0);
+		return ld_point_array_new ();
 	}
 
 	array = json_node_get_array (node);
 	point_node_list = json_array_get_elements (array);
-	points = ld_point_array_new (json_array_get_length (array));
+	points = ld_point_array_sized_new (json_array_get_length (array));
 
-	points->num_points = 0;
 	for (iter = point_node_list; iter; iter = g_list_next (iter))
 	{
-		if (read_point_node (iter->data, &points->points[points->num_points]))
-			points->num_points++;
+		g_assert (points->length < points->size);
+
+		if (read_point_node (iter->data, &points->points[points->length]))
+			points->length++;
 	}
 	return points;
 }
@@ -267,7 +268,7 @@ ld_diagram_connection_set_points (LdDiagramConnection *self,
 
 	storage = ld_diagram_object_get_storage (LD_DIAGRAM_OBJECT (self));
 	array = json_array_new ();
-	for (i = 0; i < points->num_points; i++)
+	for (i = 0; i < points->length; i++)
 	{
 		point_array = json_array_new ();
 		json_array_add_double_element (point_array, points->points[i].x);

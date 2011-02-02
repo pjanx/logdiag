@@ -9,6 +9,7 @@
  */
 
 #include <math.h>
+#include <string.h>
 
 #include "liblogdiag.h"
 #include "config.h"
@@ -102,22 +103,34 @@ ld_point_distance (LdPoint *self, gdouble x, gdouble y)
 
 /**
  * ld_point_array_new:
- * @num_points: the number of points the array can store.
  *
- * Create a new array of points and initialize.
+ * Create a new #LdPointArray.
  *
- * Return value: an #LdPointArray structure.
+ * Return value: (transfer full): an #LdPointArray structure.
  */
 LdPointArray *
-ld_point_array_new (gint num_points)
+ld_point_array_new (void)
+{
+	return ld_point_array_sized_new (0);
+}
+
+/**
+ * ld_point_array_sized_new:
+ * @preallocated: the number of points preallocated.
+ *
+ * Create a new #LdPointArray and preallocate storage for @preallocated items.
+ *
+ * Return value: (transfer full): an #LdPointArray structure.
+ */
+LdPointArray *
+ld_point_array_sized_new (guint preallocated)
 {
 	LdPointArray *new_array;
 
-	g_return_val_if_fail (num_points >= 1, NULL);
-
 	new_array = g_slice_new (LdPointArray);
-	new_array->num_points = num_points;
-	new_array->points = g_malloc0 (num_points * sizeof (LdPoint));
+	new_array->length = 0;
+	new_array->size = preallocated;
+	new_array->points = g_malloc0 (preallocated * sizeof (LdPoint));
 	return new_array;
 }
 
@@ -128,7 +141,7 @@ ld_point_array_new (gint num_points)
  * Makes a copy of the structure.
  * The result must be freed by ld_point_array_free().
  *
- * Return value: a copy of @self.
+ * Return value: (transfer full): a copy of @self.
  */
 LdPointArray *
 ld_point_array_copy (const LdPointArray *self)
@@ -138,9 +151,9 @@ ld_point_array_copy (const LdPointArray *self)
 	g_return_val_if_fail (self != NULL, NULL);
 
 	new_array = g_slice_new (LdPointArray);
-	new_array->num_points = self->num_points;
-	new_array->points = g_memdup (self->points,
-		self->num_points * sizeof (LdPoint));
+	new_array->length = self->length;
+	new_array->size = self->size;
+	new_array->points = g_memdup (self->points, self->size * sizeof (LdPoint));
 	return new_array;
 }
 
@@ -157,6 +170,106 @@ ld_point_array_free (LdPointArray *self)
 
 	g_free (self->points);
 	g_slice_free (LdPointArray, self);
+}
+
+/**
+ * ld_point_array_insert:
+ * @self: an #LdPointArray structure.
+ * @points: an array of points to be inserted.
+ * @pos: the position at which the points should be inserted. This number
+ *       must not be bigger than the number of points already present
+ *       in the array. Negative values append to the array.
+ * @length: count of points in @points.
+ *
+ * Insert points into the array.
+ */
+void
+ld_point_array_insert (LdPointArray *self, LdPoint *points,
+	gint pos, guint length)
+{
+	guint new_size;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (points != NULL);
+	g_return_if_fail (pos <= (signed) self->length);
+
+	new_size = self->size ? self->size : 1;
+	while (self->length + length > new_size)
+		new_size <<= 1;
+	if (new_size != self->size)
+		ld_point_array_set_size (self, new_size);
+
+	if (pos < 0)
+		pos = self->length;
+
+	g_memmove (self->points + pos + length, self->points + pos,
+		(self->length - pos) * sizeof (LdPoint));
+	memcpy (self->points + pos, points, length * sizeof (LdPoint));
+	self->length += length;
+}
+
+/**
+ * ld_point_array_remove:
+ * @self: an #LdPointArray structure.
+ * @pos: the position at which the points should be removed.
+ *       Negative values are relative to the end of the array.
+ * @length: count of points to remove.
+ *
+ * Remove points from the array. The array may be resized as a result.
+ */
+void
+ld_point_array_remove (LdPointArray *self, gint pos, guint length)
+{
+	guint new_size;
+
+	g_return_if_fail (self != NULL);
+
+	if (pos < 0)
+	{
+		pos += self->length;
+		if (pos < 0)
+		{
+			length += pos;
+			pos = 0;
+		}
+	}
+	if ((unsigned) pos >= self->length)
+		return;
+	if (pos + length > self->length)
+		length = self->length - pos;
+
+	g_memmove (self->points + pos, self->points + pos + length,
+		(self->length - pos) * sizeof (LdPoint));
+	self->length -= length;
+
+	new_size = self->size;
+	while (new_size >> 2 > self->length)
+		new_size >>= 1;
+	if (new_size != self->size)
+		ld_point_array_set_size (self, new_size);
+}
+
+/**
+ * ld_point_array_set_size:
+ * @self: an #LdPointArray structure.
+ * @size: the new size.
+ *
+ * Change size of the array.
+ */
+void ld_point_array_set_size (LdPointArray *self, guint size)
+{
+	g_return_if_fail (self != NULL);
+
+	if (self->size == size)
+		return;
+
+	self->points = g_realloc (self->points, size * sizeof (LdPoint));
+	if (self->length > size)
+		self->length = size;
+	if (self->size < size)
+		memset (self->points + self->length, 0, size - self->length);
+
+	self->size = size;
 }
 
 /**

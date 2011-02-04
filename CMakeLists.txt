@@ -296,12 +296,17 @@ set (CPACK_PACKAGE_FILE_NAME
 	"${PROJECT_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 set (CPACK_PACKAGE_INSTALL_DIRECTORY
 	"${PROJECT_NAME} ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}")
+
 set (CPACK_NSIS_INSTALLED_ICON_NAME "logdiag.exe")
 set (CPACK_NSIS_CREATE_ICONS_EXTRA
 	"CreateShortCut '\$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\logdiag.lnk' '\$INSTDIR\\\\logdiag.exe'")
 set (CPACK_NSIS_DELETE_ICONS_EXTRA
 	"!insertmacro MUI_STARTMENU_GETFOLDER Application $SM_FOLDER
 	Delete '\$SMPROGRAMS\\\\$SM_FOLDER\\\\logdiag.lnk'")
+
+set (CPACK_DEBIAN_PACKAGE_DEPENDS "libgtk2.0-0 (>= 2.12), libjson-glib-1.0-0 (>= 0.10.4), liblua5.1-0, librsvg2-common")
+set (CPACK_DEBIAN_PACKAGE_BUILDS_DEPENDS "libgtk2.0-dev (>= 2.12), libjson-glib-dev (>= 0.10.4), liblua5.1-0-dev")
+set (CPACK_DEBIAN_PACKAGE_SECTION "Electronics")
 
 set (CPACK_SOURCE_GENERATOR "TGZ;ZIP")
 set (CPACK_SOURCE_IGNORE_FILES "/.git;/build;/win32-depends;/liblogdiag/ld-marshal.[ch]")

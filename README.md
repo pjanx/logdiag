@@ -8,8 +8,9 @@ usability and openness.
 Runtime dependencies:  
 
  - GTK+ &gt;= 2.12
- - json-glib &gt;= 0.10
+ - json-glib &gt;= 0.10.4
  - lua = 5.1
+ - librsvg &gt;= 2.0
 
 Build dependencies:  
 

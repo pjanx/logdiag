@@ -393,6 +393,8 @@ ld_diagram_save_to_file (LdDiagram *self,
 	GFileOutputStream *file_stream;
 	JsonGenerator *generator;
 	JsonNode *root;
+	gchar *buffer;
+	gsize length;
 	GError *local_error;
 
 	g_return_val_if_fail (LD_IS_DIAGRAM (self), FALSE);
@@ -428,10 +430,12 @@ ld_diagram_save_to_file (LdDiagram *self,
 	json_node_free (root);
 
 	local_error = NULL;
-	json_generator_to_stream (generator, G_OUTPUT_STREAM (file_stream),
-		NULL, &local_error);
+	buffer = json_generator_to_data (generator, &length);
+	g_output_stream_write (G_OUTPUT_STREAM (file_stream),
+		buffer, length, NULL, &local_error);
 	g_object_unref (file_stream);
 	g_object_unref (generator);
+	g_free (buffer);
 
 	if (local_error)
 	{

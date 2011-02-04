@@ -273,8 +273,9 @@ else (WIN32)
 	install (FILES share/logdiag.desktop DESTINATION share/applications)
 	install (FILES share/logdiag.xml DESTINATION share/mime/packages)
 	install (DIRECTORY share/icons DESTINATION share)
-	install (DIRECTORY "${project_DOC_DIR}/html/"
-		DESTINATION share/gtk-doc/html/${CMAKE_PROJECT_NAME})
+# Don't install the documentation yet as we don't install any library
+#	install (DIRECTORY "${project_DOC_DIR}/html/"
+#		DESTINATION share/gtk-doc/html/${CMAKE_PROJECT_NAME})
 	install (FILES LICENSE DESTINATION share/doc/${CMAKE_PROJECT_NAME})
 endif (WIN32)
 

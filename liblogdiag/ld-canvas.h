@@ -80,6 +80,10 @@ void ld_canvas_diagram_to_widget_coords (LdCanvas *self,
 
 gdouble ld_canvas_get_zoom (LdCanvas *self);
 void ld_canvas_set_zoom (LdCanvas *self, gdouble zoom);
+gboolean ld_canvas_can_zoom_in (LdCanvas *self);
+void ld_canvas_zoom_in (LdCanvas *self);
+gboolean ld_canvas_can_zoom_out (LdCanvas *self);
+void ld_canvas_zoom_out (LdCanvas *self);
 
 void ld_canvas_add_object_begin (LdCanvas *self, LdDiagramObject *object);
 

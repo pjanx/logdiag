@@ -33,8 +33,8 @@
 #define ZOOM_MIN 0.01
 #define ZOOM_MAX 100
 #define ZOOM_DEFAULT 1
-/* Multiplication factor for zooming with mouse wheel. */
-#define ZOOM_WHEEL_STEP 1.4
+/* Multiplication factor for zooming. */
+#define ZOOM_STEP 1.4
 
 /* When drawing is requested, extend all sides of
  * the rectangle to be drawn by this number of pixels.
@@ -862,6 +862,58 @@ ld_canvas_set_zoom (LdCanvas *self, gdouble zoom)
 	g_object_notify (G_OBJECT (self), "zoom");
 }
 
+/**
+ * ld_canvas_can_zoom_in:
+ * @self: an #LdCanvas object.
+ *
+ * Return value: %TRUE if the view can be zoomed in.
+ */
+gboolean
+ld_canvas_can_zoom_in (LdCanvas *self)
+{
+	g_return_val_if_fail (LD_IS_CANVAS (self), FALSE);
+	return self->priv->zoom < ZOOM_MAX;
+}
+
+/**
+ * ld_canvas_can_zoom_out:
+ * @self: an #LdCanvas object.
+ *
+ * Return value: %TRUE if the view can be zoomed out.
+ */
+gboolean
+ld_canvas_can_zoom_out (LdCanvas *self)
+{
+	g_return_val_if_fail (LD_IS_CANVAS (self), FALSE);
+	return self->priv->zoom > ZOOM_MIN;
+}
+
+/**
+ * ld_canvas_zoom_in:
+ * @self: an #LdCanvas object.
+ *
+ * Zoom the view in.
+ */
+void
+ld_canvas_zoom_in (LdCanvas *self)
+{
+	g_return_if_fail (LD_IS_CANVAS (self));
+	ld_canvas_set_zoom (self, self->priv->zoom * ZOOM_STEP);
+}
+
+/**
+ * ld_canvas_zoom_out:
+ * @self: an #LdCanvas object.
+ *
+ * Zoom the view out.
+ */
+void
+ld_canvas_zoom_out (LdCanvas *self)
+{
+	g_return_if_fail (LD_IS_CANVAS (self));
+	ld_canvas_set_zoom (self, self->priv->zoom / ZOOM_STEP);
+}
+
 
 /* ===== Operations ======================================================== */
 
@@ -1288,10 +1340,10 @@ on_scroll (GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
 	switch (event->direction)
 	{
 	case GDK_SCROLL_UP:
-		ld_canvas_set_zoom (self, self->priv->zoom * ZOOM_WHEEL_STEP);
+		ld_canvas_zoom_in (self);
 		break;
 	case GDK_SCROLL_DOWN:
-		ld_canvas_set_zoom (self, self->priv->zoom / ZOOM_WHEEL_STEP);
+		ld_canvas_zoom_out (self);
 		break;
 	default:
 		return FALSE;

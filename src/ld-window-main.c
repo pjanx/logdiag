@@ -59,6 +59,9 @@ static void update_title (LdWindowMain *self);
 static void action_set_sensitive (LdWindowMain *self, const gchar *name,
 	gboolean sensitive);
 
+static void on_canvas_zoom_changed (LdCanvas *canvas,
+	GParamSpec *pspec, LdWindowMain *self);
+
 static void on_diagram_changed (LdDiagram *diagram, LdWindowMain *self);
 static void on_diagram_history_changed (LdDiagram *diagram,
 	GParamSpec *pspec, LdWindowMain *self);
@@ -96,6 +99,10 @@ static void on_action_undo (GtkAction *action, LdWindowMain *self);
 static void on_action_redo (GtkAction *action, LdWindowMain *self);
 static void on_action_delete (GtkAction *action, LdWindowMain *self);
 static void on_action_select_all (GtkAction *action, LdWindowMain *self);
+
+static void on_action_zoom_in (GtkAction *action, LdWindowMain *self);
+static void on_action_zoom_out (GtkAction *action, LdWindowMain *self);
+static void on_action_normal_size (GtkAction *action, LdWindowMain *self);
 
 
 /* ===== Local variables =================================================== */
@@ -147,13 +154,13 @@ static GtkActionEntry wm_action_entries[] =
 	{"ViewMenu", NULL, Q_("_View"), NULL, NULL, NULL},
 		{"ZoomIn", GTK_STOCK_ZOOM_IN, Q_("_Zoom In"), "<Ctrl>plus",
 			Q_("Zoom into the diagram"),
-			NULL},
+			G_CALLBACK (on_action_zoom_in)},
 		{"ZoomOut", GTK_STOCK_ZOOM_OUT, Q_("Zoom _Out"), "<Ctrl>minus",
 			Q_("Zoom out of the diagram"),
-			NULL},
+			G_CALLBACK (on_action_zoom_out)},
 		{"NormalSize", GTK_STOCK_ZOOM_100, Q_("_Normal Size"), "<Ctrl>0",
 			Q_("Reset zoom level back to the default"),
-			NULL},
+			G_CALLBACK (on_action_normal_size)},
 
 	{"HelpMenu", NULL, Q_("_Help"), NULL, NULL, NULL},
 		{"About", GTK_STOCK_ABOUT, Q_("_About"), NULL,
@@ -285,6 +292,9 @@ ld_window_main_init (LdWindowMain *self)
 	ld_canvas_set_diagram (priv->canvas, priv->diagram);
 	ld_canvas_set_library (priv->canvas, priv->library);
 
+	g_signal_connect (priv->canvas, "notify::zoom",
+		G_CALLBACK (on_canvas_zoom_changed), self);
+
 	ld_library_toolbar_set_library (LD_LIBRARY_TOOLBAR (priv->library_toolbar),
 		priv->library);
 	ld_library_toolbar_set_canvas (LD_LIBRARY_TOOLBAR (priv->library_toolbar),
@@ -302,8 +312,6 @@ ld_window_main_init (LdWindowMain *self)
 	action_set_sensitive (self, "Undo", FALSE);
 	action_set_sensitive (self, "Redo", FALSE);
 	action_set_sensitive (self, "Delete", FALSE);
-	action_set_sensitive (self, "ZoomIn", FALSE);
-	action_set_sensitive (self, "ZoomOut", FALSE);
 	action_set_sensitive (self, "NormalSize", FALSE);
 
 	gtk_widget_grab_focus (GTK_WIDGET (priv->canvas));
@@ -515,9 +523,11 @@ diagram_new (LdWindowMain *self)
 		" closing it and creating a new one?"))
 		return;
 
-	/* TODO: Reset canvas view to the center. */
 	ld_diagram_clear (self->priv->diagram);
 	ld_diagram_set_modified (self->priv->diagram, FALSE);
+
+	/* TODO: Reset canvas view to the center. */
+	ld_canvas_set_zoom (self->priv->canvas, 1);
 
 	diagram_set_filename (self, NULL);
 }
@@ -785,6 +795,17 @@ on_symbol_chosen (LdLibraryToolbar *toolbar, LdSymbol *symbol,
 }
 
 static void
+on_canvas_zoom_changed (LdCanvas *canvas, GParamSpec *pspec, LdWindowMain *self)
+{
+	action_set_sensitive (self, "ZoomIn",
+		ld_canvas_can_zoom_in (self->priv->canvas));
+	action_set_sensitive (self, "ZoomOut",
+		ld_canvas_can_zoom_out (self->priv->canvas));
+	action_set_sensitive (self, "NormalSize",
+		ld_canvas_get_zoom (self->priv->canvas) != 1);
+}
+
+static void
 on_action_new (GtkAction *action, LdWindowMain *self)
 {
 	diagram_new (self);
@@ -847,4 +868,22 @@ static void
 on_action_select_all (GtkAction *action, LdWindowMain *self)
 {
 	ld_diagram_select_all (self->priv->diagram);
+}
+
+static void
+on_action_zoom_in (GtkAction *action, LdWindowMain *self)
+{
+	ld_canvas_zoom_in (self->priv->canvas);
+}
+
+static void
+on_action_zoom_out (GtkAction *action, LdWindowMain *self)
+{
+	ld_canvas_zoom_out (self->priv->canvas);
+}
+
+static void
+on_action_normal_size (GtkAction *action, LdWindowMain *self)
+{
+	ld_canvas_set_zoom (self->priv->canvas, 1);
 }

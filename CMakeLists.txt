@@ -143,7 +143,8 @@ set (liblogdiag_HEADERS
 	liblogdiag/ld-lua-symbol-private.h)
 
 set (logdiag_TESTS
-	point-array)
+	point-array
+	diagram)
 
 set (logdiag_SOURCES
 	src/ld-window-main.c

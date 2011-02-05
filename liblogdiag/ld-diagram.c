@@ -720,7 +720,7 @@ ld_diagram_undo (LdDiagram *self)
 
 	action = self->priv->undo_stack;
 	self->priv->undo_stack = g_list_remove_link (action, action);
-	for (sub = g_list_last (action->data); sub; sub = g_list_previous (sub))
+	for (sub = action->data; sub; sub = g_list_next (sub))
 		ld_undo_action_undo (sub->data);
 	self->priv->redo_stack = g_list_concat (action, self->priv->redo_stack);
 

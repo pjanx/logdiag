@@ -1390,14 +1390,17 @@ static void
 oper_move_selection_motion (LdCanvas *self, gdouble x, gdouble y)
 {
 	MoveSelectionData *data;
-	gdouble scale, move_x, move_y;
+	gdouble scale, dx, dy, move_x, move_y;
 	gdouble move = FALSE;
 
 	scale = ld_canvas_get_scale_in_px (self);
 	data = &OPER_DATA (self, move_selection);
 
-	move_x = floor ((x - data->move_origin.x) / scale);
-	move_y = floor ((y - data->move_origin.y) / scale);
+	dx = x - data->move_origin.x;
+	dy = y - data->move_origin.y;
+
+	move_x = dx < 0 ? ceil (dx / scale) : floor (dx / scale);
+	move_y = dy < 0 ? ceil (dy / scale) : floor (dy / scale);
 
 	if (ABS (move_x) >= 1)
 	{

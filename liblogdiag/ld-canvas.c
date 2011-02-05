@@ -60,15 +60,29 @@ typedef void (*OperationEnd) (LdCanvas *self);
 enum
 {
 	OPER_0,
-	OPER_ADD_OBJECT
+	OPER_ADD_OBJECT,
+	OPER_SELECT,
+	OPER_MOVE_SELECTION
 };
 
 typedef struct _AddObjectData AddObjectData;
+typedef struct _SelectData SelectData;
+typedef struct _MoveSelectionData MoveSelectionData;
 
 struct _AddObjectData
 {
 	LdDiagramObject *object;
 	gboolean visible;
+};
+
+struct _SelectData
+{
+	LdPoint drag_last_pos;
+};
+
+struct _MoveSelectionData
+{
+	LdPoint move_origin;
 };
 
 enum
@@ -100,6 +114,10 @@ struct _LdCanvasColor
  * @x: the X coordinate of the center of view.
  * @y: the Y coordinate of the center of view.
  * @zoom: the current zoom of the canvas.
+ * @terminal: position of the highlighted terminal.
+ * @terminal_highlighted: whether a terminal is highlighted.
+ * @drag_start_pos: position of the mouse pointer when dragging started.
+ * @drag_operation: the operation to start when dragging starts.
  * @operation: the current operation.
  * @operation_data: data related to the current operation.
  * @operation_end: a callback to end the operation.
@@ -120,10 +138,15 @@ struct _LdCanvasPrivate
 	LdPoint terminal;
 	gboolean terminal_highlighted;
 
+	LdPoint drag_start_pos;
+	gint drag_operation;
+
 	gint operation;
 	union
 	{
 		AddObjectData add_object;
+		SelectData select;
+		MoveSelectionData move_selection;
 	}
 	operation_data;
 	OperationEnd operation_end;
@@ -180,22 +203,11 @@ static void diagram_disconnect_signals (LdCanvas *self);
 static gdouble ld_canvas_get_base_unit_in_px (GtkWidget *self);
 static gdouble ld_canvas_get_scale_in_px (LdCanvas *self);
 
-static void simulate_motion (LdCanvas *self);
-static gboolean on_motion_notify (GtkWidget *widget, GdkEventMotion *event,
-	gpointer user_data);
-static gboolean on_leave_notify (GtkWidget *widget, GdkEventCrossing *event,
-	gpointer user_data);
-static gboolean on_button_press (GtkWidget *widget, GdkEventButton *event,
-	gpointer user_data);
-static gboolean on_button_release (GtkWidget *widget, GdkEventButton *event,
-	gpointer user_data);
-static gboolean on_scroll (GtkWidget *widget, GdkEventScroll *event,
-	gpointer user_data);
-
 static void ld_canvas_color_set (LdCanvasColor *color,
 	gdouble r, gdouble g, gdouble b, gdouble a);
 static void ld_canvas_color_apply (LdCanvasColor *color, cairo_t *cr);
 
+static void move_selection (LdCanvas *self, gdouble dx, gdouble dy);
 static void move_object_to_coords (LdCanvas *self, LdDiagramObject *object,
 	gdouble x, gdouble y);
 static LdDiagramObject *get_object_at_coords (LdCanvas *self,
@@ -218,7 +230,30 @@ static void queue_object_draw (LdCanvas *self, LdDiagramObject *object);
 static void queue_terminal_draw (LdCanvas *self, LdPoint *terminal);
 
 static void ld_canvas_real_cancel_operation (LdCanvas *self);
-static void ld_canvas_add_object_end (LdCanvas *self);
+static void oper_add_object_end (LdCanvas *self);
+
+static void oper_select_begin (LdCanvas *self, gdouble x, gdouble y);
+static void oper_select_end (LdCanvas *self);
+static void oper_select_get_rectangle (LdCanvas *self, LdRectangle *rect);
+static void oper_select_queue_draw (LdCanvas *self);
+static void oper_select_draw (GtkWidget *widget, DrawData *data);
+static void oper_select_motion (LdCanvas *self, gdouble x, gdouble y);
+
+static void oper_move_selection_begin (LdCanvas *self, gdouble x, gdouble y);
+static void oper_move_selection_end (LdCanvas *self);
+static void oper_move_selection_motion (LdCanvas *self, gdouble x, gdouble y);
+
+static void simulate_motion (LdCanvas *self);
+static gboolean on_motion_notify (GtkWidget *widget, GdkEventMotion *event,
+	gpointer user_data);
+static gboolean on_leave_notify (GtkWidget *widget, GdkEventCrossing *event,
+	gpointer user_data);
+static gboolean on_button_press (GtkWidget *widget, GdkEventButton *event,
+	gpointer user_data);
+static gboolean on_button_release (GtkWidget *widget, GdkEventButton *event,
+	gpointer user_data);
+static gboolean on_scroll (GtkWidget *widget, GdkEventScroll *event,
+	gpointer user_data);
 
 static gboolean on_expose_event (GtkWidget *widget, GdkEventExpose *event,
 	gpointer user_data);
@@ -581,27 +616,16 @@ static void
 ld_canvas_real_move (LdCanvas *self, gdouble dx, gdouble dy)
 {
 	LdDiagram *diagram;
-	GList *selection, *iter;
+
+	diagram = self->priv->diagram;
+	if (!diagram)
+		return;
 
 	/* TODO: Check/move boundaries, also implement normal
 	 *       getters and setters for priv->x and priv->y.
 	 */
-	diagram = self->priv->diagram;
-	selection = ld_diagram_get_selection (diagram);
-	if (selection)
-	{
-		ld_diagram_begin_user_action (diagram);
-		for (iter = selection; iter; iter = g_list_next (iter))
-		{
-			gdouble x, y;
-
-			g_object_get (iter->data, "x", &x, "y", &y, NULL);
-			x += dx;
-			y += dy;
-			g_object_set (iter->data, "x", x, "y", y, NULL);
-		}
-		ld_diagram_end_user_action (diagram);
-	}
+	if (ld_diagram_get_selection (diagram))
+		move_selection (self, dx, dy);
 	else
 	{
 		self->priv->x += dx;
@@ -915,62 +939,7 @@ ld_canvas_zoom_out (LdCanvas *self)
 }
 
 
-/* ===== Operations ======================================================== */
-
-static void
-ld_canvas_real_cancel_operation (LdCanvas *self)
-{
-	g_return_if_fail (LD_IS_CANVAS (self));
-
-	if (self->priv->operation)
-	{
-		if (self->priv->operation_end)
-			self->priv->operation_end (self);
-		self->priv->operation = OPER_0;
-		self->priv->operation_end = NULL;
-	}
-}
-
-/**
- * ld_canvas_add_object_begin:
- * @self: an #LdCanvas object.
- * @object: (transfer full): the object to be added to the diagram.
- *
- * Begin an operation for adding an object into the diagram.
- */
-void
-ld_canvas_add_object_begin (LdCanvas *self, LdDiagramObject *object)
-{
-	AddObjectData *data;
-
-	g_return_if_fail (LD_IS_CANVAS (self));
-	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (object));
-
-	ld_canvas_real_cancel_operation (self);
-
-	self->priv->operation = OPER_ADD_OBJECT;
-	self->priv->operation_end = ld_canvas_add_object_end;
-
-	data = &OPER_DATA (self, add_object);
-	data->object = object;
-}
-
-static void
-ld_canvas_add_object_end (LdCanvas *self)
-{
-	AddObjectData *data;
-
-	data = &OPER_DATA (self, add_object);
-	if (data->object)
-	{
-		queue_object_draw (self, data->object);
-		g_object_unref (data->object);
-		data->object = NULL;
-	}
-}
-
-
-/* ===== Events, rendering ================================================= */
+/* ===== Helper functions ================================================== */
 
 static void
 ld_canvas_color_set (LdCanvasColor *color,
@@ -986,6 +955,33 @@ static void
 ld_canvas_color_apply (LdCanvasColor *color, cairo_t *cr)
 {
 	cairo_set_source_rgba (cr, color->r, color->g, color->b, color->a);
+}
+
+static void
+move_selection (LdCanvas *self, gdouble dx, gdouble dy)
+{
+	LdDiagram *diagram;
+	GList *selection, *iter;
+
+	diagram = self->priv->diagram;
+	if (!diagram)
+		return;
+
+	selection = ld_diagram_get_selection (diagram);
+	if (!selection)
+		return;
+
+	ld_diagram_begin_user_action (diagram);
+	for (iter = selection; iter; iter = g_list_next (iter))
+	{
+		gdouble x, y;
+
+		g_object_get (iter->data, "x", &x, "y", &y, NULL);
+		x += dx;
+		y += dy;
+		g_object_set (iter->data, "x", x, "y", y, NULL);
+	}
+	ld_diagram_end_user_action (diagram);
 }
 
 static void
@@ -1208,6 +1204,219 @@ queue_terminal_draw (LdCanvas *self, LdPoint *terminal)
 	queue_draw (self, &rect);
 }
 
+
+/* ===== Operations ======================================================== */
+
+static void
+ld_canvas_real_cancel_operation (LdCanvas *self)
+{
+	g_return_if_fail (LD_IS_CANVAS (self));
+
+	if (self->priv->operation)
+	{
+		if (self->priv->operation_end)
+			self->priv->operation_end (self);
+		self->priv->operation = OPER_0;
+		self->priv->operation_end = NULL;
+	}
+}
+
+/**
+ * ld_canvas_add_object_begin:
+ * @self: an #LdCanvas object.
+ * @object: (transfer full): the object to be added to the diagram.
+ *
+ * Begin an operation for adding an object into the diagram.
+ */
+void
+ld_canvas_add_object_begin (LdCanvas *self, LdDiagramObject *object)
+{
+	AddObjectData *data;
+
+	g_return_if_fail (LD_IS_CANVAS (self));
+	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (object));
+
+	ld_canvas_real_cancel_operation (self);
+
+	self->priv->operation = OPER_ADD_OBJECT;
+	self->priv->operation_end = oper_add_object_end;
+
+	data = &OPER_DATA (self, add_object);
+	data->object = object;
+}
+
+static void
+oper_add_object_end (LdCanvas *self)
+{
+	AddObjectData *data;
+
+	data = &OPER_DATA (self, add_object);
+	if (data->object)
+	{
+		queue_object_draw (self, data->object);
+		g_object_unref (data->object);
+		data->object = NULL;
+	}
+}
+
+static void
+oper_select_begin (LdCanvas *self, gdouble x, gdouble y)
+{
+	SelectData *data;
+
+	ld_canvas_real_cancel_operation (self);
+
+	self->priv->operation = OPER_SELECT;
+	self->priv->operation_end = oper_select_end;
+
+	data = &OPER_DATA (self, select);
+	data->drag_last_pos.x = self->priv->drag_start_pos.x;
+	data->drag_last_pos.y = self->priv->drag_start_pos.y;
+
+	oper_select_motion (self, x, y);
+}
+
+static void
+oper_select_end (LdCanvas *self)
+{
+	oper_select_queue_draw (self);
+}
+
+static void
+oper_select_get_rectangle (LdCanvas *self, LdRectangle *rect)
+{
+	SelectData *data;
+
+	data = &OPER_DATA (self, select);
+	rect->x = MIN (self->priv->drag_start_pos.x, data->drag_last_pos.x);
+	rect->y = MIN (self->priv->drag_start_pos.y, data->drag_last_pos.y);
+	rect->width  = ABS (self->priv->drag_start_pos.x - data->drag_last_pos.x);
+	rect->height = ABS (self->priv->drag_start_pos.y - data->drag_last_pos.y);
+}
+
+static void
+oper_select_queue_draw (LdCanvas *self)
+{
+	LdRectangle rect;
+	SelectData *data;
+
+	data = &OPER_DATA (self, select);
+	oper_select_get_rectangle (self, &rect);
+	queue_draw (self, &rect);
+}
+
+static void
+oper_select_draw (GtkWidget *widget, DrawData *data)
+{
+	static const double dashes[] = {3, 5};
+	SelectData *select_data;
+
+	g_return_if_fail (data->self->priv->operation == OPER_SELECT);
+
+	ld_canvas_color_apply (COLOR_GET (data->self, COLOR_GRID), data->cr);
+	cairo_set_line_width (data->cr, 1);
+	cairo_set_line_cap (data->cr, CAIRO_LINE_CAP_SQUARE);
+	cairo_set_dash (data->cr, dashes, G_N_ELEMENTS (dashes), 0);
+
+	select_data = &OPER_DATA (data->self, select);
+
+	cairo_rectangle (data->cr,
+		data->self->priv->drag_start_pos.x - 0.5,
+		data->self->priv->drag_start_pos.y - 0.5,
+		select_data->drag_last_pos.x - data->self->priv->drag_start_pos.x + 1,
+		select_data->drag_last_pos.y - data->self->priv->drag_start_pos.y + 1);
+	cairo_stroke (data->cr);
+}
+
+static void
+oper_select_motion (LdCanvas *self, gdouble x, gdouble y)
+{
+	SelectData *data;
+	GList *objects, *iter;
+	LdRectangle selection_rect, object_rect;
+
+	data = &OPER_DATA (self, select);
+
+	oper_select_queue_draw (self);
+	data->drag_last_pos.x = x;
+	data->drag_last_pos.y = y;
+	oper_select_queue_draw (self);
+
+	oper_select_get_rectangle (self, &selection_rect);
+	objects = (GList *) ld_diagram_get_objects (self->priv->diagram);
+
+	for (iter = objects; iter; iter = g_list_next (iter))
+	{
+		LdDiagramObject *object;
+
+		object = LD_DIAGRAM_OBJECT (iter->data);
+		if (!get_object_area (self, object, &object_rect))
+			continue;
+
+		ld_rectangle_extend (&object_rect, OBJECT_BORDER_TOLERANCE);
+		if (ld_rectangle_intersects (&object_rect, &selection_rect))
+			ld_diagram_select (self->priv->diagram, object);
+		else
+			ld_diagram_unselect (self->priv->diagram, object);
+	}
+}
+
+static void
+oper_move_selection_begin (LdCanvas *self, gdouble x, gdouble y)
+{
+	MoveSelectionData *data;
+
+	ld_canvas_real_cancel_operation (self);
+
+	self->priv->operation = OPER_MOVE_SELECTION;
+	self->priv->operation_end = oper_move_selection_end;
+
+	ld_diagram_begin_user_action (self->priv->diagram);
+
+	data = &OPER_DATA (self, move_selection);
+	data->move_origin.x = self->priv->drag_start_pos.x;
+	data->move_origin.y = self->priv->drag_start_pos.y;
+
+	oper_move_selection_motion (self, x, y);
+}
+
+static void
+oper_move_selection_end (LdCanvas *self)
+{
+	ld_diagram_end_user_action (self->priv->diagram);
+}
+
+static void
+oper_move_selection_motion (LdCanvas *self, gdouble x, gdouble y)
+{
+	MoveSelectionData *data;
+	gdouble scale, move_x, move_y;
+	gdouble move = FALSE;
+
+	scale = ld_canvas_get_scale_in_px (self);
+	data = &OPER_DATA (self, move_selection);
+
+	move_x = floor ((x - data->move_origin.x) / scale);
+	move_y = floor ((y - data->move_origin.y) / scale);
+
+	if (ABS (move_x) >= 1)
+	{
+		data->move_origin.x += move_x * scale;
+		move = TRUE;
+	}
+	if (ABS (move_y) >= 1)
+	{
+		data->move_origin.y += move_y * scale;
+		move = TRUE;
+	}
+
+	if (move)
+		move_selection (self, move_x, move_y);
+}
+
+
+/* ===== Events, rendering ================================================= */
+
 static void
 simulate_motion (LdCanvas *self)
 {
@@ -1236,21 +1445,40 @@ static gboolean
 on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 {
 	LdCanvas *self;
+	AddObjectData *add_data;
 
 	self = LD_CANVAS (widget);
 	switch (self->priv->operation)
 	{
-		AddObjectData *data;
-
 	case OPER_ADD_OBJECT:
-		data = &OPER_DATA (self, add_object);
-		data->visible = TRUE;
+		add_data = &OPER_DATA (self, add_object);
+		add_data->visible = TRUE;
 
-		queue_object_draw (self, data->object);
-		move_object_to_coords (self, data->object, event->x, event->y);
-		queue_object_draw (self, data->object);
+		queue_object_draw (self, add_data->object);
+		move_object_to_coords (self, add_data->object, event->x, event->y);
+		queue_object_draw (self, add_data->object);
+		break;
+	case OPER_SELECT:
+		oper_select_motion (self, event->x, event->y);
+		break;
+	case OPER_MOVE_SELECTION:
+		oper_move_selection_motion (self, event->x, event->y);
 		break;
 	case OPER_0:
+		if (event->state & GDK_BUTTON1_MASK
+			&& (event->x != self->priv->drag_start_pos.x
+			|| event->y != self->priv->drag_start_pos.y))
+		{
+			switch (self->priv->drag_operation)
+			{
+			case OPER_SELECT:
+				oper_select_begin (self, event->x, event->y);
+				break;
+			case OPER_MOVE_SELECTION:
+				oper_move_selection_begin (self, event->x, event->y);
+				break;
+			}
+		}
 		check_terminals (self, event->x, event->y);
 		break;
 	}
@@ -1281,39 +1509,50 @@ static gboolean
 on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
 	LdCanvas *self;
+	AddObjectData *data;
+	LdDiagramObject *object;
 
+	if (event->button != 1)
+		return FALSE;
 	if (!gtk_widget_has_focus (widget))
 		gtk_widget_grab_focus (widget);
 
 	self = LD_CANVAS (widget);
+	if (!self->priv->diagram)
+		return FALSE;
+
+	self->priv->drag_operation = OPER_0;
 	switch (self->priv->operation)
 	{
-		AddObjectData *data;
-
 	case OPER_ADD_OBJECT:
 		data = &OPER_DATA (self, add_object);
 
 		queue_object_draw (self, data->object);
 		move_object_to_coords (self, data->object, event->x, event->y);
-
-		if (self->priv->diagram)
-			ld_diagram_insert_object (self->priv->diagram, data->object, -1);
+		ld_diagram_insert_object (self->priv->diagram, data->object, -1);
 
 		/* XXX: "cancel" causes confusion. */
 		ld_canvas_real_cancel_operation (self);
 		break;
 	case OPER_0:
-		if (self->priv->diagram)
-		{
-			LdDiagramObject *object;
+		self->priv->drag_start_pos.x = event->x;
+		self->priv->drag_start_pos.y = event->y;
 
+		object = get_object_at_coords (self, event->x, event->y);
+		if (!object)
+		{
+			ld_diagram_unselect_all (self->priv->diagram);
+			self->priv->drag_operation = OPER_SELECT;
+		}
+		else if (!is_object_selected (self, object))
+		{
 			if (event->state != GDK_SHIFT_MASK)
 				ld_diagram_unselect_all (self->priv->diagram);
-
-			object = get_object_at_coords (self, event->x, event->y);
-			if (object)
-				ld_diagram_select (self->priv->diagram, object);
+			ld_diagram_select (self->priv->diagram, object);
+			self->priv->drag_operation = OPER_MOVE_SELECTION;
 		}
+		else
+			self->priv->drag_operation = OPER_MOVE_SELECTION;
 		break;
 	}
 	return FALSE;
@@ -1322,6 +1561,32 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 static gboolean
 on_button_release (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
+	LdCanvas *self;
+	LdDiagramObject *object;
+
+	if (event->button != 1)
+		return FALSE;
+
+	self = LD_CANVAS (widget);
+	if (!self->priv->diagram)
+		return FALSE;
+
+	switch (self->priv->operation)
+	{
+	case OPER_SELECT:
+	case OPER_MOVE_SELECTION:
+		ld_canvas_real_cancel_operation (self);
+		break;
+	case OPER_0:
+		object = get_object_at_coords (self, event->x, event->y);
+		if (object && is_object_selected (self, object))
+		{
+			if (!(event->state & GDK_SHIFT_MASK))
+				ld_diagram_unselect_all (self->priv->diagram);
+			ld_diagram_select (self->priv->diagram, object);
+		}
+		break;
+	}
 	return FALSE;
 }
 
@@ -1382,6 +1647,9 @@ on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 	draw_grid (widget, &data);
 	draw_diagram (widget, &data);
 	draw_terminal (widget, &data);
+
+	if (data.self->priv->operation == OPER_SELECT)
+		oper_select_draw (widget, &data);
 
 	cairo_destroy (data.cr);
 	return FALSE;

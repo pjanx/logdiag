@@ -1662,6 +1662,7 @@ draw_grid (GtkWidget *widget, DrawData *data)
 	gint grid_factor;
 	gdouble x_init, y_init;
 	gdouble x, y;
+	gdouble x_round, y_round;
 
 	grid_step = data->scale;
 	grid_factor = 1;
@@ -1694,8 +1695,10 @@ draw_grid (GtkWidget *widget, DrawData *data)
 		for (y = y_init; y <= data->exposed_rect.y + data->exposed_rect.height;
 			 y += grid_step)
 		{
-			cairo_move_to (data->cr, x, y);
-			cairo_line_to (data->cr, x, y);
+			x_round = floor (x) + 0.5;
+			y_round = floor (y) + 0.5;
+			cairo_move_to (data->cr, x_round, y_round);
+			cairo_line_to (data->cr, x_round, y_round);
 		}
 	}
 	cairo_stroke (data->cr);

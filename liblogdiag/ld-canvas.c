@@ -1056,6 +1056,11 @@ get_symbol_area (LdCanvas *self, LdDiagramSymbol *symbol, LdRectangle *rect)
 		object_y + area.y + area.height,
 		&x2, &y2);
 
+	x1 = floor (x1);
+	y1 = floor (y1);
+	x2 = ceil (x2);
+	y2 = ceil (y2);
+
 	rect->x = x1;
 	rect->y = y1;
 	rect->width  = x2 - x1;

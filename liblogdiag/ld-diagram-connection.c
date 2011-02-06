@@ -186,6 +186,7 @@ ld_diagram_connection_get_points (LdDiagramConnection *self)
 		if (read_point_node (iter->data, &points->points[points->length]))
 			points->length++;
 	}
+	g_list_free (point_node_list);
 	return points;
 }
 
@@ -283,7 +284,7 @@ ld_diagram_connection_set_points (LdDiagramConnection *self,
 	action_data->old_node = node ? json_node_copy (node) : NULL;
 
 	node = json_node_new (JSON_NODE_ARRAY);
-	json_node_set_array (node, array);
+	json_node_take_array (node, array);
 	action_data->new_node = json_node_copy (node);
 
 	json_object_set_member (storage, "points", node);

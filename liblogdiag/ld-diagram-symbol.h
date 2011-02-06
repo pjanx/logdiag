@@ -53,7 +53,7 @@ struct _LdDiagramSymbolClass
 GType ld_diagram_symbol_get_type (void) G_GNUC_CONST;
 
 LdDiagramSymbol *ld_diagram_symbol_new (JsonObject *storage);
-const gchar *ld_diagram_symbol_get_class (LdDiagramSymbol *self);
+gchar *ld_diagram_symbol_get_class (LdDiagramSymbol *self);
 void ld_diagram_symbol_set_class (LdDiagramSymbol *self, const gchar *klass);
 
 

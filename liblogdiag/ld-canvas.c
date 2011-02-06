@@ -1022,11 +1022,16 @@ is_object_selected (LdCanvas *self, LdDiagramObject *object)
 static LdSymbol *
 resolve_diagram_symbol (LdCanvas *self, LdDiagramSymbol *diagram_symbol)
 {
+	LdSymbol *symbol;
+	gchar *klass;
+
 	if (!self->priv->library)
 		return NULL;
 
-	return ld_library_find_symbol (self->priv->library,
-		ld_diagram_symbol_get_class (diagram_symbol));
+	klass = ld_diagram_symbol_get_class (diagram_symbol);
+	symbol = ld_library_find_symbol (self->priv->library, klass);
+	g_free (klass);
+	return symbol;
 }
 
 static gboolean
@@ -1789,8 +1794,11 @@ draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data)
 	/* TODO: Resolve this better; draw a cross or whatever. */
 	if (!symbol)
 	{
-		g_warning ("cannot find symbol `%s' in the library",
-			ld_diagram_symbol_get_class (diagram_symbol));
+		gchar *klass;
+
+		klass = ld_diagram_symbol_get_class (diagram_symbol);
+		g_warning ("cannot find symbol `%s' in the library", klass);
+		g_free (klass);
 		return;
 	}
 

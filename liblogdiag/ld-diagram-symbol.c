@@ -116,10 +116,10 @@ ld_diagram_symbol_new (JsonObject *storage)
  *
  * Return value: the class of the symbol.
  */
-const gchar *
+gchar *
 ld_diagram_symbol_get_class (LdDiagramSymbol *self)
 {
-	const gchar *klass;
+	gchar *klass;
 
 	g_return_val_if_fail (LD_IS_DIAGRAM_SYMBOL (self), NULL);
 	g_object_get (self, "class", &klass, NULL);

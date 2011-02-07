@@ -607,8 +607,8 @@ on_category_toggle (GtkToggleButton *toggle_button, gpointer user_data)
 			item->scale = data->menu_height * 0.5
 				/ MAX (ABS (area.y), ABS (area.y + area.height)) * 0.5;
 			item->width = data->menu_height * 0.5 + item->scale * area.width;
-			item->dx = item->width * 0.5 + item->scale * (area.width * 0.5
-				- MAX (ABS (area.x), ABS (area.x + area.width)));
+			item->dx = item->width * 0.5 + item->scale
+				* (area.width * 0.5 - ABS (area.x + area.width));
 
 			menu_width += item++->width;
 		}

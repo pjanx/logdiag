@@ -3,6 +3,9 @@
 logdiag is a schematic editor written in GTK+. It focuses on simplicity,  
 usability and openness.  
 
+__This software is considered to be alpha quality and cannot be recommended  
+for regular usage.__  
+
 ## Requirements
 
 Runtime dependencies:  
@@ -16,9 +19,10 @@ Build dependencies:
 
  - CMake &gt;= 2.6
 
-## Installation on Unix-like systems
+## Installation from sources on Unix-like systems
 
-First check that you have all the required dependencies installed.  
+First check that you have all the required dependencies installed, including  
+all development packages, if your distribution provides them.  
 
 Reserve a directory for an out-of-source build:  
     $ mkdir build
@@ -30,7 +34,7 @@ the application to be installed. The default is _/usr/local_.
 
 Now you have two basic choices of installing the application:  
 
-1. Using _make install_:
+1. Using _make install_:  
        # make install
 
 2. Using _cpack_; you have to choose a package format understood by your  

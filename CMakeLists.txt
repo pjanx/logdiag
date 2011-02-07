@@ -284,7 +284,7 @@ endif (WIN32)
 
 # CPack
 set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Schematic editor")
-set (CPACK_PACKAGE_VENDOR "Přemysl Janouch")
+set (CPACK_PACKAGE_VENDOR "Premysl Janouch")
 set (CPACK_PACKAGE_CONTACT "p.janouch@gmail.com")
 set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set (CPACK_PACKAGE_VERSION_MAJOR ${project_VERSION_MAJOR})
@@ -307,6 +307,9 @@ set (CPACK_NSIS_CREATE_ICONS_EXTRA
 	"CreateShortCut '\$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\logdiag.lnk' '\$INSTDIR\\\\logdiag.exe'")
 set (CPACK_NSIS_DELETE_ICONS_EXTRA
 	"Delete '\$SMPROGRAMS\\\\$MUI_TEMP\\\\logdiag.lnk'")
+
+string (REPLACE "http://" "http:\\\\\\\\" project_URL_NSIS "${project_URL}")
+set (CPACK_NSIS_URL_INFO_ABOUT "${project_URL_NSIS}")
 
 set (CPACK_DEBIAN_PACKAGE_DEPENDS
 	"libgtk2.0-0 (>= 2.12), libjson-glib-1.0-0 (>= 0.10.4), liblua5.1-0, librsvg2-common")

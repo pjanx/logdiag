@@ -48,7 +48,7 @@ if (WIN32)
 
 	add_custom_target (win32-depends COMMAND ${CMAKE_COMMAND} -P
 		${CMAKE_CURRENT_SOURCE_DIR}/Win32Depends.cmake
-		WORKING_DIRECTORY ${WIN32_DEPENDS_PATH})
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 	add_custom_target (win32-depends-clean COMMAND ${CMAKE_COMMAND} -E
 		remove_directory ${WIN32_DEPENDS_PATH})
 endif (WIN32)

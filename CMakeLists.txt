@@ -310,6 +310,10 @@ set (CPACK_DEBIAN_PACKAGE_DEPENDS "libgtk2.0-0 (>= 2.12), libjson-glib-1.0-0 (>=
 set (CPACK_DEBIAN_PACKAGE_BUILDS_DEPENDS "libgtk2.0-dev (>= 2.12), libjson-glib-dev (>= 0.10.4), liblua5.1-0-dev")
 set (CPACK_DEBIAN_PACKAGE_SECTION "Electronics")
 
+set (CPACK_RPM_PACKAGE_REQUIRES "gtk2 >= 2.12, json-glib >= 0.10.4, lua = 5.1, librsvg2")
+set (CPACK_RPM_PACKAGE_GROUP "Graphics")
+set (CPACK_RPM_PACKAGE_LICENSE "BSD")
+
 set (CPACK_SOURCE_GENERATOR "TGZ;ZIP")
 set (CPACK_SOURCE_IGNORE_FILES "/.git;/build;/win32-depends;/liblogdiag/ld-marshal.[ch]")
 set (CPACK_SOURCE_PACKAGE_FILE_NAME

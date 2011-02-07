@@ -156,11 +156,12 @@ endforeach (pkg_set)
 file (WRITE ${working_dir}/etc/gtk-2.0/gtkrc
 	"gtk-theme-name = \"MS-Windows\"")
 
-set (gdk_pixbuf_libdir ${working_dir}/lib/gdk-pixbuf-2.0/2.10.0)
+set (gdk_pixbuf_libdir lib/gdk-pixbuf-2.0/2.10.0)
 set (ENV{GDK_PIXBUF_MODULE_FILE} ${gdk_pixbuf_libdir}/loaders.cache)
 set (ENV{GDK_PIXBUF_MODULEDIR} ${gdk_pixbuf_libdir}/loaders)
 execute_process (COMMAND
 	${working_dir}/bin/gdk-pixbuf-query-loaders --update-cache
+	WORKING_DIRECTORY "${working_dir}"
 	RESULT_VARIABLE result)
 if (result)
 	message (FATAL_ERROR "gdk-pixbuf-query-loaders failed")

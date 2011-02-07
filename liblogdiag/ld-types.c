@@ -90,7 +90,7 @@ DEFINE_BOXED_TRIVIAL_FREE (LdPoint, ld_point)
  * Compute the distance between two points.
  */
 gdouble
-ld_point_distance (LdPoint *self, gdouble x, gdouble y)
+ld_point_distance (const LdPoint *self, gdouble x, gdouble y)
 {
 	gdouble dx, dy;
 
@@ -292,22 +292,6 @@ DEFINE_BOXED_TRIVIAL_COPY (LdRectangle, ld_rectangle)
 DEFINE_BOXED_TRIVIAL_FREE (LdRectangle, ld_rectangle)
 
 /**
- * ld_rectangle_contains:
- * @self: an #LdRectangle structure.
- * @x: the X coordinate of the point to be checked.
- * @y: the Y coordinate of the point to be checked.
- *
- * Return value: %TRUE if the rectangle contains the specified point.
- */
-gboolean
-ld_rectangle_contains (LdRectangle *self, gdouble x, gdouble y)
-{
-	g_return_val_if_fail (self != NULL, FALSE);
-	return (x >= self->x && x <= self->x + self->width
-	     && y >= self->y && y <= self->y + self->height);
-}
-
-/**
  * ld_rectangle_intersects:
  * @self: an #LdRectangle structure.
  * @rect: an #LdRectangle to be checked for intersection.
@@ -315,7 +299,7 @@ ld_rectangle_contains (LdRectangle *self, gdouble x, gdouble y)
  * Return value: %TRUE if the two rectangles intersect.
  */
 gboolean
-ld_rectangle_intersects (LdRectangle *self, LdRectangle *rect)
+ld_rectangle_intersects (const LdRectangle *self, const LdRectangle *rect)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (rect != NULL, FALSE);
@@ -324,6 +308,42 @@ ld_rectangle_intersects (LdRectangle *self, LdRectangle *rect)
 	      || self->y > rect->y + rect->height
 	      || self->x + self->width  < rect->x
 	      || self->y + self->height < rect->y);
+}
+
+/**
+ * ld_rectangle_contains:
+ * @self: an #LdRectangle structure.
+ * @rect: an #LdRectangle to be checked for containment.
+ *
+ * Return value: %TRUE if @self fully contains @rect.
+ */
+gboolean
+ld_rectangle_contains (const LdRectangle *self, const LdRectangle *rect)
+{
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (rect != NULL, FALSE);
+
+	return (self->x <= rect->x
+	     && self->y <= rect->y
+	     && self->x + self->width  >= rect->x + rect->width
+	     && self->y + self->height >= rect->y + rect->height);
+}
+
+/**
+ * ld_rectangle_contains_point:
+ * @self: an #LdRectangle structure.
+ * @point: the point to be checked.
+ *
+ * Return value: %TRUE if the rectangle contains the specified point.
+ */
+gboolean
+ld_rectangle_contains_point (const LdRectangle *self, const LdPoint *point)
+{
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (point != NULL, FALSE);
+
+	return (point->x >= self->x && point->x <= self->x + self->width
+	     && point->y >= self->y && point->y <= self->y + self->height);
 }
 
 /**

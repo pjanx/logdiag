@@ -39,7 +39,7 @@ GType ld_point_get_type (void) G_GNUC_CONST;
 
 LdPoint *ld_point_copy (const LdPoint *self);
 void ld_point_free (LdPoint *self);
-gdouble ld_point_distance (LdPoint *self, gdouble x, gdouble y);
+gdouble ld_point_distance (const LdPoint *self, gdouble x, gdouble y);
 
 
 /**
@@ -88,8 +88,12 @@ GType ld_rectangle_get_type (void) G_GNUC_CONST;
 
 LdRectangle *ld_rectangle_copy (const LdRectangle *self);
 void ld_rectangle_free (LdRectangle *self);
-gboolean ld_rectangle_contains (LdRectangle *self, gdouble x, gdouble y);
-gboolean ld_rectangle_intersects (LdRectangle *self, LdRectangle *rect);
+gboolean ld_rectangle_intersects (const LdRectangle *self,
+	const LdRectangle *rect);
+gboolean ld_rectangle_contains (const LdRectangle *self,
+	const LdRectangle *rect);
+gboolean ld_rectangle_contains_point (const LdRectangle *self,
+	const LdPoint *point);
 void ld_rectangle_extend (LdRectangle *self, gdouble border);
 
 

@@ -61,11 +61,13 @@ enum
 {
 	OPER_0,
 	OPER_ADD_OBJECT,
+	OPER_CONNECT,
 	OPER_SELECT,
 	OPER_MOVE_SELECTION
 };
 
 typedef struct _AddObjectData AddObjectData;
+typedef struct _ConnectData ConnectData;
 typedef struct _SelectData SelectData;
 typedef struct _MoveSelectionData MoveSelectionData;
 
@@ -73,6 +75,12 @@ struct _AddObjectData
 {
 	LdDiagramObject *object;
 	gboolean visible;
+};
+
+struct _ConnectData
+{
+	LdDiagramConnection *connection;
+	LdPoint origin;
 };
 
 struct _SelectData
@@ -115,7 +123,7 @@ struct _LdCanvasColor
  * @y: the Y coordinate of the center of view.
  * @zoom: the current zoom of the canvas.
  * @terminal: position of the highlighted terminal.
- * @terminal_highlighted: whether a terminal is highlighted.
+ * @terminal_hovered: whether a terminal is hovered.
  * @drag_start_pos: position of the mouse pointer when dragging started.
  * @drag_operation: the operation to start when dragging starts.
  * @operation: the current operation.
@@ -136,7 +144,7 @@ struct _LdCanvasPrivate
 	gdouble zoom;
 
 	LdPoint terminal;
-	gboolean terminal_highlighted;
+	gboolean terminal_hovered;
 
 	LdPoint drag_start_pos;
 	gint drag_operation;
@@ -145,6 +153,7 @@ struct _LdCanvasPrivate
 	union
 	{
 		AddObjectData add_object;
+		ConnectData connect;
 		SelectData select;
 		MoveSelectionData move_selection;
 	}
@@ -203,46 +212,76 @@ static void diagram_disconnect_signals (LdCanvas *self);
 static gdouble ld_canvas_get_base_unit_in_px (GtkWidget *self);
 static gdouble ld_canvas_get_scale_in_px (LdCanvas *self);
 
+/* Helper functions. */
 static void ld_canvas_color_set (LdCanvasColor *color,
 	gdouble r, gdouble g, gdouble b, gdouble a);
 static void ld_canvas_color_apply (LdCanvasColor *color, cairo_t *cr);
 
+static gdouble point_to_line_segment_distance
+	(const LdPoint *point, const LdPoint *p1, const LdPoint *p2);
+
+/* Generic functions. */
+static gboolean object_hit_test (LdCanvas *self,
+	LdDiagramObject *object, const LdPoint *point);
+static gboolean get_object_clip_area (LdCanvas *self,
+	LdDiagramObject *object, LdRectangle *rect);
+
+static void move_object_to_point (LdCanvas *self, LdDiagramObject *object,
+	const LdPoint *point);
+static LdDiagramObject *get_object_at_point (LdCanvas *self,
+	const LdPoint *point);
+
 static void move_selection (LdCanvas *self, gdouble dx, gdouble dy);
-static void move_object_to_coords (LdCanvas *self, LdDiagramObject *object,
-	gdouble x, gdouble y);
-static LdDiagramObject *get_object_at_coords (LdCanvas *self,
-	gdouble x, gdouble y);
 static gboolean is_object_selected (LdCanvas *self, LdDiagramObject *object);
-static LdSymbol *resolve_diagram_symbol (LdCanvas *self,
-	LdDiagramSymbol *diagram_symbol);
-static gboolean get_symbol_area (LdCanvas *self, LdDiagramSymbol *symbol,
-	LdRectangle *rect);
-static gboolean get_symbol_clip_area (LdCanvas *self, LdDiagramSymbol *symbol,
-	LdRectangle *rect);
-static gboolean get_object_area (LdCanvas *self, LdDiagramObject *object,
-	LdRectangle *rect);
-static gboolean object_hit_test (LdCanvas *self, LdDiagramObject *object,
-	gdouble x, gdouble y);
-static void check_terminals (LdCanvas *self, gdouble x, gdouble y);
-static void hide_terminals (LdCanvas *self);
+
 static void queue_draw (LdCanvas *self, LdRectangle *rect);
 static void queue_object_draw (LdCanvas *self, LdDiagramObject *object);
+
+/* Symbol terminals. */
+static void check_terminals (LdCanvas *self, const LdPoint *point);
+static void hide_terminals (LdCanvas *self);
 static void queue_terminal_draw (LdCanvas *self, LdPoint *terminal);
 
+/* Diagram symbol. */
+static gboolean symbol_hit_test (LdCanvas *self,
+	LdDiagramSymbol *symbol, const LdPoint *point);
+static gboolean get_symbol_clip_area (LdCanvas *self,
+	LdDiagramSymbol *symbol, LdRectangle *rect);
+
+static gboolean get_symbol_area (LdCanvas *self,
+	LdDiagramSymbol *symbol, LdRectangle *rect);
+static LdSymbol *resolve_symbol (LdCanvas *self,
+	LdDiagramSymbol *diagram_symbol);
+
+/* Diagram connection. */
+static gboolean connection_hit_test (LdCanvas *self,
+	LdDiagramConnection *connection, const LdPoint *point);
+static gboolean get_connection_clip_area (LdCanvas *self,
+	LdDiagramConnection *connection, LdRectangle *rect);
+
+static gboolean get_connection_area (LdCanvas *self,
+	LdDiagramConnection *connection, LdRectangle *rect);
+
+/* Operations. */
 static void ld_canvas_real_cancel_operation (LdCanvas *self);
 static void oper_add_object_end (LdCanvas *self);
 
-static void oper_select_begin (LdCanvas *self, gdouble x, gdouble y);
+static void oper_connect_begin (LdCanvas *self, const LdPoint *point);
+static void oper_connect_end (LdCanvas *self);
+static void oper_connect_motion (LdCanvas *self, const LdPoint *point);
+
+static void oper_select_begin (LdCanvas *self, const LdPoint *point);
 static void oper_select_end (LdCanvas *self);
 static void oper_select_get_rectangle (LdCanvas *self, LdRectangle *rect);
 static void oper_select_queue_draw (LdCanvas *self);
 static void oper_select_draw (GtkWidget *widget, DrawData *data);
-static void oper_select_motion (LdCanvas *self, gdouble x, gdouble y);
+static void oper_select_motion (LdCanvas *self, const LdPoint *point);
 
-static void oper_move_selection_begin (LdCanvas *self, gdouble x, gdouble y);
+static void oper_move_selection_begin (LdCanvas *self, const LdPoint *point);
 static void oper_move_selection_end (LdCanvas *self);
-static void oper_move_selection_motion (LdCanvas *self, gdouble x, gdouble y);
+static void oper_move_selection_motion (LdCanvas *self, const LdPoint *point);
 
+/* Events, rendering. */
 static void simulate_motion (LdCanvas *self);
 static gboolean on_motion_notify (GtkWidget *widget, GdkEventMotion *event,
 	gpointer user_data);
@@ -262,6 +301,7 @@ static void draw_diagram (GtkWidget *widget, DrawData *data);
 static void draw_terminal (GtkWidget *widget, DrawData *data);
 static void draw_object (LdDiagramObject *diagram_object, DrawData *data);
 static void draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data);
+static void draw_connection (LdDiagramConnection *connection, DrawData *data);
 
 
 G_DEFINE_TYPE (LdCanvas, ld_canvas, GTK_TYPE_DRAWING_AREA);
@@ -957,6 +997,92 @@ ld_canvas_color_apply (LdCanvasColor *color, cairo_t *cr)
 	cairo_set_source_rgba (cr, color->r, color->g, color->b, color->a);
 }
 
+static gdouble
+point_to_line_segment_distance
+	(const LdPoint *point, const LdPoint *p1, const LdPoint *p2)
+{
+	gdouble dx, dy, u;
+
+	dx = p2->x - p1->x;
+	dy = p2->y - p1->y;
+
+	if (dx == 0. && dy == 0.)
+		return ld_point_distance (point, p1->x, p1->y);
+
+	/* Find projection of the point onto the line. */
+	u = ((point->x - p1->x) * dx + (point->y - p1->y) * dy)
+		/ (dx * dx + dy * dy);
+
+	/* The projection is beyond the line segment. */
+	if (u < 0.)
+		return ld_point_distance (point, p1->x, p1->y);
+	else if (u > 1.)
+		return ld_point_distance (point, p2->x, p2->y);
+
+	/* The projection is on the line segment. */
+	return ld_point_distance (point, p1->x + u * dx, p1->y + u * dy);
+}
+
+
+/* ===== Generic functions ================================================= */
+
+static gboolean
+object_hit_test (LdCanvas *self, LdDiagramObject *object, const LdPoint *point)
+{
+	if (LD_IS_DIAGRAM_SYMBOL (object))
+		return symbol_hit_test (self,
+			LD_DIAGRAM_SYMBOL (object), point);
+	if (LD_IS_DIAGRAM_CONNECTION (object))
+		return connection_hit_test (self,
+			LD_DIAGRAM_CONNECTION (object), point);
+	return FALSE;
+}
+
+static gboolean
+get_object_clip_area (LdCanvas *self,
+	LdDiagramObject *object, LdRectangle *rect)
+{
+	if (LD_IS_DIAGRAM_SYMBOL (object))
+		return get_symbol_clip_area (self,
+			LD_DIAGRAM_SYMBOL (object), rect);
+	if (LD_IS_DIAGRAM_CONNECTION (object))
+		return get_connection_clip_area (self,
+			LD_DIAGRAM_CONNECTION (object), rect);
+	return FALSE;
+}
+
+static void
+move_object_to_point (LdCanvas *self, LdDiagramObject *object,
+	const LdPoint *point)
+{
+	gdouble diagram_x, diagram_y;
+
+	ld_canvas_widget_to_diagram_coords (self,
+		point->x, point->y, &diagram_x, &diagram_y);
+	g_object_set (object,
+		"x", floor (diagram_x + 0.5),
+		"y", floor (diagram_y + 0.5),
+		NULL);
+}
+
+static LdDiagramObject *
+get_object_at_point (LdCanvas *self, const LdPoint *point)
+{
+	GList *objects, *iter;
+
+	/* Iterate from the top object downwards. */
+	objects = (GList *) ld_diagram_get_objects (self->priv->diagram);
+	for (iter = g_list_last (objects); iter; iter = g_list_previous (iter))
+	{
+		LdDiagramObject *object;
+
+		object = LD_DIAGRAM_OBJECT (iter->data);
+		if (object_hit_test (self, object, point))
+			return object;
+	}
+	return NULL;
+}
+
 static void
 move_selection (LdCanvas *self, gdouble dx, gdouble dy)
 {
@@ -984,34 +1110,6 @@ move_selection (LdCanvas *self, gdouble dx, gdouble dy)
 	ld_diagram_end_user_action (diagram);
 }
 
-static void
-move_object_to_coords (LdCanvas *self, LdDiagramObject *object,
-	gdouble x, gdouble y)
-{
-	gdouble dx, dy;
-
-	ld_canvas_widget_to_diagram_coords (self, x, y, &dx, &dy);
-	g_object_set (object, "x", floor (dx + 0.5), "y", floor (dy + 0.5), NULL);
-}
-
-static LdDiagramObject *
-get_object_at_coords (LdCanvas *self, gdouble x, gdouble y)
-{
-	GList *objects, *iter;
-
-	/* Iterate from the top object downwards. */
-	objects = (GList *) ld_diagram_get_objects (self->priv->diagram);
-	for (iter = g_list_last (objects); iter; iter = g_list_previous (iter))
-	{
-		LdDiagramObject *object;
-
-		object = LD_DIAGRAM_OBJECT (iter->data);
-		if (object_hit_test (self, object, x, y))
-			return object;
-	}
-	return NULL;
-}
-
 static gboolean
 is_object_selected (LdCanvas *self, LdDiagramObject *object)
 {
@@ -1019,19 +1117,145 @@ is_object_selected (LdCanvas *self, LdDiagramObject *object)
 		object) != NULL;
 }
 
-static LdSymbol *
-resolve_diagram_symbol (LdCanvas *self, LdDiagramSymbol *diagram_symbol)
+static void
+queue_draw (LdCanvas *self, LdRectangle *rect)
 {
-	LdSymbol *symbol;
-	gchar *klass;
+	LdRectangle area;
 
-	if (!self->priv->library)
-		return NULL;
+	area = *rect;
+	ld_rectangle_extend (&area, QUEUE_DRAW_EXTEND);
+	gtk_widget_queue_draw_area (GTK_WIDGET (self),
+		area.x, area.y, area.width, area.height);
+}
 
-	klass = ld_diagram_symbol_get_class (diagram_symbol);
-	symbol = ld_library_find_symbol (self->priv->library, klass);
-	g_free (klass);
-	return symbol;
+static void
+queue_object_draw (LdCanvas *self, LdDiagramObject *object)
+{
+	LdRectangle rect;
+
+	if (!get_object_clip_area (self, object, &rect))
+		return;
+	queue_draw (self, &rect);
+}
+
+
+/* ===== Symbol terminals ================================================== */
+
+static void
+check_terminals (LdCanvas *self, const LdPoint *point)
+{
+	GList *objects, *iter;
+	LdDiagramSymbol *closest_symbol = NULL;
+	gdouble closest_distance = TERMINAL_HOVER_TOLERANCE;
+	LdPoint closest_terminal;
+
+	objects = (GList *) ld_diagram_get_objects (self->priv->diagram);
+	for (iter = objects; iter; iter = g_list_next (iter))
+	{
+		LdDiagramObject *diagram_object;
+		gdouble object_x, object_y;
+		LdDiagramSymbol *diagram_symbol;
+		LdSymbol *symbol;
+		const LdPointArray *terminals;
+		guint i;
+
+		if (!LD_IS_DIAGRAM_SYMBOL (iter->data))
+			continue;
+
+		diagram_symbol = LD_DIAGRAM_SYMBOL (iter->data);
+		symbol = resolve_symbol (self, diagram_symbol);
+		if (!symbol)
+			continue;
+
+		diagram_object = LD_DIAGRAM_OBJECT (iter->data);
+		g_object_get (diagram_object, "x", &object_x, "y", &object_y, NULL);
+
+		terminals = ld_symbol_get_terminals (symbol);
+
+		for (i = 0; i < terminals->length; i++)
+		{
+			LdPoint cur_term, widget_coords;
+			gdouble distance;
+
+			cur_term = terminals->points[i];
+			cur_term.x += object_x;
+			cur_term.y += object_y;
+
+			ld_canvas_diagram_to_widget_coords (self,
+				cur_term.x, cur_term.y, &widget_coords.x, &widget_coords.y);
+			distance = ld_point_distance (&widget_coords, point->x, point->y);
+			if (distance <= closest_distance)
+			{
+				closest_symbol = diagram_symbol;
+				closest_distance = distance;
+				closest_terminal = cur_term;
+			}
+		}
+	}
+
+	hide_terminals (self);
+
+	if (closest_symbol)
+	{
+		self->priv->terminal_hovered = TRUE;
+		self->priv->terminal = closest_terminal;
+		queue_terminal_draw (self, &closest_terminal);
+	}
+}
+
+static void
+hide_terminals (LdCanvas *self)
+{
+	if (self->priv->terminal_hovered)
+	{
+		self->priv->terminal_hovered = FALSE;
+		queue_terminal_draw (self, &self->priv->terminal);
+	}
+}
+
+static void
+queue_terminal_draw (LdCanvas *self, LdPoint *terminal)
+{
+	LdRectangle rect;
+	LdPoint widget_coords;
+
+	ld_canvas_diagram_to_widget_coords (self,
+		terminal->x, terminal->y, &widget_coords.x, &widget_coords.y);
+
+	rect.x = widget_coords.x - TERMINAL_RADIUS;
+	rect.y = widget_coords.y - TERMINAL_RADIUS;
+	rect.width  = 2 * TERMINAL_RADIUS;
+	rect.height = 2 * TERMINAL_RADIUS;
+
+	queue_draw (self, &rect);
+}
+
+
+/* ===== Diagram symbol ==================================================== */
+
+static gboolean
+symbol_hit_test (LdCanvas *self, LdDiagramSymbol *symbol, const LdPoint *point)
+{
+	LdRectangle rect;
+
+	if (!get_symbol_area (self, symbol, &rect))
+		return FALSE;
+	ld_rectangle_extend (&rect, OBJECT_BORDER_TOLERANCE);
+	return ld_rectangle_contains_point (&rect, point);
+}
+
+static gboolean
+get_symbol_clip_area (LdCanvas *self,
+	LdDiagramSymbol *symbol, LdRectangle *rect)
+{
+	LdRectangle object_rect;
+
+	if (!get_symbol_area (self, symbol, &object_rect))
+		return FALSE;
+
+	*rect = object_rect;
+	ld_rectangle_extend (rect, SYMBOL_CLIP_TOLERANCE);
+	return TRUE;
 }
 
 static gboolean
@@ -1045,7 +1269,7 @@ get_symbol_area (LdCanvas *self, LdDiagramSymbol *symbol, LdRectangle *rect)
 
 	g_object_get (symbol, "x", &object_x, "y", &object_y, NULL);
 
-	library_symbol = resolve_diagram_symbol (self, symbol);
+	library_symbol = resolve_symbol (self, symbol);
 	if (library_symbol)
 		ld_symbol_get_area (library_symbol, &area);
 	else
@@ -1073,145 +1297,122 @@ get_symbol_area (LdCanvas *self, LdDiagramSymbol *symbol, LdRectangle *rect)
 	return TRUE;
 }
 
-static gboolean
-get_symbol_clip_area (LdCanvas *self, LdDiagramSymbol *symbol,
-	LdRectangle *rect)
+static LdSymbol *
+resolve_symbol (LdCanvas *self, LdDiagramSymbol *diagram_symbol)
 {
-	LdRectangle object_rect;
+	LdSymbol *symbol;
+	gchar *klass;
 
-	if (!get_object_area (self, LD_DIAGRAM_OBJECT (symbol), &object_rect))
-		return FALSE;
+	if (!self->priv->library)
+		return NULL;
 
-	*rect = object_rect;
-	ld_rectangle_extend (rect, SYMBOL_CLIP_TOLERANCE);
-	return TRUE;
+	klass = ld_diagram_symbol_get_class (diagram_symbol);
+	symbol = ld_library_find_symbol (self->priv->library, klass);
+	g_free (klass);
+	return symbol;
 }
 
+
+/* ===== Diagram connection ================================================ */
+
 static gboolean
-get_object_area (LdCanvas *self, LdDiagramObject *object, LdRectangle *rect)
+connection_hit_test (LdCanvas *self, LdDiagramConnection *connection,
+	const LdPoint *point)
 {
-	if (LD_IS_DIAGRAM_SYMBOL (object))
-		return get_symbol_area (self, LD_DIAGRAM_SYMBOL (object), rect);
+	gdouble object_x, object_y, length;
+	LdPointArray *points;
+	guint i;
+
+	g_object_get (connection, "x", &object_x, "y", &object_y, NULL);
+
+	points = ld_diagram_connection_get_points (connection);
+	if (points->length < 2)
+	{
+		ld_point_array_free (points);
+		return FALSE;
+	}
+
+	for (i = 0; i < points->length; i++)
+	{
+		ld_canvas_diagram_to_widget_coords (self,
+			points->points[i].x + object_x,
+			points->points[i].y + object_y,
+			&points->points[i].x,
+			&points->points[i].y);
+
+		if (!i)
+			continue;
+
+		length = point_to_line_segment_distance
+			(point, &points->points[i - 1], &points->points[i]);
+		if (length <= OBJECT_BORDER_TOLERANCE)
+		{
+			ld_point_array_free (points);
+			return TRUE;
+		}
+	}
+	ld_point_array_free (points);
 	return FALSE;
 }
 
 static gboolean
-object_hit_test (LdCanvas *self, LdDiagramObject *object, gdouble x, gdouble y)
+get_connection_clip_area (LdCanvas *self,
+	LdDiagramConnection *connection, LdRectangle *rect)
 {
-	LdRectangle rect;
+	return get_connection_area (self, connection, rect);
+}
 
-	if (!get_object_area (self, object, &rect))
+static gboolean
+get_connection_area (LdCanvas *self,
+	LdDiagramConnection *connection, LdRectangle *rect)
+{
+	gdouble x_origin, y_origin;
+	gdouble x, y, x_min, x_max, y_min, y_max;
+	LdPointArray *points;
+	guint i;
+
+	points = ld_diagram_connection_get_points (connection);
+	if (!points->length)
+	{
+		ld_point_array_free (points);
 		return FALSE;
-	ld_rectangle_extend (&rect, OBJECT_BORDER_TOLERANCE);
-	return ld_rectangle_contains (&rect, x, y);
-}
-
-static void
-check_terminals (LdCanvas *self, gdouble x, gdouble y)
-{
-	GList *objects, *iter;
-	LdDiagramSymbol *closest_symbol = NULL;
-	gdouble closest_distance = TERMINAL_HOVER_TOLERANCE;
-	LdPoint closest_terminal;
-
-	objects = (GList *) ld_diagram_get_objects (self->priv->diagram);
-	for (iter = objects; iter; iter = g_list_next (iter))
-	{
-		LdDiagramObject *diagram_object;
-		gdouble object_x, object_y;
-		LdDiagramSymbol *diagram_symbol;
-		LdSymbol *symbol;
-		const LdPointArray *terminals;
-		guint i;
-
-		if (!LD_IS_DIAGRAM_SYMBOL (iter->data))
-			continue;
-
-		diagram_symbol = LD_DIAGRAM_SYMBOL (iter->data);
-		symbol = resolve_diagram_symbol (self, diagram_symbol);
-		if (!symbol)
-			continue;
-
-		diagram_object = LD_DIAGRAM_OBJECT (iter->data);
-		g_object_get (diagram_object, "x", &object_x, "y", &object_y, NULL);
-
-		terminals = ld_symbol_get_terminals (symbol);
-
-		for (i = 0; i < terminals->length; i++)
-		{
-			LdPoint cur_term;
-			gdouble distance;
-
-			cur_term = terminals->points[i];
-			cur_term.x += object_x;
-			cur_term.y += object_y;
-			ld_canvas_diagram_to_widget_coords (self,
-				cur_term.x, cur_term.y, &cur_term.x, &cur_term.y);
-
-			distance = ld_point_distance (&cur_term, x, y);
-			if (distance <= closest_distance)
-			{
-				closest_symbol = diagram_symbol;
-				closest_distance = distance;
-				closest_terminal = cur_term;
-			}
-		}
 	}
 
-	hide_terminals (self);
+	g_object_get (connection, "x", &x_origin, "y", &y_origin, NULL);
 
-	if (closest_symbol)
+	ld_canvas_diagram_to_widget_coords (self,
+		x_origin + points->points[0].x,
+		y_origin + points->points[0].y,
+		&x, &y);
+
+	x_max = x_min = x;
+	y_max = y_min = y;
+
+	for (i = 1; i < points->length; i++)
 	{
-		self->priv->terminal_highlighted = TRUE;
-		self->priv->terminal = closest_terminal;
-		queue_terminal_draw (self, &closest_terminal);
+		ld_canvas_diagram_to_widget_coords (self,
+			x_origin + points->points[i].x,
+			y_origin + points->points[i].y,
+			&x, &y);
+
+		if (x < x_min)
+			x_min = x;
+		else if (x > x_max)
+			x_max = x;
+
+		if (y < y_min)
+			y_min = y;
+		else if (y > y_max)
+			y_max = y;
 	}
-}
 
-static void
-hide_terminals (LdCanvas *self)
-{
-	if (self->priv->terminal_highlighted)
-	{
-		self->priv->terminal_highlighted = FALSE;
-		queue_terminal_draw (self, &self->priv->terminal);
-	}
-}
+	rect->x = x_min;
+	rect->y = y_min;
+	rect->width  = x_max - x_min;
+	rect->height = y_max - y_min;
 
-static void
-queue_draw (LdCanvas *self, LdRectangle *rect)
-{
-	LdRectangle area;
-
-	area = *rect;
-	ld_rectangle_extend (&area, QUEUE_DRAW_EXTEND);
-	gtk_widget_queue_draw_area (GTK_WIDGET (self),
-		area.x, area.y, area.width, area.height);
-}
-
-static void
-queue_object_draw (LdCanvas *self, LdDiagramObject *object)
-{
-	if (LD_IS_DIAGRAM_SYMBOL (object))
-	{
-		LdRectangle rect;
-
-		if (!get_symbol_clip_area (self, LD_DIAGRAM_SYMBOL (object), &rect))
-			return;
-		queue_draw (self, &rect);
-	}
-}
-
-static void
-queue_terminal_draw (LdCanvas *self, LdPoint *terminal)
-{
-	LdRectangle rect;
-
-	rect.x = terminal->x - TERMINAL_RADIUS;
-	rect.y = terminal->y - TERMINAL_RADIUS;
-	rect.width  = 2 * TERMINAL_RADIUS;
-	rect.height = 2 * TERMINAL_RADIUS;
-	queue_draw (self, &rect);
+	ld_point_array_free (points);
+	return TRUE;
 }
 
 
@@ -1270,7 +1471,94 @@ oper_add_object_end (LdCanvas *self)
 }
 
 static void
-oper_select_begin (LdCanvas *self, gdouble x, gdouble y)
+oper_connect_begin (LdCanvas *self, const LdPoint *point)
+{
+	ConnectData *data;
+
+	ld_canvas_real_cancel_operation (self);
+
+	self->priv->operation = OPER_CONNECT;
+	self->priv->operation_end = oper_connect_end;
+
+	data = &OPER_DATA (self, connect);
+	data->connection = ld_diagram_connection_new (NULL);
+
+	data->origin = self->priv->terminal;
+	g_object_set (data->connection,
+		"x", data->origin.x,
+		"y", data->origin.y,
+		NULL);
+
+	self->priv->terminal_hovered = FALSE;
+
+	oper_connect_motion (self, point);
+}
+
+static void
+oper_connect_end (LdCanvas *self)
+{
+	ConnectData *data;
+
+	data = &OPER_DATA (self, connect);
+	queue_object_draw (self, LD_DIAGRAM_OBJECT (data->connection));
+
+	ld_diagram_insert_object (self->priv->diagram,
+		LD_DIAGRAM_OBJECT (data->connection), -1);
+
+	g_object_unref (data->connection);
+}
+
+static void
+oper_connect_motion (LdCanvas *self, const LdPoint *point)
+{
+	ConnectData *data;
+	LdPointArray *points;
+	gdouble diagram_x, diagram_y;
+
+	data = &OPER_DATA (self, connect);
+
+	/* Find an orthogonal path between the points. */
+	/* TODO: This alghorithm is pretty lame, needs to be improved. */
+	points = ld_point_array_sized_new (4);
+	points->length = 4;
+
+	points->points[0].x = 0;
+	points->points[0].y = 0;
+
+	ld_canvas_widget_to_diagram_coords (self,
+		point->x, point->y, &diagram_x, &diagram_y);
+	points->points[3].x = floor (diagram_x - data->origin.x + 0.5);
+	points->points[3].y = floor (diagram_y - data->origin.y + 0.5);
+
+	if (ABS (points->points[3].x) > ABS (points->points[3].y))
+	{
+		points->points[1].x = points->points[3].x / 2;
+		points->points[1].y = 0;
+		points->points[2].x = points->points[3].x / 2;
+		points->points[2].y = points->points[3].y;
+	}
+	else
+	{
+		points->points[1].x = 0;
+		points->points[1].y = points->points[3].y / 2;
+		points->points[2].x = points->points[3].x;
+		points->points[2].y = points->points[3].y / 2;
+	}
+
+	queue_object_draw (self, LD_DIAGRAM_OBJECT (data->connection));
+	ld_diagram_connection_set_points (data->connection, points);
+	queue_object_draw (self, LD_DIAGRAM_OBJECT (data->connection));
+	ld_point_array_free (points);
+
+	check_terminals (self, point);
+
+	if (self->priv->terminal.x == data->origin.x
+		&& self->priv->terminal.y == data->origin.y)
+		self->priv->terminal_hovered = FALSE;
+}
+
+static void
+oper_select_begin (LdCanvas *self, const LdPoint *point)
 {
 	SelectData *data;
 
@@ -1283,7 +1571,7 @@ oper_select_begin (LdCanvas *self, gdouble x, gdouble y)
 	data->drag_last_pos.x = self->priv->drag_start_pos.x;
 	data->drag_last_pos.y = self->priv->drag_start_pos.y;
 
-	oper_select_motion (self, x, y);
+	oper_select_motion (self, point);
 }
 
 static void
@@ -1339,17 +1627,16 @@ oper_select_draw (GtkWidget *widget, DrawData *data)
 }
 
 static void
-oper_select_motion (LdCanvas *self, gdouble x, gdouble y)
+oper_select_motion (LdCanvas *self, const LdPoint *point)
 {
 	SelectData *data;
 	GList *objects, *iter;
-	LdRectangle selection_rect, object_rect;
+	LdRectangle selection_rect, rect;
 
 	data = &OPER_DATA (self, select);
 
 	oper_select_queue_draw (self);
-	data->drag_last_pos.x = x;
-	data->drag_last_pos.y = y;
+	data->drag_last_pos = *point;
 	oper_select_queue_draw (self);
 
 	oper_select_get_rectangle (self, &selection_rect);
@@ -1360,11 +1647,21 @@ oper_select_motion (LdCanvas *self, gdouble x, gdouble y)
 		LdDiagramObject *object;
 
 		object = LD_DIAGRAM_OBJECT (iter->data);
-		if (!get_object_area (self, object, &object_rect))
-			continue;
+		if (LD_IS_DIAGRAM_SYMBOL (object))
+		{
+			if (!get_symbol_area (self,
+				LD_DIAGRAM_SYMBOL (object), &rect))
+				continue;
+		}
+		else if (LD_IS_DIAGRAM_CONNECTION (object))
+		{
+			if (!get_connection_area (self,
+				LD_DIAGRAM_CONNECTION (object), &rect))
+				continue;
+		}
 
-		ld_rectangle_extend (&object_rect, OBJECT_BORDER_TOLERANCE);
-		if (ld_rectangle_intersects (&object_rect, &selection_rect))
+		ld_rectangle_extend (&rect, OBJECT_BORDER_TOLERANCE);
+		if (ld_rectangle_contains (&selection_rect, &rect))
 			ld_diagram_select (self->priv->diagram, object);
 		else
 			ld_diagram_unselect (self->priv->diagram, object);
@@ -1372,7 +1669,7 @@ oper_select_motion (LdCanvas *self, gdouble x, gdouble y)
 }
 
 static void
-oper_move_selection_begin (LdCanvas *self, gdouble x, gdouble y)
+oper_move_selection_begin (LdCanvas *self, const LdPoint *point)
 {
 	MoveSelectionData *data;
 
@@ -1384,10 +1681,9 @@ oper_move_selection_begin (LdCanvas *self, gdouble x, gdouble y)
 	ld_diagram_begin_user_action (self->priv->diagram);
 
 	data = &OPER_DATA (self, move_selection);
-	data->move_origin.x = self->priv->drag_start_pos.x;
-	data->move_origin.y = self->priv->drag_start_pos.y;
+	data->move_origin = self->priv->drag_start_pos;
 
-	oper_move_selection_motion (self, x, y);
+	oper_move_selection_motion (self, point);
 }
 
 static void
@@ -1397,7 +1693,7 @@ oper_move_selection_end (LdCanvas *self)
 }
 
 static void
-oper_move_selection_motion (LdCanvas *self, gdouble x, gdouble y)
+oper_move_selection_motion (LdCanvas *self, const LdPoint *point)
 {
 	MoveSelectionData *data;
 	gdouble scale, dx, dy, move_x, move_y;
@@ -1406,8 +1702,8 @@ oper_move_selection_motion (LdCanvas *self, gdouble x, gdouble y)
 	scale = ld_canvas_get_scale_in_px (self);
 	data = &OPER_DATA (self, move_selection);
 
-	dx = x - data->move_origin.x;
-	dy = y - data->move_origin.y;
+	dx = point->x - data->move_origin.x;
+	dy = point->y - data->move_origin.y;
 
 	move_x = dx < 0 ? ceil (dx / scale) : floor (dx / scale);
 	move_y = dy < 0 ? ceil (dy / scale) : floor (dy / scale);
@@ -1457,8 +1753,12 @@ simulate_motion (LdCanvas *self)
 static gboolean
 on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 {
+	LdPoint point;
 	LdCanvas *self;
 	AddObjectData *add_data;
+
+	point.x = event->x;
+	point.y = event->y;
 
 	self = LD_CANVAS (widget);
 	switch (self->priv->operation)
@@ -1468,14 +1768,17 @@ on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 		add_data->visible = TRUE;
 
 		queue_object_draw (self, add_data->object);
-		move_object_to_coords (self, add_data->object, event->x, event->y);
+		move_object_to_point (self, add_data->object, &point);
 		queue_object_draw (self, add_data->object);
 		break;
+	case OPER_CONNECT:
+		oper_connect_motion (self, &point);
+		break;
 	case OPER_SELECT:
-		oper_select_motion (self, event->x, event->y);
+		oper_select_motion (self, &point);
 		break;
 	case OPER_MOVE_SELECTION:
-		oper_move_selection_motion (self, event->x, event->y);
+		oper_move_selection_motion (self, &point);
 		break;
 	case OPER_0:
 		if (event->state & GDK_BUTTON1_MASK
@@ -1484,15 +1787,18 @@ on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 		{
 			switch (self->priv->drag_operation)
 			{
+			case OPER_CONNECT:
+				oper_connect_begin (self, &point);
+				break;
 			case OPER_SELECT:
-				oper_select_begin (self, event->x, event->y);
+				oper_select_begin (self, &point);
 				break;
 			case OPER_MOVE_SELECTION:
-				oper_move_selection_begin (self, event->x, event->y);
+				oper_move_selection_begin (self, &point);
 				break;
 			}
 		}
-		check_terminals (self, event->x, event->y);
+		check_terminals (self, &point);
 		break;
 	}
 	return FALSE;
@@ -1521,6 +1827,7 @@ on_leave_notify (GtkWidget *widget, GdkEventCrossing *event, gpointer user_data)
 static gboolean
 on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
+	LdPoint point;
 	LdCanvas *self;
 	AddObjectData *data;
 	LdDiagramObject *object;
@@ -1529,6 +1836,9 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 		return FALSE;
 	if (!gtk_widget_has_focus (widget))
 		gtk_widget_grab_focus (widget);
+
+	point.x = event->x;
+	point.y = event->y;
 
 	self = LD_CANVAS (widget);
 	if (!self->priv->diagram)
@@ -1541,17 +1851,22 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 		data = &OPER_DATA (self, add_object);
 
 		queue_object_draw (self, data->object);
-		move_object_to_coords (self, data->object, event->x, event->y);
+		move_object_to_point (self, data->object, &point);
 		ld_diagram_insert_object (self->priv->diagram, data->object, -1);
 
 		/* XXX: "cancel" causes confusion. */
 		ld_canvas_real_cancel_operation (self);
 		break;
 	case OPER_0:
-		self->priv->drag_start_pos.x = event->x;
-		self->priv->drag_start_pos.y = event->y;
+		self->priv->drag_start_pos = point;
 
-		object = get_object_at_coords (self, event->x, event->y);
+		if (self->priv->terminal_hovered)
+		{
+			self->priv->drag_operation = OPER_CONNECT;
+			break;
+		}
+
+		object = get_object_at_point (self, &point);
 		if (!object)
 		{
 			ld_diagram_unselect_all (self->priv->diagram);
@@ -1574,11 +1889,15 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 static gboolean
 on_button_release (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
+	LdPoint point;
 	LdCanvas *self;
 	LdDiagramObject *object;
 
 	if (event->button != 1)
 		return FALSE;
+
+	point.x = event->x;
+	point.y = event->y;
 
 	self = LD_CANVAS (widget);
 	if (!self->priv->diagram)
@@ -1588,10 +1907,11 @@ on_button_release (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 	{
 	case OPER_SELECT:
 	case OPER_MOVE_SELECTION:
+	case OPER_CONNECT:
 		ld_canvas_real_cancel_operation (self);
 		break;
 	case OPER_0:
-		object = get_object_at_coords (self, event->x, event->y);
+		object = get_object_at_point (self, &point);
 		if (object && is_object_selected (self, object))
 		{
 			if (!(event->state & GDK_SHIFT_MASK))
@@ -1608,8 +1928,11 @@ on_scroll (GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
 {
 	gdouble prev_x, prev_y;
 	gdouble new_x, new_y;
+	LdPoint point;
 	LdCanvas *self;
 
+	point.x = event->x;
+	point.y = event->y;
 	self = LD_CANVAS (widget);
 
 	ld_canvas_widget_to_diagram_coords (self,
@@ -1634,7 +1957,7 @@ on_scroll (GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
 	self->priv->x += prev_x - new_x;
 	self->priv->y += prev_y - new_y;
 
-	check_terminals (self, event->x, event->y);
+	check_terminals (self, &point);
 	return TRUE;
 }
 
@@ -1721,16 +2044,20 @@ static void
 draw_terminal (GtkWidget *widget, DrawData *data)
 {
 	LdCanvasPrivate *priv;
+	LdPoint widget_coords;
 
 	priv = data->self->priv;
-	if (!priv->terminal_highlighted)
+	if (!priv->terminal_hovered)
 		return;
 
 	ld_canvas_color_apply (COLOR_GET (data->self, COLOR_TERMINAL), data->cr);
 	cairo_set_line_width (data->cr, 1);
 
 	cairo_new_path (data->cr);
-	cairo_arc (data->cr, priv->terminal.x, priv->terminal.y,
+	ld_canvas_diagram_to_widget_coords (data->self,
+		priv->terminal.x, priv->terminal.y,
+		&widget_coords.x, &widget_coords.y);
+	cairo_arc (data->cr, widget_coords.x, widget_coords.y,
 		TERMINAL_RADIUS, 0, 2 * G_PI);
 	cairo_stroke (data->cr);
 }
@@ -1753,12 +2080,17 @@ draw_diagram (GtkWidget *widget, DrawData *data)
 
 	switch (data->self->priv->operation)
 	{
-		AddObjectData *op_data;
+		AddObjectData *add_data;
+		ConnectData *connect_data;
 
 	case OPER_ADD_OBJECT:
-		op_data = &OPER_DATA (data->self, add_object);
-		if (op_data->visible)
-			draw_object (op_data->object, data);
+		add_data = &OPER_DATA (data->self, add_object);
+		if (add_data->visible)
+			draw_object (add_data->object, data);
+		break;
+	case OPER_CONNECT:
+		connect_data = &OPER_DATA (data->self, connect);
+		draw_object (LD_DIAGRAM_OBJECT (connect_data->connection), data);
 		break;
 	}
 
@@ -1780,6 +2112,8 @@ draw_object (LdDiagramObject *diagram_object, DrawData *data)
 
 	if (LD_IS_DIAGRAM_SYMBOL (diagram_object))
 		draw_symbol (LD_DIAGRAM_SYMBOL (diagram_object), data);
+	else if (LD_IS_DIAGRAM_CONNECTION (diagram_object))
+		draw_connection (LD_DIAGRAM_CONNECTION (diagram_object), data);
 }
 
 static void
@@ -1789,7 +2123,7 @@ draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data)
 	LdRectangle clip_rect;
 	gdouble x, y;
 
-	symbol = resolve_diagram_symbol (data->self, diagram_symbol);
+	symbol = resolve_symbol (data->self, diagram_symbol);
 
 	/* TODO: Resolve this better; draw a cross or whatever. */
 	if (!symbol)
@@ -1813,13 +2147,51 @@ draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data)
 	cairo_clip (data->cr);
 
 	/* TODO: Rotate the space for other orientations. */
-	ld_canvas_diagram_to_widget_coords (data->self,
-		ld_diagram_object_get_x (LD_DIAGRAM_OBJECT (diagram_symbol)),
-		ld_diagram_object_get_y (LD_DIAGRAM_OBJECT (diagram_symbol)),
-		&x, &y);
+	g_object_get (diagram_symbol, "x", &x, "y", &y, NULL);
+	ld_canvas_diagram_to_widget_coords (data->self, x, y, &x, &y);
 	cairo_translate (data->cr, x, y);
 	cairo_scale (data->cr, data->scale, data->scale);
-	ld_symbol_draw (symbol, data->cr);
 
+	ld_symbol_draw (symbol, data->cr);
 	cairo_restore (data->cr);
+}
+
+static void
+draw_connection (LdDiagramConnection *connection, DrawData *data)
+{
+	LdRectangle clip_rect;
+	LdPointArray *points;
+	gdouble x, y;
+	guint i;
+
+	if (!get_connection_clip_area (data->self, connection, &clip_rect)
+		|| !ld_rectangle_intersects (&clip_rect, &data->exposed_rect))
+		return;
+
+	points = ld_diagram_connection_get_points (connection);
+	if (points->length < 2)
+		goto draw_connection_end;
+
+	cairo_save (data->cr);
+
+	g_object_get (connection, "x", &x, "y", &y, NULL);
+	ld_canvas_diagram_to_widget_coords (data->self, x, y, &x, &y);
+	cairo_translate (data->cr, x, y);
+	cairo_scale (data->cr, data->scale, data->scale);
+
+	for (i = 1; i < points->length; i++)
+	{
+		cairo_move_to (data->cr,
+			points->points[i - 1].x,
+			points->points[i - 1].y);
+		cairo_line_to (data->cr,
+			points->points[i].x,
+			points->points[i].y);
+		cairo_stroke (data->cr);
+	}
+	cairo_restore (data->cr);
+
+draw_connection_end:
+	ld_point_array_free (points);
+	return;
 }

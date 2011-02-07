@@ -306,8 +306,7 @@ set (CPACK_NSIS_INSTALLED_ICON_NAME "logdiag.exe")
 set (CPACK_NSIS_CREATE_ICONS_EXTRA
 	"CreateShortCut '\$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\logdiag.lnk' '\$INSTDIR\\\\logdiag.exe'")
 set (CPACK_NSIS_DELETE_ICONS_EXTRA
-	"!insertmacro MUI_STARTMENU_GETFOLDER Application $SM_FOLDER
-	Delete '\$SMPROGRAMS\\\\$SM_FOLDER\\\\logdiag.lnk'")
+	"Delete '\$SMPROGRAMS\\\\$MUI_TEMP\\\\logdiag.lnk'")
 
 set (CPACK_DEBIAN_PACKAGE_DEPENDS
 	"libgtk2.0-0 (>= 2.12), libjson-glib-1.0-0 (>= 0.10.4), liblua5.1-0, librsvg2-common")

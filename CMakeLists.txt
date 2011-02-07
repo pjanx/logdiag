@@ -15,8 +15,8 @@ endif (OPTION_NOINSTALL)
 
 # Project information
 set (project_VERSION_MAJOR "0")
-set (project_VERSION_MINOR "0")
-set (project_VERSION_PATCH "1")
+set (project_VERSION_MINOR "1")
+set (project_VERSION_PATCH "0")
 
 set (project_VERSION "${project_VERSION_MAJOR}")
 set (project_VERSION "${project_VERSION}.${project_VERSION_MINOR}")

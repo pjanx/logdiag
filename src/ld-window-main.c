@@ -843,6 +843,7 @@ on_action_about (GtkAction *action, LdWindowMain *self)
 		"program-name", PROJECT_NAME,
 		"version", PROJECT_VERSION,
 		"copyright", "Copyright Přemysl Janouch 2010 - 2011",
+		"website", PROJECT_URL,
 		NULL);
 }
 

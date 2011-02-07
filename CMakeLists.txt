@@ -13,7 +13,7 @@ else (OPTION_NOINSTALL)
 	set (OPTION_NOINSTALL 0)
 endif (OPTION_NOINSTALL)
 
-# Version
+# Project information
 set (project_VERSION_MAJOR "0")
 set (project_VERSION_MINOR "0")
 set (project_VERSION_PATCH "1")
@@ -21,6 +21,8 @@ set (project_VERSION_PATCH "1")
 set (project_VERSION "${project_VERSION_MAJOR}")
 set (project_VERSION "${project_VERSION}.${project_VERSION_MINOR}")
 set (project_VERSION "${project_VERSION}.${project_VERSION_PATCH}")
+
+set (project_URL "http://github.com/pjanouch/logdiag")
 
 # For custom modules
 set (CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -309,10 +311,12 @@ set (CPACK_NSIS_DELETE_ICONS_EXTRA
 set (CPACK_DEBIAN_PACKAGE_DEPENDS "libgtk2.0-0 (>= 2.12), libjson-glib-1.0-0 (>= 0.10.4), liblua5.1-0, librsvg2-common")
 set (CPACK_DEBIAN_PACKAGE_BUILDS_DEPENDS "libgtk2.0-dev (>= 2.12), libjson-glib-dev (>= 0.10.4), liblua5.1-0-dev")
 set (CPACK_DEBIAN_PACKAGE_SECTION "Electronics")
+set (CPACK_DEBIAN_PACKAGE_HOMEPAGE "${project_URL}")
 
 set (CPACK_RPM_PACKAGE_REQUIRES "gtk2 >= 2.12, json-glib >= 0.10.4, lua = 5.1, librsvg2")
 set (CPACK_RPM_PACKAGE_GROUP "Graphics")
 set (CPACK_RPM_PACKAGE_LICENSE "BSD")
+set (CPACK_RPM_PACKAGE_URL "${project_URL}")
 
 set (CPACK_SOURCE_GENERATOR "TGZ;ZIP")
 set (CPACK_SOURCE_IGNORE_FILES "/.git;/build;/win32-depends;/liblogdiag/ld-marshal.[ch]")

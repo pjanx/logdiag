@@ -10,6 +10,7 @@
 
 #define PROJECT_NAME "${PROJECT_NAME}"
 #define PROJECT_VERSION "${project_VERSION}"
+#define PROJECT_URL "${project_URL}"
 
 #if ${OPTION_NOINSTALL}
 	/* For developers. */

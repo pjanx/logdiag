@@ -44,3 +44,29 @@ Now you have two basic choices of installing the application:
        $ cpack -G DEB
        # dpkg -i logdiag-0.0-Linux-x86_64.deb
 
+# Building from sources on Windows
+
+First install CMake 2.8 and MinGW. Add both to the system path.  
+If you want to build an installation package, also install NSIS.  
+
+Run the following command in the directory with source files  
+to automatically fetch and setup all dependencies:  
+    > cmake -P Win32Depends.cmake
+
+Reserve a directory for an out-of-source build:  
+    > mkdir build
+    > cd build
+
+Let CMake prepare the build:  
+	> cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+
+Now you can generate a package with CPack. You may choose between:  
+
+1. An NSIS-based installation package:  
+       > cpack -G NSIS
+
+2. A portable ZIP package:  
+       > cpack -G ZIP
+
+By default, that is if you specify no generator, both packages are built.  
+

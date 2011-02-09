@@ -1,18 +1,18 @@
 -- Symbol name
-names =
+local names =
 {
 	en = "Switch",
 	cs = "Spínač"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)
-area = {-2, -1.5, 2, 0}
+local area = {-2, -1.5, 2, 0}
 
 -- Terminals
-terminals = {{-2, 0}, {2, 0}}
+local terminals = {{-2, 0}, {2, 0}}
 
 -- Rendering
-render_normal = function (cr)
+local render_normal = function (cr)
 	-- The switch contact
 	cr.move_to (1.3, -1.3)
 	cr.line_to (-1, 0)

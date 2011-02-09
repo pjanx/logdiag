@@ -1,18 +1,18 @@
 -- Symbol name
-names =
+local names =
 {
 	en = "NOT",
 	cs = "NOT"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)
-area = {-4, -2, 4, 2}
+local area = {-4, -2, 4, 2}
 
 -- Terminals
-terminals = {{-4, 0}, {4, 0}}
+local terminals = {{-4, 0}, {4, 0}}
 
 -- Rendering
-render = function (cr)
+local render = function (cr)
 	-- The triangle
 	cr.move_to (-2, -2)
 	cr.line_to (2, 0)

@@ -1,18 +1,18 @@
 -- Symbol name
-names =
+local names =
 {
 	en = "AND",
 	cs = "AND"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)
-area = {-4, -2, 5, 2}
+local area = {-4, -2, 5, 2}
 
 -- Terminals
-terminals = {{-4, -1}, {-4, 1}, {5, 0}}
+local terminals = {{-4, -1}, {-4, 1}, {5, 0}}
 
 -- Rendering
-render = function (cr)
+local render = function (cr)
 	-- The main shape
 	cr.move_to (-2, -2)
 	cr.line_to (1, -2)

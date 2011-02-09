@@ -1,18 +1,18 @@
 -- Symbol name
-names =
+local names =
 {
 	en = "Ground",
 	cs = "Zem"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)
-area = {-1, -1, 1, 2}
+local area = {-1, -1, 1, 2}
 
 -- Terminals
-terminals = {{0, -1}}
+local terminals = {{0, -1}}
 
 -- Rendering
-render = function (cr)
+local render = function (cr)
 	-- The vertical line
 	cr.move_to (0, -1)
 	cr.line_to (0, 0.5)

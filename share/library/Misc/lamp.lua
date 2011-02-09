@@ -1,18 +1,18 @@
 -- Symbol name
-names =
+local names =
 {
 	en = "Lamp",
 	cs = "Světelný zdroj"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)
-area = {-2, -1, 2, 1}
+local area = {-2, -1, 2, 1}
 
 -- Terminals
-terminals = {{-2, 0}, {2, 0}}
+local terminals = {{-2, 0}, {2, 0}}
 
 -- Rendering
-render = function (cr)
+local render = function (cr)
 	-- The circle
 	cr.save ()
 

@@ -1,18 +1,18 @@
 -- Symbol name
-names =
+local names =
 {
 	en = "Resistor",
 	cs = "Rezistor"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)
-area = {-2, -0.5, 2, 0.5}
+local area = {-2, -0.5, 2, 0.5}
 
 -- Terminals
-terminals = {{-2, 0}, {2, 0}}
+local terminals = {{-2, 0}, {2, 0}}
 
 -- Rendering
-render = function (cr)
+local render = function (cr)
 	-- The rectangle
 	cr.move_to (-1.5, -0.5)
 	cr.line_to (1.5, -0.5)

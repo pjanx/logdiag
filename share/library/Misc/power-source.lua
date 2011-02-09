@@ -1,18 +1,18 @@
 -- Symbol name
-names =
+local names =
 {
 	en = "Power source",
 	cs = "Zdroj napětí"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)
-area = {-1, -2, 1, 2}
+local area = {-1, -2, 1, 2}
 
 -- Terminals
-terminals = {{-1, 0}, {1, 0}}
+local terminals = {{-1, 0}, {1, 0}}
 
 -- Rendering
-render = function (cr)
+local render = function (cr)
 	-- The vertical lines
 	cr.move_to (-0.2, -1)
 	cr.line_to (-0.2, 1)

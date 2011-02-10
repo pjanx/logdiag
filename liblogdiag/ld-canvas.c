@@ -216,6 +216,7 @@ static gdouble ld_canvas_get_scale_in_px (LdCanvas *self);
 static void ld_canvas_color_set (LdCanvasColor *color,
 	gdouble r, gdouble g, gdouble b, gdouble a);
 static void ld_canvas_color_apply (LdCanvasColor *color, cairo_t *cr);
+static guint32 ld_canvas_color_to_cairo_argb (LdCanvasColor *color);
 
 static gdouble point_to_line_segment_distance
 	(const LdPoint *point, const LdPoint *p1, const LdPoint *p2);
@@ -995,6 +996,15 @@ static void
 ld_canvas_color_apply (LdCanvasColor *color, cairo_t *cr)
 {
 	cairo_set_source_rgba (cr, color->r, color->g, color->b, color->a);
+}
+
+static guint32
+ld_canvas_color_to_cairo_argb (LdCanvasColor *color)
+{
+	return (guint) (color->a            * 255) << 24
+	     | (guint) (color->r * color->a * 255) << 16
+	     | (guint) (color->g * color->a * 255) << 8
+	     | (guint) (color->b * color->a * 255);
 }
 
 static gdouble
@@ -1998,7 +2008,10 @@ draw_grid (GtkWidget *widget, DrawData *data)
 	gint grid_factor;
 	gdouble x_init, y_init;
 	gdouble x, y;
-	gdouble x_round, y_round;
+	cairo_surface_t *grid_surface;
+	gint stride;
+	unsigned char *pixels;
+	guint32 color;
 
 	grid_step = data->scale;
 	grid_factor = 1;
@@ -2008,9 +2021,13 @@ draw_grid (GtkWidget *widget, DrawData *data)
 		grid_factor *= 5;
 	}
 
-	ld_canvas_color_apply (COLOR_GET (data->self, COLOR_GRID), data->cr);
-	cairo_set_line_width (data->cr, 1);
-	cairo_set_line_cap (data->cr, CAIRO_LINE_CAP_ROUND);
+	/* Paint manually on our own raster surface for speed. */
+	stride = cairo_format_stride_for_width
+		(CAIRO_FORMAT_ARGB32, data->exposed_rect.width);
+	pixels = g_malloc0 (stride * data->exposed_rect.height);
+	grid_surface = cairo_image_surface_create_for_data
+		(pixels, CAIRO_FORMAT_ARGB32,
+		data->exposed_rect.width, data->exposed_rect.height, stride);
 
 	/* Get coordinates of the top-left point. */
 	ld_canvas_widget_to_diagram_coords (data->self,
@@ -2024,20 +2041,26 @@ draw_grid (GtkWidget *widget, DrawData *data)
 	ld_canvas_diagram_to_widget_coords (data->self,
 		x_init, y_init, &x_init, &y_init);
 
-	/* Iterate over all the points. */
-	for     (x = x_init; x <= data->exposed_rect.x + data->exposed_rect.width;
-			 x += grid_step)
-	{
-		for (y = y_init; y <= data->exposed_rect.y + data->exposed_rect.height;
-			 y += grid_step)
-		{
-			x_round = floor (x) + 0.5;
-			y_round = floor (y) + 0.5;
-			cairo_move_to (data->cr, x_round, y_round);
-			cairo_line_to (data->cr, x_round, y_round);
-		}
-	}
-	cairo_stroke (data->cr);
+	x_init -= data->exposed_rect.x;
+	y_init -= data->exposed_rect.y;
+
+	while (x_init < 0)
+		x_init += grid_step;
+	while (y_init < 0)
+		y_init += grid_step;
+
+	color = ld_canvas_color_to_cairo_argb (COLOR_GET (data->self, COLOR_GRID));
+
+	for     (x = x_init; x < data->exposed_rect.width;  x += grid_step)
+		for (y = y_init; y < data->exposed_rect.height; y += grid_step)
+			*((guint32 *) (pixels + stride * (gint) y) + (gint) x) = color;
+
+	cairo_set_source_surface (data->cr, grid_surface,
+		data->exposed_rect.x, data->exposed_rect.y);
+	cairo_paint (data->cr);
+
+	cairo_surface_destroy (grid_surface);
+	g_free (pixels);
 }
 
 static void

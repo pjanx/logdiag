@@ -447,6 +447,7 @@ foreach(_GTK2_component ${GTK2_FIND_COMPONENTS})
 
         _GTK2_FIND_INCLUDE_DIR(GTK2_PANGO_INCLUDE_DIR pango/pango.h)
         _GTK2_FIND_LIBRARY    (GTK2_PANGO_LIBRARY pango false true)
+        _GTK2_FIND_LIBRARY    (GTK2_PANGOCAIRO_LIBRARY pangocairo false true)
 
         _GTK2_FIND_INCLUDE_DIR(GTK2_ATK_INCLUDE_DIR atk/atk.h)
         _GTK2_FIND_LIBRARY    (GTK2_ATK_LIBRARY atk false true)

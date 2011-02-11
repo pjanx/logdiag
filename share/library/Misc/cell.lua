@@ -1,8 +1,8 @@
 -- Symbol name
 local names =
 {
-	en = "Power source",
-	cs = "Zdroj napětí"
+	en = "Cell",
+	cs = "Článek"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)
@@ -31,6 +31,6 @@ local render = function (cr)
 end
 
 -- Register the symbol
-logdiag.register ("PowerSource", names, area, terminals, render)
+logdiag.register ("Cell", names, area, terminals, render)
 
 

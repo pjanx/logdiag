@@ -111,6 +111,7 @@ static int ld_lua_cairo_fill (lua_State *L);
 static int ld_lua_cairo_fill_preserve (lua_State *L);
 static int ld_lua_cairo_clip (lua_State *L);
 static int ld_lua_cairo_clip_preserve (lua_State *L);
+static int ld_lua_cairo_show_text (lua_State *L);
 
 
 static luaL_Reg ld_lua_logdiag_lib[] =
@@ -142,6 +143,7 @@ static luaL_Reg ld_lua_cairo_table[] =
 	{"fill_preserve", ld_lua_cairo_fill_preserve},
 	{"clip", ld_lua_cairo_clip},
 	{"clip_preserve", ld_lua_cairo_clip_preserve},
+	{"show_text", ld_lua_cairo_show_text},
 	{NULL, NULL}
 };
 
@@ -805,5 +807,36 @@ LD_LUA_CAIRO_BEGIN (arc_negative)
 	angle2 = luaL_checknumber (L, 5);
 
 	cairo_arc_negative (data->cr, xc, yc, radius, angle1, angle2);
+LD_LUA_CAIRO_END (0)
+
+LD_LUA_CAIRO_BEGIN (show_text)
+	const char *text;
+	GtkStyle *style;
+	PangoLayout *layout;
+	int width, height;
+	double x, y;
+
+	data = lua_touserdata (L, lua_upvalueindex (1));
+	text = luaL_checkstring (L, 1);
+
+	layout = pango_cairo_create_layout (data->cr);
+	pango_layout_set_text (layout, text, -1);
+
+	style = gtk_style_new ();
+	pango_font_description_set_size (style->font_desc, 1 * PANGO_SCALE);
+	pango_layout_set_font_description (layout, style->font_desc);
+	g_object_unref (style);
+
+	pango_layout_get_size (layout, &width, &height);
+	cairo_get_current_point (data->cr, &x, &y);
+	x -= (double) width  / PANGO_SCALE / 2;
+	y -= (double) height / PANGO_SCALE / 2;
+
+	cairo_save (data->cr);
+	cairo_move_to (data->cr, x, y);
+	pango_cairo_show_layout (data->cr, layout);
+	cairo_restore (data->cr);
+
+	g_object_unref (layout);
 LD_LUA_CAIRO_END (0)
 

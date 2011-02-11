@@ -658,6 +658,14 @@ on_canvas_exposed (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 	{
 		SymbolMenuItem *item;
 
+		if (i)
+		{
+			cairo_move_to (cr, x - 0.5, data->menu_y + 1);
+			cairo_line_to (cr, x - 0.5, data->menu_y + data->menu_height);
+			cairo_set_source_rgb (cr, 0.5, 0.5, 0.5);
+			cairo_stroke (cr);
+		}
+
 		item = data->items + i;
 		cairo_save (cr);
 
@@ -682,7 +690,8 @@ on_canvas_exposed (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 		x += item->width;
 	}
 
-	cairo_rectangle (cr, 0, data->menu_y, data->menu_width, data->menu_height);
+	cairo_rectangle (cr, 0.5, data->menu_y + 0.5,
+		data->menu_width, data->menu_height);
 	cairo_set_source_rgb (cr, 0, 0, 0);
 	cairo_stroke (cr);
 

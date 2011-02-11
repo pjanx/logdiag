@@ -8,16 +8,16 @@ local names =
 -- Render area in base units (X1, Y1, X2, Y2)
 local area = {-2, -1.5, 2, 0}
 
--- Terminals
+-- Terminal points
 local terminals = {{-2, 0}, {2, 0}}
 
 -- Rendering
-local render_normal = function (cr)
+local render = function (cr)
 	-- The switch contact
 	cr.move_to (1.3, -1.3)
 	cr.line_to (-1, 0)
 
-	-- The contacts
+	-- The terminals
 	cr.move_to (-2, 0)
 	cr.line_to (-1, 0)
 
@@ -28,6 +28,6 @@ local render_normal = function (cr)
 end
 
 -- Register the symbol
-logdiag.register ("Switch", names, area, terminals, render_normal)
+logdiag.register ("Switch", names, area, terminals, render)
 
 

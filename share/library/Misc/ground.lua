@@ -8,7 +8,7 @@ local names =
 -- Render area in base units (X1, Y1, X2, Y2)
 local area = {-1, -1, 1, 2}
 
--- Terminals
+-- Terminal points
 local terminals = {{0, -1}}
 
 -- Rendering

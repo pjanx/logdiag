@@ -8,7 +8,7 @@ local names =
 -- Render area in base units (X1, Y1, X2, Y2)
 local area = {-4, -2, 5, 2}
 
--- Terminals
+-- Terminal points
 local terminals = {{-4, -1}, {-4, 1}, {5, 0}}
 
 -- Rendering
@@ -22,7 +22,7 @@ local render = function (cr)
 	cr.curve_to (-1, 1, -1, -1, -2, -2)
 	cr.stroke ()
 
-	-- The contacts
+	-- The terminals
 	cr.save ()
 
 	-- Crop the contacts according to
@@ -36,12 +36,11 @@ local render = function (cr)
 
 	cr.move_to (-4, -1)
 	cr.line_to (-1, -1)
-	cr.stroke ()
 
 	cr.move_to (-4, 1)
 	cr.line_to (-1, 1)
-	cr.stroke ()
 
+	cr.stroke ()
 	cr.restore ()
 
 	cr.move_to (3, 0)

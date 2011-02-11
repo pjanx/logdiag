@@ -94,6 +94,9 @@ static int ld_lua_cairo_save (lua_State *L);
 static int ld_lua_cairo_restore (lua_State *L);
 static int ld_lua_cairo_get_line_width (lua_State *L);
 static int ld_lua_cairo_set_line_width (lua_State *L);
+static int ld_lua_cairo_translate (lua_State *L);
+static int ld_lua_cairo_scale (lua_State *L);
+static int ld_lua_cairo_rotate (lua_State *L);
 static int ld_lua_cairo_move_to (lua_State *L);
 static int ld_lua_cairo_line_to (lua_State *L);
 static int ld_lua_cairo_curve_to (lua_State *L);
@@ -122,6 +125,9 @@ static luaL_Reg ld_lua_cairo_table[] =
 	{"restore", ld_lua_cairo_restore},
 	{"get_line_width", ld_lua_cairo_get_line_width},
 	{"set_line_width", ld_lua_cairo_set_line_width},
+	{"translate", ld_lua_cairo_translate},
+	{"scale", ld_lua_cairo_scale},
+	{"rotate", ld_lua_cairo_rotate},
 	{"move_to", ld_lua_cairo_move_to},
 	{"line_to", ld_lua_cairo_line_to},
 	{"curve_to", ld_lua_cairo_curve_to},
@@ -649,15 +655,21 @@ get_cairo_scale (cairo_t *cr)
 	return dx;
 }
 
-#define LD_LUA_CAIRO_TRIVIAL(name) \
+#define LD_LUA_CAIRO_BEGIN(name) \
 static int \
 ld_lua_cairo_ ## name (lua_State *L) \
 { \
 	LdLuaDrawData *data; \
+
+#define LD_LUA_CAIRO_END(n_values) \
+	return (n_values); \
+}
+
+#define LD_LUA_CAIRO_TRIVIAL(name) \
+LD_LUA_CAIRO_BEGIN (name) \
 	data = lua_touserdata (L, lua_upvalueindex (1)); \
 	cairo_ ## name (data->cr); \
-	return 0; \
-}
+LD_LUA_CAIRO_END (0)
 
 LD_LUA_CAIRO_TRIVIAL (new_path)
 LD_LUA_CAIRO_TRIVIAL (new_sub_path)
@@ -670,60 +682,67 @@ LD_LUA_CAIRO_TRIVIAL (fill_preserve)
 LD_LUA_CAIRO_TRIVIAL (clip)
 LD_LUA_CAIRO_TRIVIAL (clip_preserve)
 
-static int
-ld_lua_cairo_save (lua_State *L)
-{
-	LdLuaDrawData *data;
-
+LD_LUA_CAIRO_BEGIN (save)
 	data = lua_touserdata (L, lua_upvalueindex (1));
 	if (data->save_count + 1)
 	{
 		data->save_count++;
 		cairo_save (data->cr);
 	}
-	return 0;
-}
+LD_LUA_CAIRO_END (0)
 
-static int
-ld_lua_cairo_restore (lua_State *L)
-{
-	LdLuaDrawData *data;
-
+LD_LUA_CAIRO_BEGIN (restore)
 	data = lua_touserdata (L, lua_upvalueindex (1));
 	if (data->save_count)
 	{
 		data->save_count--;
 		cairo_restore (data->cr);
 	}
-	return 0;
-}
+LD_LUA_CAIRO_END (0)
 
-static int
-ld_lua_cairo_get_line_width (lua_State *L)
-{
-	LdLuaDrawData *data;
-
+LD_LUA_CAIRO_BEGIN (get_line_width)
 	data = lua_touserdata (L, lua_upvalueindex (1));
 	lua_pushnumber (L, cairo_get_line_width (data->cr)
 		* get_cairo_scale (data->cr));
-	return 1;
-}
+LD_LUA_CAIRO_END (1)
 
-static int
-ld_lua_cairo_set_line_width (lua_State *L)
-{
-	LdLuaDrawData *data;
-
+LD_LUA_CAIRO_BEGIN (set_line_width)
 	data = lua_touserdata (L, lua_upvalueindex (1));
 	cairo_set_line_width (data->cr, luaL_checknumber (L, 1)
 		/ get_cairo_scale (data->cr));
-	return 0;
-}
+LD_LUA_CAIRO_END (0)
 
-static int
-ld_lua_cairo_move_to (lua_State *L)
-{
-	LdLuaDrawData *data;
+LD_LUA_CAIRO_BEGIN (translate)
+	lua_Number x, y;
+
+	data = lua_touserdata (L, lua_upvalueindex (1));
+
+	x = luaL_checknumber (L, 1);
+	y = luaL_checknumber (L, 2);
+
+	cairo_translate (data->cr, x, y);
+LD_LUA_CAIRO_END (0)
+
+LD_LUA_CAIRO_BEGIN (scale)
+	lua_Number sx, sy;
+
+	data = lua_touserdata (L, lua_upvalueindex (1));
+
+	sx = luaL_checknumber (L, 1);
+	sy = luaL_checknumber (L, 2);
+
+	cairo_scale (data->cr, sx, sy);
+LD_LUA_CAIRO_END (0)
+
+LD_LUA_CAIRO_BEGIN (rotate)
+	lua_Number angle;
+
+	data = lua_touserdata (L, lua_upvalueindex (1));
+	angle = luaL_checknumber (L, 1);
+	cairo_rotate (data->cr, angle);
+LD_LUA_CAIRO_END (0)
+
+LD_LUA_CAIRO_BEGIN (move_to)
 	lua_Number x, y;
 
 	data = lua_touserdata (L, lua_upvalueindex (1));
@@ -732,13 +751,9 @@ ld_lua_cairo_move_to (lua_State *L)
 	y = luaL_checknumber (L, 2);
 
 	cairo_move_to (data->cr, x, y);
-	return 0;
-}
+LD_LUA_CAIRO_END (0)
 
-static int
-ld_lua_cairo_line_to (lua_State *L)
-{
-	LdLuaDrawData *data;
+LD_LUA_CAIRO_BEGIN (line_to)
 	lua_Number x, y;
 
 	data = lua_touserdata (L, lua_upvalueindex (1));
@@ -747,13 +762,9 @@ ld_lua_cairo_line_to (lua_State *L)
 	y = luaL_checknumber (L, 2);
 
 	cairo_line_to (data->cr, x, y);
-	return 0;
-}
+LD_LUA_CAIRO_END (0)
 
-static int
-ld_lua_cairo_curve_to (lua_State *L)
-{
-	LdLuaDrawData *data;
+LD_LUA_CAIRO_BEGIN (curve_to)
 	lua_Number x1, y1, x2, y2, x3, y3;
 
 	data = lua_touserdata (L, lua_upvalueindex (1));
@@ -766,13 +777,9 @@ ld_lua_cairo_curve_to (lua_State *L)
 	y3 = luaL_checknumber (L, 6);
 
 	cairo_curve_to (data->cr, x1, y1, x2, y2, x3, y3);
-	return 0;
-}
+LD_LUA_CAIRO_END (0)
 
-static int
-ld_lua_cairo_arc (lua_State *L)
-{
-	LdLuaDrawData *data;
+LD_LUA_CAIRO_BEGIN (arc)
 	lua_Number xc, yc, radius, angle1, angle2;
 
 	data = lua_touserdata (L, lua_upvalueindex (1));
@@ -784,13 +791,9 @@ ld_lua_cairo_arc (lua_State *L)
 	angle2 = luaL_checknumber (L, 5);
 
 	cairo_arc (data->cr, xc, yc, radius, angle1, angle2);
-	return 0;
-}
+LD_LUA_CAIRO_END (0)
 
-static int
-ld_lua_cairo_arc_negative (lua_State *L)
-{
-	LdLuaDrawData *data;
+LD_LUA_CAIRO_BEGIN (arc_negative)
 	lua_Number xc, yc, radius, angle1, angle2;
 
 	data = lua_touserdata (L, lua_upvalueindex (1));
@@ -802,6 +805,5 @@ ld_lua_cairo_arc_negative (lua_State *L)
 	angle2 = luaL_checknumber (L, 5);
 
 	cairo_arc_negative (data->cr, xc, yc, radius, angle1, angle2);
-	return 0;
-}
+LD_LUA_CAIRO_END (0)
 

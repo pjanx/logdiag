@@ -110,61 +110,61 @@ static void on_action_normal_size (GtkAction *action, LdWindowMain *self);
 /* Actions for menus, toolbars, accelerators. */
 static GtkActionEntry wm_action_entries[] =
 {
-	{"FileMenu", NULL, Q_("_File"), NULL, NULL, NULL},
-		{"New", GTK_STOCK_NEW, Q_("_New"), "<Ctrl>N",
-			Q_("Create a new diagram"),
+	{"FileMenu", NULL, N_("_File"), NULL, NULL, NULL},
+		{"New", GTK_STOCK_NEW, N_("_New"), "<Ctrl>N",
+			N_("Create a new diagram"),
 			G_CALLBACK (on_action_new)},
-		{"Open", GTK_STOCK_OPEN, Q_("_Open..."), "<Ctrl>O",
-			Q_("Open a diagram"),
+		{"Open", GTK_STOCK_OPEN, N_("_Open..."), "<Ctrl>O",
+			N_("Open a diagram"),
 			G_CALLBACK (on_action_open)},
-		{"Save", GTK_STOCK_SAVE, Q_("_Save"), "<Ctrl>S",
-			Q_("Save the current diagram"),
+		{"Save", GTK_STOCK_SAVE, N_("_Save"), "<Ctrl>S",
+			N_("Save the current diagram"),
 			G_CALLBACK (on_action_save)},
-		{"SaveAs", GTK_STOCK_SAVE_AS, Q_("Save _As..."), "<Shift><Ctrl>S",
-			Q_("Save the current diagram with another name"),
+		{"SaveAs", GTK_STOCK_SAVE_AS, N_("Save _As..."), "<Shift><Ctrl>S",
+			N_("Save the current diagram with another name"),
 			G_CALLBACK (on_action_save_as)},
 /*
- *		{"Export", NULL, Q_("_Export"), NULL,
- *			Q_("Export the diagram"),
+ *		{"Export", NULL, N_("_Export"), NULL,
+ *			N_("Export the diagram"),
  *			NULL},
  */
-		{"Quit", GTK_STOCK_QUIT, Q_("_Quit"), "<Ctrl>Q",
-			Q_("Quit the application"),
+		{"Quit", GTK_STOCK_QUIT, N_("_Quit"), "<Ctrl>Q",
+			N_("Quit the application"),
 			G_CALLBACK (on_action_quit)},
 
-	{"EditMenu", NULL, Q_("_Edit"), NULL, NULL, NULL},
-		{"Undo", GTK_STOCK_UNDO, Q_("_Undo"), "<Ctrl>Z",
-			Q_("Undo the last action"),
+	{"EditMenu", NULL, N_("_Edit"), NULL, NULL, NULL},
+		{"Undo", GTK_STOCK_UNDO, N_("_Undo"), "<Ctrl>Z",
+			N_("Undo the last action"),
 			G_CALLBACK (on_action_undo)},
-		{"Redo", GTK_STOCK_REDO, Q_("_Redo"), "<Shift><Ctrl>Z",
-			Q_("Redo the last undone action"),
+		{"Redo", GTK_STOCK_REDO, N_("_Redo"), "<Shift><Ctrl>Z",
+			N_("Redo the last undone action"),
 			G_CALLBACK (on_action_redo)},
 /*
- *		{"Cut", GTK_STOCK_CUT, Q_("Cu_t"), "<Ctrl>X", NULL, NULL},
- *		{"Copy", GTK_STOCK_COPY, Q_("_Copy"), "<Ctrl>C", NULL, NULL},
- *		{"Paste", GTK_STOCK_PASTE, Q_("_Paste"), "<Ctrl>V", NULL, NULL},
+ *		{"Cut", GTK_STOCK_CUT, N_("Cu_t"), "<Ctrl>X", NULL, NULL},
+ *		{"Copy", GTK_STOCK_COPY, N_("_Copy"), "<Ctrl>C", NULL, NULL},
+ *		{"Paste", GTK_STOCK_PASTE, N_("_Paste"), "<Ctrl>V", NULL, NULL},
  */
-		{"Delete", GTK_STOCK_DELETE, Q_("_Delete"), "Delete",
-			Q_("Delete the contents of the selection"),
+		{"Delete", GTK_STOCK_DELETE, N_("_Delete"), "Delete",
+			N_("Delete the contents of the selection"),
 			G_CALLBACK (on_action_delete)},
-		{"SelectAll", GTK_STOCK_SELECT_ALL, Q_("Select _All"), "<Ctrl>A",
-			Q_("Select all objects in the diagram"),
+		{"SelectAll", GTK_STOCK_SELECT_ALL, N_("Select _All"), "<Ctrl>A",
+			N_("Select all objects in the diagram"),
 			G_CALLBACK (on_action_select_all)},
 
-	{"ViewMenu", NULL, Q_("_View"), NULL, NULL, NULL},
-		{"ZoomIn", GTK_STOCK_ZOOM_IN, Q_("_Zoom In"), "<Ctrl>plus",
-			Q_("Zoom into the diagram"),
+	{"ViewMenu", NULL, N_("_View"), NULL, NULL, NULL},
+		{"ZoomIn", GTK_STOCK_ZOOM_IN, N_("_Zoom In"), "<Ctrl>plus",
+			N_("Zoom into the diagram"),
 			G_CALLBACK (on_action_zoom_in)},
-		{"ZoomOut", GTK_STOCK_ZOOM_OUT, Q_("Zoom _Out"), "<Ctrl>minus",
-			Q_("Zoom out of the diagram"),
+		{"ZoomOut", GTK_STOCK_ZOOM_OUT, N_("Zoom _Out"), "<Ctrl>minus",
+			N_("Zoom out of the diagram"),
 			G_CALLBACK (on_action_zoom_out)},
-		{"NormalSize", GTK_STOCK_ZOOM_100, Q_("_Normal Size"), "<Ctrl>0",
-			Q_("Reset zoom level back to the default"),
+		{"NormalSize", GTK_STOCK_ZOOM_100, N_("_Normal Size"), "<Ctrl>0",
+			N_("Reset zoom level back to the default"),
 			G_CALLBACK (on_action_normal_size)},
 
-	{"HelpMenu", NULL, Q_("_Help"), NULL, NULL, NULL},
-		{"About", GTK_STOCK_ABOUT, Q_("_About"), NULL,
-			Q_("Show a dialog about this application"),
+	{"HelpMenu", NULL, N_("_Help"), NULL, NULL, NULL},
+		{"About", GTK_STOCK_ABOUT, N_("_About"), NULL,
+			N_("Show a dialog about this application"),
 			G_CALLBACK (on_action_about)}
 };
 
@@ -216,6 +216,8 @@ ld_window_main_init (LdWindowMain *self)
 		G_CALLBACK (on_ui_proxy_disconnected), self);
 
 	priv->action_group = gtk_action_group_new ("MainActions");
+	gtk_action_group_set_translation_domain
+		(priv->action_group, GETTEXT_DOMAIN);
 	gtk_action_group_add_actions (priv->action_group, wm_action_entries,
 		G_N_ELEMENTS (wm_action_entries), self);
 	gtk_ui_manager_insert_action_group (priv->ui_manager,

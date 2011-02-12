@@ -14,7 +14,7 @@
 
 #=============================================================================
 # Copyright 2007-2009 Kitware, Inc.
-# Copyright 2010 Přemysl Janouch
+# Copyright 2010-2011 Přemysl Janouch
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -41,7 +41,6 @@
 #=============================================================================
 
 find_program (GETTEXT_MSGMERGE_EXECUTABLE msgmerge)
-
 find_program (GETTEXT_MSGFMT_EXECUTABLE msgfmt)
 
 macro (GETTEXT_CREATE_TRANSLATIONS _potFile _firstPoFileArg)
@@ -93,13 +92,8 @@ macro (GETTEXT_CREATE_TRANSLATIONS _potFile _firstPoFileArg)
 		DEPENDS ${_gmoFiles})
 endmacro (GETTEXT_CREATE_TRANSLATIONS)
 
-if (GETTEXT_MSGMERGE_EXECUTABLE AND GETTEXT_MSGFMT_EXECUTABLE)
-	set (GETTEXT_FOUND TRUE)
-else (GETTEXT_MSGMERGE_EXECUTABLE AND GETTEXT_MSGFMT_EXECUTABLE)
-	set (GETTEXT_FOUND FALSE)
-	if (GetText_REQUIRED)
-		message (FATAL_ERROR "GetText not found")
-	endif (GetText_REQUIRED)
-endif (GETTEXT_MSGMERGE_EXECUTABLE AND GETTEXT_MSGFMT_EXECUTABLE)
+include (FindPackageHandleStandardArgs)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS (Gettext DEFAULT_MSG
+	GETTEXT_MSGMERGE_EXECUTABLE GETTEXT_MSGFMT_EXECUTABLE)
 
 

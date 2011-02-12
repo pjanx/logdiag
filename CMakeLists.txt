@@ -94,14 +94,16 @@ find_package (Lua51 REQUIRED)
 find_package (JsonGlib REQUIRED)
 
 # Localization
-find_package (Gettext)
-if (GETTEXT_FOUND)
-	set (HAVE_GETTEXT true)
-	file (GLOB project_TRANSLATIONS ${CMAKE_CURRENT_SOURCE_DIR}/po/*.po)
-	GETTEXT_CREATE_TRANSLATIONS (
-		${CMAKE_CURRENT_SOURCE_DIR}/po/${CMAKE_PROJECT_NAME}.pot
-		ALL ${project_TRANSLATIONS})
-endif (GETTEXT_FOUND)
+find_package (Gettext REQUIRED)
+file (GLOB project_PO_FILES ${CMAKE_CURRENT_SOURCE_DIR}/po/*.po)
+GETTEXT_CREATE_TRANSLATIONS (
+	${CMAKE_CURRENT_SOURCE_DIR}/po/${CMAKE_PROJECT_NAME}.pot
+	ALL ${project_PO_FILES})
+
+foreach (file ${project_PO_FILES})
+	get_filename_component (translation "${file}" NAME_WE)
+	list (APPEND project_TRANSLATIONS "${translation}")
+endforeach (file)
 
 # Documentation
 # TODO: Add pregenerated docs to the tree
@@ -218,6 +220,11 @@ include_directories (${GTK2_INCLUDE_DIRS}
 set (logdiag_LIBS ${GTK2_LIBRARIES}
 	${JSON_GLIB_LIBRARIES} ${LUA_LIBRARIES})
 
+if (WIN32)
+	find_package (LibIntl REQUIRED)
+	list (APPEND logdiag_LIBS ${LIBINTL_LIBRARIES})
+endif (WIN32)
+
 # Build the library
 add_library (liblogdiag STATIC ${liblogdiag_SOURCES} ${liblogdiag_HEADERS})
 set_target_properties (liblogdiag PROPERTIES OUTPUT_NAME logdiag)
@@ -258,7 +265,8 @@ if (WIN32)
 	install (DIRECTORY
 		${WIN32_DEPENDS_PATH}/bin/
 		DESTINATION .
-		FILES_MATCHING PATTERN "*.dll")
+		FILES_MATCHING PATTERN "*.dll"
+		PATTERN "libgettext*" EXCLUDE)
 	install (DIRECTORY
 		${WIN32_DEPENDS_PATH}/etc/
 		DESTINATION etc)
@@ -268,9 +276,20 @@ if (WIN32)
 		${WIN32_DEPENDS_PATH}/lib/gdk-pixbuf-2.0
 		DESTINATION lib)
 	install (DIRECTORY
-		${WIN32_DEPENDS_PATH}/share/locale
 		${WIN32_DEPENDS_PATH}/share/themes
 		DESTINATION share)
+
+	# Avoid partial translations
+	file (GLOB locales ${WIN32_DEPENDS_PATH}/share/locale/*)
+	foreach (locale ${locales})
+		get_filename_component (translation ${locale} NAME)
+		list (FIND project_TRANSLATIONS ${translation} translation_found)
+		if (translation_found GREATER -1)
+			install (DIRECTORY
+				${WIN32_DEPENDS_PATH}/share/locale/${translation}
+				DESTINATION share/locale)
+		endif (translation_found GREATER -1)
+	endforeach (locale)
 else (WIN32)
 	install (TARGETS logdiag DESTINATION bin)
 	install (FILES share/logdiag.desktop DESTINATION share/applications)

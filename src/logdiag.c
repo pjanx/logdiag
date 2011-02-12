@@ -9,6 +9,7 @@
  */
 
 #include <gtk/gtk.h>
+#include <locale.h>
 
 #include "config.h"
 
@@ -20,13 +21,11 @@ main (int argc, char *argv[])
 {
 	GtkWidget *wnd;
 
-#ifdef HAVE_GETTEXT
 	setlocale (LC_ALL, "");
 
 	bindtextdomain (GETTEXT_DOMAIN, GETTEXT_DIRNAME);
 	bind_textdomain_codeset (GETTEXT_DOMAIN, "UTF-8");
 	textdomain (GETTEXT_DOMAIN);
-#endif
 
 	/* For custom command line arguments, see:
 	 * http://git.gnome.org/browse/glade3/tree/src/main.c

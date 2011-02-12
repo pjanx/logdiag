@@ -44,7 +44,8 @@ set (pkg_gtk_urls
 	"${pkg_gtk_root}/librsvg/2.32/svg-gdk-pixbuf-loader_2.32.1-1_win32.zip"
 	"${pkg_gtk_root}/libcroco/0.6/libcroco_0.6.2-1_win32.zip"
 	"${pkg_gtk_root}/dependencies/libxml2_2.7.7-1_win32.zip"
-	"${pkg_gtk_root}/dependencies/libxml2-dev_2.7.7-1_win32.zip")
+	"${pkg_gtk_root}/dependencies/libxml2-dev_2.7.7-1_win32.zip"
+	"${pkg_gtk_root}/dependencies/gettext-tools-0.17.zip")
 set (pkg_gtk_md5
 	"a545c0ca1e6a312701d42a18e49572af"
 	"2c712a8d7a652363241c0967098515db"
@@ -52,7 +53,8 @@ set (pkg_gtk_md5
 	"bf4e34f1f175b88430159d33e01d0c49"
 	"2d90c71404be0de4e5f3259f63a3e278"
 	"bd6b3d8c35e06a00937db65887c6e287"
-	"b6f59b70eef0992df37f8db891d4b283")
+	"b6f59b70eef0992df37f8db891d4b283"
+	"09baff956ebd1c391c7f71e9bd768edd")
 
 set (pkg_opensuse_root "http://download.opensuse.org/repositories/windows:/mingw:/win32/openSUSE_Factory/noarch")
 set (pkg_opensuse_urls

@@ -276,8 +276,8 @@ if (WIN32)
 		${WIN32_DEPENDS_PATH}/lib/gdk-pixbuf-2.0
 		DESTINATION lib)
 	install (DIRECTORY
-		${WIN32_DEPENDS_PATH}/share/themes
-		DESTINATION share)
+		${WIN32_DEPENDS_PATH}/share/themes/MS-Windows
+		DESTINATION share/themes)
 
 	# Avoid partial translations
 	file (GLOB locales ${WIN32_DEPENDS_PATH}/share/locale/*)

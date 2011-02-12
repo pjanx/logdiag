@@ -1,0 +1,141 @@
+# Czech translation for logdiag.
+# Copyright (C) 2011 Přemysl Janouch
+# This file is distributed under the same license as the logdiag package.
+# Přemysl Janouch <p.janouch@gmail.com>, 2011.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: logdiag\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-02-12 02:13+0100\n"
+"PO-Revision-Date: 2011-02-12 02:24+0100\n"
+"Last-Translator: Přemysl Janouch <p.janouch@gmail.com>\n"
+"Language-Team: Czech <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../src/ld-window-main.c:115
+msgid "Create a new diagram"
+msgstr "Vytvoří nový diagram"
+
+#: ../src/ld-window-main.c:148
+msgid "Delete the contents of the selection"
+msgstr "Odstraní obsah výběru"
+
+#: ../src/ld-window-main.c:118
+msgid "Open a diagram"
+msgstr "Otevře diagram"
+
+#: ../src/ld-window-main.c:132
+msgid "Quit the application"
+msgstr "Ukončí aplikaci"
+
+#: ../src/ld-window-main.c:140
+msgid "Redo the last undone action"
+msgstr "Provede posledně vrácenou akci"
+
+#: ../src/ld-window-main.c:162
+msgid "Reset zoom level back to the default"
+msgstr "Vrátí přiblížení na výchozí hodnotu"
+
+#: ../src/ld-window-main.c:123
+msgid "Save _As..."
+msgstr "Uložit _jako..."
+
+#: ../src/ld-window-main.c:121
+msgid "Save the current diagram"
+msgstr "Uloží stávající diagram"
+
+#: ../src/ld-window-main.c:124
+msgid "Save the current diagram with another name"
+msgstr "Uloží stávající diagram pod jiným jménem"
+
+#: ../src/ld-window-main.c:150
+msgid "Select _All"
+msgstr "Vybrat _vše"
+
+#: ../src/ld-window-main.c:151
+msgid "Select all objects in the diagram"
+msgstr "Vybere všechny objekty v diagramu"
+
+#: ../src/ld-window-main.c:167
+msgid "Show a dialog about this application"
+msgstr "Zobrazí dialog o této aplikaci"
+
+#: ../src/ld-window-main.c:137
+msgid "Undo the last action"
+msgstr "Vrátí poslední akci"
+
+#: ../src/ld-window-main.c:490
+msgid "Unsaved Diagram"
+msgstr "Neuložený diagram"
+
+#: ../src/ld-window-main.c:158
+msgid "Zoom _Out"
+msgstr "_Oddálit"
+
+#: ../src/ld-window-main.c:156
+msgid "Zoom into the diagram"
+msgstr "Přiblíží diagram"
+
+#: ../src/ld-window-main.c:159
+msgid "Zoom out of the diagram"
+msgstr "Oddálí diagram"
+
+#: ../src/ld-window-main.c:166
+msgid "_About"
+msgstr "_O programu"
+
+#: ../src/ld-window-main.c:147
+msgid "_Delete"
+msgstr "_Smazat"
+
+#: ../src/ld-window-main.c:135
+msgid "_Edit"
+msgstr "_Úpravy"
+
+#: ../src/ld-window-main.c:113
+msgid "_File"
+msgstr "_Soubor"
+
+#: ../src/ld-window-main.c:165
+msgid "_Help"
+msgstr "_Nápověda"
+
+#: ../src/ld-window-main.c:114
+msgid "_New"
+msgstr "_Nový"
+
+#: ../src/ld-window-main.c:161
+msgid "_Normal Size"
+msgstr "_Normální velikost"
+
+#: ../src/ld-window-main.c:117
+msgid "_Open..."
+msgstr "_Otevřít..."
+
+#: ../src/ld-window-main.c:131
+msgid "_Quit"
+msgstr "_Ukončit"
+
+#: ../src/ld-window-main.c:139
+msgid "_Redo"
+msgstr "_Znovu"
+
+#: ../src/ld-window-main.c:120
+msgid "_Save"
+msgstr "_Uložit"
+
+#: ../src/ld-window-main.c:136
+msgid "_Undo"
+msgstr "_Zpět"
+
+#: ../src/ld-window-main.c:154
+msgid "_View"
+msgstr "_Zobrazení"
+
+#: ../src/ld-window-main.c:155
+msgid "_Zoom In"
+msgstr "_Přiblížit"

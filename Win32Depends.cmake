@@ -62,8 +62,8 @@ set (pkg_opensuse_urls
 	"${pkg_opensuse_root}/mingw32-json-glib-devel-0.12.0-2.38.noarch.rpm")
 set (pkg_opensuse_strip "usr/i686-pc-mingw32/sys-root/mingw")
 set (pkg_opensuse_md5
-	"2ca72896a3888c9081104e16a996a234"
-	"1c50ab8368b54f9ddf14dbca001477b9")
+	"0ad8263366797a712265536d89f155ea"
+	"39a430e0e391edac1749d3fefb3c077b")
 
 set (pkg_mingw_lua_root "http://sourceforge.net/projects/mingw-cross/files/%5BLIB%5D%20Lua")
 set (pkg_mingw_lua_name "mingw32-lua-5.1.4-2")

@@ -228,7 +228,7 @@ ld_window_main_init (LdWindowMain *self)
 		(priv->ui_manager, PROJECT_SHARE_DIR "gui/window-main.ui", &error);
 	if (error)
 	{
-		g_message (_("Building UI failed: %s"), error->message);
+		g_message ("Building UI failed: %s", error->message);
 		g_error_free (error);
 	}
 

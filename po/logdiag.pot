@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: logdiag \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-02-12 02:13+0100\n"
+"POT-Creation-Date: 2011-02-13 20:25+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,126 +17,183 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../src/ld-window-main.c:113
+#: ../src/ld-window-main.c:114
 msgid "_File"
 msgstr ""
 
-#: ../src/ld-window-main.c:114
+#: ../src/ld-window-main.c:115
 msgid "_New"
 msgstr ""
 
-#: ../src/ld-window-main.c:115
+#: ../src/ld-window-main.c:116
 msgid "Create a new diagram"
 msgstr ""
 
-#: ../src/ld-window-main.c:117
+#: ../src/ld-window-main.c:118
 msgid "_Open..."
 msgstr ""
 
-#: ../src/ld-window-main.c:118
+#: ../src/ld-window-main.c:119
 msgid "Open a diagram"
 msgstr ""
 
-#: ../src/ld-window-main.c:120
+#: ../src/ld-window-main.c:121
 msgid "_Save"
 msgstr ""
 
-#: ../src/ld-window-main.c:121
+#: ../src/ld-window-main.c:122
 msgid "Save the current diagram"
 msgstr ""
 
-#: ../src/ld-window-main.c:123
+#: ../src/ld-window-main.c:124
 msgid "Save _As..."
 msgstr ""
 
-#: ../src/ld-window-main.c:124
+#: ../src/ld-window-main.c:125
 msgid "Save the current diagram with another name"
 msgstr ""
 
-#: ../src/ld-window-main.c:131
+#: ../src/ld-window-main.c:132
 msgid "_Quit"
 msgstr ""
 
-#: ../src/ld-window-main.c:132
+#: ../src/ld-window-main.c:133
 msgid "Quit the application"
 msgstr ""
 
-#: ../src/ld-window-main.c:135
+#: ../src/ld-window-main.c:136
 msgid "_Edit"
 msgstr ""
 
-#: ../src/ld-window-main.c:136
+#: ../src/ld-window-main.c:137
 msgid "_Undo"
 msgstr ""
 
-#: ../src/ld-window-main.c:137
+#: ../src/ld-window-main.c:138
 msgid "Undo the last action"
 msgstr ""
 
-#: ../src/ld-window-main.c:139
+#: ../src/ld-window-main.c:140
 msgid "_Redo"
 msgstr ""
 
-#: ../src/ld-window-main.c:140
+#: ../src/ld-window-main.c:141
 msgid "Redo the last undone action"
 msgstr ""
 
-#: ../src/ld-window-main.c:147
+#: ../src/ld-window-main.c:148
 msgid "_Delete"
 msgstr ""
 
-#: ../src/ld-window-main.c:148
+#: ../src/ld-window-main.c:149
 msgid "Delete the contents of the selection"
 msgstr ""
 
-#: ../src/ld-window-main.c:150
+#: ../src/ld-window-main.c:151
 msgid "Select _All"
 msgstr ""
 
-#: ../src/ld-window-main.c:151
+#: ../src/ld-window-main.c:152
 msgid "Select all objects in the diagram"
 msgstr ""
 
-#: ../src/ld-window-main.c:154
+#: ../src/ld-window-main.c:155
 msgid "_View"
 msgstr ""
 
-#: ../src/ld-window-main.c:155
+#: ../src/ld-window-main.c:156
 msgid "_Zoom In"
 msgstr ""
 
-#: ../src/ld-window-main.c:156
+#: ../src/ld-window-main.c:157
 msgid "Zoom into the diagram"
 msgstr ""
 
-#: ../src/ld-window-main.c:158
+#: ../src/ld-window-main.c:159
 msgid "Zoom _Out"
 msgstr ""
 
-#: ../src/ld-window-main.c:159
+#: ../src/ld-window-main.c:160
 msgid "Zoom out of the diagram"
 msgstr ""
 
-#: ../src/ld-window-main.c:161
+#: ../src/ld-window-main.c:162
 msgid "_Normal Size"
 msgstr ""
 
-#: ../src/ld-window-main.c:162
+#: ../src/ld-window-main.c:163
 msgid "Reset zoom level back to the default"
 msgstr ""
 
-#: ../src/ld-window-main.c:165
+#: ../src/ld-window-main.c:166
 msgid "_Help"
 msgstr ""
 
-#: ../src/ld-window-main.c:166
+#: ../src/ld-window-main.c:167
 msgid "_About"
 msgstr ""
 
-#: ../src/ld-window-main.c:167
+#: ../src/ld-window-main.c:168
 msgid "Show a dialog about this application"
 msgstr ""
 
-#: ../src/ld-window-main.c:490
+#: ../src/ld-window-main.c:493
 msgid "Unsaved Diagram"
+msgstr ""
+
+#: ../src/ld-window-main.c:525
+#, c-format
+msgid ""
+"Save the changes to diagram \"%s\" before closing it and creating a new one?"
+msgstr ""
+
+#: ../src/ld-window-main.c:569
+msgid "Failed to save the diagram"
+msgstr ""
+
+#: ../src/ld-window-main.c:572
+msgid "Try again or save it under another name."
+msgstr ""
+
+#: ../src/ld-window-main.c:604
+msgid "Failed to open the file"
+msgstr ""
+
+#: ../src/ld-window-main.c:607
+msgid "The file is probably corrupted."
+msgstr ""
+
+#: ../src/ld-window-main.c:629
+msgid "Logdiag Diagrams (*.ldd)"
+msgstr ""
+
+#: ../src/ld-window-main.c:646
+#, c-format
+msgid ""
+"Save the changes to diagram \"%s\" before closing it and opening another one?"
+msgstr ""
+
+#: ../src/ld-window-main.c:650
+msgid "Open..."
+msgstr ""
+
+#: ../src/ld-window-main.c:681
+msgid "Save As..."
+msgstr ""
+
+#: ../src/ld-window-main.c:734
+msgid "If you don't save, changes will be permanently lost."
+msgstr ""
+
+#: ../src/ld-window-main.c:736
+msgid "Close _without Saving"
+msgstr ""
+
+#: ../src/ld-window-main.c:774
+#, c-format
+msgid "Save the changes to diagram \"%s\" before closing?"
+msgstr ""
+
+#: ../src/logdiag.c:33
+msgid "[FILE] - Schematic editor"
 msgstr ""

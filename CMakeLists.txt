@@ -321,12 +321,22 @@ set (CPACK_PACKAGE_FILE_NAME
 set (CPACK_PACKAGE_INSTALL_DIRECTORY
 	"${CMAKE_PROJECT_NAME} ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}")
 
+# FIXME: It is possible to install multiple copies. Everything screws up then.
 set (CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/share\\\\header.bmp")
 set (CPACK_NSIS_INSTALLED_ICON_NAME "logdiag.exe")
-set (CPACK_NSIS_CREATE_ICONS_EXTRA
-	"CreateShortCut '\$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\logdiag.lnk' '\$INSTDIR\\\\logdiag.exe'")
-set (CPACK_NSIS_DELETE_ICONS_EXTRA
-	"Delete '\$SMPROGRAMS\\\\$MUI_TEMP\\\\logdiag.lnk'")
+set (CPACK_NSIS_CREATE_ICONS_EXTRA "
+	CreateShortCut '\$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\logdiag.lnk' '\$INSTDIR\\\\logdiag.exe'")
+set (CPACK_NSIS_DELETE_ICONS_EXTRA "
+	Delete '\$SMPROGRAMS\\\\$MUI_TEMP\\\\logdiag.lnk'")
+set (CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
+	WriteRegStr HKCR '.ldd' '' 'logdiag.Diagram'
+	WriteRegStr HKCR 'logdiag.Diagram' '' 'logdiag Diagram'
+	WriteRegStr HKCR 'logdiag.Diagram\\\\shell\\\\open\\\\command' '' '\\\"\$INSTDIR\\\\logdiag.exe\\\" \\\"%1\\\"'
+	WriteRegStr HKCR 'logdiag.Diagram\\\\shell\\\\edit\\\\command' '' '\\\"\$INSTDIR\\\\logdiag.exe\\\" \\\"%1\\\"'
+	System::Call 'shell32::SHChangeNotify(i,i,i,i) (0x08000000, 0x1000, 0, 0)'")
+set (CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "
+	DeleteRegKey HKCR 'logdiag.Diagram'
+	System::Call 'shell32::SHChangeNotify(i,i,i,i) (0x08000000, 0x1000, 0, 0)'")
 
 string (REPLACE "http://" "http:\\\\\\\\" project_URL_NSIS "${project_URL}")
 set (CPACK_NSIS_URL_INFO_ABOUT "${project_URL_NSIS}")

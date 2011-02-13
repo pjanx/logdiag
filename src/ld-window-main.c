@@ -71,6 +71,7 @@ static void on_diagram_selection_changed (LdDiagram *diagram,
 static gchar *diagram_get_name (LdWindowMain *self);
 static void diagram_set_filename (LdWindowMain *self, gchar *filename);
 static void diagram_new (LdWindowMain *self);
+static gboolean diagram_open (LdWindowMain *self, const gchar *filename);
 static void diagram_save (LdWindowMain *self);
 
 static GtkFileFilter *diagram_get_file_filter (void);
@@ -228,7 +229,7 @@ ld_window_main_init (LdWindowMain *self)
 		(priv->ui_manager, PROJECT_SHARE_DIR "gui/window-main.ui", &error);
 	if (error)
 	{
-		g_message ("Building UI failed: %s", error->message);
+		g_message ("building UI failed: %s", error->message);
 		g_error_free (error);
 	}
 
@@ -487,7 +488,7 @@ diagram_get_name (LdWindowMain *self)
 	g_return_val_if_fail (LD_IS_WINDOW_MAIN (self), NULL);
 
 	if (self->priv->filename)
-		return g_path_get_basename (self->priv->filename);
+		return g_filename_display_basename (self->priv->filename);
 	else
 		return g_strdup (_("Unsaved Diagram"));
 }
@@ -521,8 +522,8 @@ diagram_new (LdWindowMain *self)
 {
 	g_return_if_fail (LD_IS_WINDOW_MAIN (self));
 
-	if (!may_close_diagram (self, "Save the changes to diagram \"%s\" before"
-		" closing it and creating a new one?"))
+	if (!may_close_diagram (self, _("Save the changes to diagram \"%s\" before"
+		" closing it and creating a new one?")))
 		return;
 
 	ld_diagram_clear (self->priv->diagram);
@@ -565,10 +566,10 @@ diagram_save (LdWindowMain *self)
 
 		message_dialog = gtk_message_dialog_new (GTK_WINDOW (self),
 			GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-			"Failed to save the diagram");
+			_("Failed to save the diagram"));
 		gtk_message_dialog_format_secondary_text
 			(GTK_MESSAGE_DIALOG (message_dialog),
-			"Try again or save it under another name.");
+			_("Try again or save it under another name."));
 		gtk_dialog_run (GTK_DIALOG (message_dialog));
 		gtk_widget_destroy (message_dialog);
 	}
@@ -577,6 +578,41 @@ diagram_save (LdWindowMain *self)
 		ld_diagram_set_modified (self->priv->diagram, FALSE);
 		update_title (self);
 	}
+}
+
+/*
+ * diagram_open:
+ *
+ * Open a diagram from a file.
+ */
+static gboolean
+diagram_open (LdWindowMain *self, const gchar *filename)
+{
+	GError *error;
+
+	error = NULL;
+	ld_diagram_load_from_file (self->priv->diagram, filename, &error);
+	if (error)
+	{
+		GtkWidget *message_dialog;
+
+		g_warning ("loading failed: %s", error->message);
+		g_error_free (error);
+
+		message_dialog = gtk_message_dialog_new (GTK_WINDOW (self),
+			GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+			_("Failed to open the file"));
+		gtk_message_dialog_format_secondary_text
+			(GTK_MESSAGE_DIALOG (message_dialog),
+			_("The file is probably corrupted."));
+		gtk_dialog_run (GTK_DIALOG (message_dialog));
+		gtk_widget_destroy (message_dialog);
+		return FALSE;
+	}
+
+	ld_diagram_set_modified (self->priv->diagram, FALSE);
+	diagram_set_filename (self, g_strdup (filename));
+	return TRUE;
 }
 
 /*
@@ -590,7 +626,7 @@ diagram_get_file_filter (void)
 	GtkFileFilter *filter;
 
 	filter = gtk_file_filter_new ();
-	gtk_file_filter_set_name (filter, "Logdiag Diagrams");
+	gtk_file_filter_set_name (filter, _("Logdiag Diagrams (*.ldd)"));
 	gtk_file_filter_add_pattern (filter, "*.ldd");
 	return filter;
 }
@@ -607,11 +643,11 @@ diagram_show_open_dialog (LdWindowMain *self)
 
 	g_return_if_fail (LD_IS_WINDOW_MAIN (self));
 
-	if (!may_close_diagram (self, "Save the changes to diagram \"%s\" before"
-		" closing it and opening another one?"))
+	if (!may_close_diagram (self, _("Save the changes to diagram \"%s\" before"
+		" closing it and opening another one?")))
 		return;
 
-	dialog = gtk_file_chooser_dialog_new ("Open...", GTK_WINDOW (self),
+	dialog = gtk_file_chooser_dialog_new (_("Open..."), GTK_WINDOW (self),
 		GTK_FILE_CHOOSER_ACTION_OPEN,
 		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 		GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
@@ -622,33 +658,10 @@ diagram_show_open_dialog (LdWindowMain *self)
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
 	{
 		gchar *filename;
-		GError *error;
 
 		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-
-		error = NULL;
-		ld_diagram_load_from_file (self->priv->diagram, filename, &error);
-		if (error)
-		{
-			GtkWidget *message_dialog;
-
-			g_warning ("loading failed: %s", error->message);
-			g_error_free (error);
-
-			message_dialog = gtk_message_dialog_new (GTK_WINDOW (self),
-				GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-				"Failed to open the file");
-			gtk_message_dialog_format_secondary_text
-				(GTK_MESSAGE_DIALOG (message_dialog),
-				"The file is probably corrupted.");
-			gtk_dialog_run (GTK_DIALOG (message_dialog));
-			gtk_widget_destroy (message_dialog);
-		}
-		else
-		{
-			ld_diagram_set_modified (self->priv->diagram, FALSE);
-			diagram_set_filename (self, filename);
-		}
+		diagram_open (self, filename);
+		g_free (filename);
 	}
 	gtk_widget_destroy (dialog);
 }
@@ -665,7 +678,7 @@ diagram_show_save_as_dialog (LdWindowMain *self)
 
 	g_return_if_fail (LD_IS_WINDOW_MAIN (self));
 
-	dialog = gtk_file_chooser_dialog_new ("Save As...", GTK_WINDOW (self),
+	dialog = gtk_file_chooser_dialog_new (_("Save As..."), GTK_WINDOW (self),
 		GTK_FILE_CHOOSER_ACTION_SAVE,
 		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 		GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
@@ -676,8 +689,8 @@ diagram_show_save_as_dialog (LdWindowMain *self)
 
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
 	{
-		diagram_set_filename (self, gtk_file_chooser_get_filename
-			(GTK_FILE_CHOOSER (dialog)));
+		diagram_set_filename (self,
+			gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog)));
 		diagram_save (self);
 	}
 	gtk_widget_destroy (dialog);
@@ -718,9 +731,9 @@ may_close_diagram (LdWindowMain *self, const gchar *dialog_message)
 		dialog_message, name);
 	gtk_message_dialog_format_secondary_text
 		(GTK_MESSAGE_DIALOG (message_dialog),
-		"If you don't save, changes will be permanently lost.");
+		_("If you don't save, changes will be permanently lost."));
 	gtk_dialog_add_buttons (GTK_DIALOG (message_dialog),
-		"Close _without Saving", GTK_RESPONSE_NO,
+		_("Close _without Saving"), GTK_RESPONSE_NO,
 		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 		GTK_STOCK_SAVE, GTK_RESPONSE_YES,
 		NULL);
@@ -758,7 +771,7 @@ may_quit (LdWindowMain *self)
 	g_return_val_if_fail (LD_IS_WINDOW_MAIN (self), TRUE);
 
 	return may_close_diagram (self,
-		"Save the changes to diagram \"%s\" before closing?");
+		_("Save the changes to diagram \"%s\" before closing?"));
 }
 
 

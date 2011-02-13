@@ -21,6 +21,16 @@ main (int argc, char *argv[])
 {
 	GtkWidget *window;
 	GError *error;
+#ifdef _WIN32
+	gchar *install_dir;
+
+	install_dir = g_win32_get_package_installation_directory_of_module (NULL);
+	if (install_dir)
+	{
+		g_chdir (install_dir);
+		g_free (install_dir);
+	}
+#endif
 
 	setlocale (LC_ALL, "");
 

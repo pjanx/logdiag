@@ -1457,7 +1457,8 @@ ld_canvas_add_object_begin (LdCanvas *self, LdDiagramObject *object)
 	g_return_if_fail (LD_IS_CANVAS (self));
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (object));
 
-	ld_canvas_real_cancel_operation (self);
+	g_signal_emit (self,
+		LD_CANVAS_GET_CLASS (self)->cancel_operation_signal, 0);
 
 	self->priv->operation = OPER_ADD_OBJECT;
 	self->priv->operation_end = oper_add_object_end;
@@ -1485,7 +1486,8 @@ oper_connect_begin (LdCanvas *self, const LdPoint *point)
 {
 	ConnectData *data;
 
-	ld_canvas_real_cancel_operation (self);
+	g_signal_emit (self,
+		LD_CANVAS_GET_CLASS (self)->cancel_operation_signal, 0);
 
 	self->priv->operation = OPER_CONNECT;
 	self->priv->operation_end = oper_connect_end;
@@ -1572,7 +1574,8 @@ oper_select_begin (LdCanvas *self, const LdPoint *point)
 {
 	SelectData *data;
 
-	ld_canvas_real_cancel_operation (self);
+	g_signal_emit (self,
+		LD_CANVAS_GET_CLASS (self)->cancel_operation_signal, 0);
 
 	self->priv->operation = OPER_SELECT;
 	self->priv->operation_end = oper_select_end;
@@ -1683,7 +1686,8 @@ oper_move_selection_begin (LdCanvas *self, const LdPoint *point)
 {
 	MoveSelectionData *data;
 
-	ld_canvas_real_cancel_operation (self);
+	g_signal_emit (self,
+		LD_CANVAS_GET_CLASS (self)->cancel_operation_signal, 0);
 
 	self->priv->operation = OPER_MOVE_SELECTION;
 	self->priv->operation_end = oper_move_selection_end;
@@ -1865,7 +1869,8 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 		ld_diagram_insert_object (self->priv->diagram, data->object, -1);
 
 		/* XXX: "cancel" causes confusion. */
-		ld_canvas_real_cancel_operation (self);
+		g_signal_emit (self,
+			LD_CANVAS_GET_CLASS (self)->cancel_operation_signal, 0);
 		break;
 	case OPER_0:
 		self->priv->drag_start_pos = point;
@@ -1918,7 +1923,8 @@ on_button_release (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 	case OPER_SELECT:
 	case OPER_MOVE_SELECTION:
 	case OPER_CONNECT:
-		ld_canvas_real_cancel_operation (self);
+		g_signal_emit (self,
+			LD_CANVAS_GET_CLASS (self)->cancel_operation_signal, 0);
 		break;
 	case OPER_0:
 		object = get_object_at_point (self, &point);

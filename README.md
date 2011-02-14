@@ -1,7 +1,6 @@
 # logdiag
 
-logdiag is a schematic editor written in GTK+. It focuses on simplicity,  
-usability and openness.  
+logdiag is a schematic editor written in GTK+.
 
 __This software is considered to be alpha quality and cannot be recommended  
 for regular usage.__  

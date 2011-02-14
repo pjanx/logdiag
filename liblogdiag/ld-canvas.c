@@ -240,6 +240,7 @@ static void queue_object_draw (LdCanvas *self, LdDiagramObject *object);
 
 /* Symbol terminals. */
 static void check_terminals (LdCanvas *self, const LdPoint *point);
+static void rotate_terminal (LdPoint *terminal, gint symbol_rotation);
 static void hide_terminals (LdCanvas *self);
 static void queue_terminal_draw (LdCanvas *self, LdPoint *terminal);
 
@@ -251,6 +252,8 @@ static gboolean get_symbol_clip_area (LdCanvas *self,
 
 static gboolean get_symbol_area (LdCanvas *self,
 	LdDiagramSymbol *symbol, LdRectangle *rect);
+static void rotate_symbol_area (LdRectangle *area, gint rotation);
+static void rotate_symbol (LdCanvas *self, LdDiagramSymbol *symbol);
 static LdSymbol *resolve_symbol (LdCanvas *self,
 	LdDiagramSymbol *diagram_symbol);
 
@@ -1162,12 +1165,12 @@ check_terminals (LdCanvas *self, const LdPoint *point)
 	objects = (GList *) ld_diagram_get_objects (self->priv->diagram);
 	for (iter = objects; iter; iter = g_list_next (iter))
 	{
-		LdDiagramObject *diagram_object;
 		gdouble object_x, object_y;
 		LdDiagramSymbol *diagram_symbol;
 		LdSymbol *symbol;
 		const LdPointArray *terminals;
 		guint i;
+		gint rotation;
 
 		if (!LD_IS_DIAGRAM_SYMBOL (iter->data))
 			continue;
@@ -1177,17 +1180,17 @@ check_terminals (LdCanvas *self, const LdPoint *point)
 		if (!symbol)
 			continue;
 
-		diagram_object = LD_DIAGRAM_OBJECT (iter->data);
-		g_object_get (diagram_object, "x", &object_x, "y", &object_y, NULL);
+		g_object_get (diagram_symbol, "x", &object_x, "y", &object_y,
+			"rotation", &rotation, NULL);
 
 		terminals = ld_symbol_get_terminals (symbol);
-
 		for (i = 0; i < terminals->length; i++)
 		{
 			LdPoint cur_term, widget_coords;
 			gdouble distance;
 
 			cur_term = terminals->points[i];
+			rotate_terminal (&cur_term, rotation);
 			cur_term.x += object_x;
 			cur_term.y += object_y;
 
@@ -1210,6 +1213,30 @@ check_terminals (LdCanvas *self, const LdPoint *point)
 		self->priv->terminal_hovered = TRUE;
 		self->priv->terminal = closest_terminal;
 		queue_terminal_draw (self, &closest_terminal);
+	}
+}
+
+static void
+rotate_terminal (LdPoint *terminal, gint symbol_rotation)
+{
+	gdouble temp;
+
+	switch (symbol_rotation)
+	{
+	case LD_DIAGRAM_SYMBOL_ROTATION_90:
+		temp = terminal->y;
+		terminal->y = terminal->x;
+		terminal->x = -temp;
+		break;
+	case LD_DIAGRAM_SYMBOL_ROTATION_180:
+		terminal->y = -terminal->y;
+		terminal->x = -terminal->x;
+		break;
+	case LD_DIAGRAM_SYMBOL_ROTATION_270:
+		temp = terminal->x;
+		terminal->x = terminal->y;
+		terminal->y = -temp;
+		break;
 	}
 }
 
@@ -1276,8 +1303,10 @@ get_symbol_area (LdCanvas *self, LdDiagramSymbol *symbol, LdRectangle *rect)
 	LdRectangle area;
 	gdouble x1, x2;
 	gdouble y1, y2;
+	gint rotation;
 
-	g_object_get (symbol, "x", &object_x, "y", &object_y, NULL);
+	g_object_get (symbol, "x", &object_x, "y", &object_y,
+		"rotation", &rotation, NULL);
 
 	library_symbol = resolve_symbol (self, symbol);
 	if (library_symbol)
@@ -1285,7 +1314,8 @@ get_symbol_area (LdCanvas *self, LdDiagramSymbol *symbol, LdRectangle *rect)
 	else
 		return FALSE;
 
-	/* TODO: Rotate the rectangle for other orientations. */
+	rotate_symbol_area (&area, rotation);
+
 	ld_canvas_diagram_to_widget_coords (self,
 		object_x + area.x,
 		object_y + area.y,
@@ -1305,6 +1335,68 @@ get_symbol_area (LdCanvas *self, LdDiagramSymbol *symbol, LdRectangle *rect)
 	rect->width  = x2 - x1;
 	rect->height = y2 - y1;
 	return TRUE;
+}
+
+static void
+rotate_symbol_area (LdRectangle *area, gint rotation)
+{
+	gdouble temp;
+
+	switch (rotation)
+	{
+	case LD_DIAGRAM_SYMBOL_ROTATION_90:
+		temp = area->y;
+		area->y = area->x;
+		area->x = -(temp + area->height);
+		break;
+	case LD_DIAGRAM_SYMBOL_ROTATION_180:
+		area->y = -(area->y + area->height);
+		area->x = -(area->x + area->width);
+		break;
+	case LD_DIAGRAM_SYMBOL_ROTATION_270:
+		temp = area->x;
+		area->x = area->y;
+		area->y = -(temp + area->width);
+		break;
+	}
+
+	switch (rotation)
+	{
+	case LD_DIAGRAM_SYMBOL_ROTATION_90:
+	case LD_DIAGRAM_SYMBOL_ROTATION_270:
+		temp = area->width;
+		area->width = area->height;
+		area->height = temp;
+		break;
+	}
+}
+
+static void
+rotate_symbol (LdCanvas *self, LdDiagramSymbol *symbol)
+{
+	gint rotation;
+
+	g_object_get (symbol, "rotation", &rotation, NULL);
+	queue_object_draw (self, LD_DIAGRAM_OBJECT (symbol));
+
+	switch (rotation)
+	{
+	case LD_DIAGRAM_SYMBOL_ROTATION_0:
+		rotation = LD_DIAGRAM_SYMBOL_ROTATION_90;
+		break;
+	case LD_DIAGRAM_SYMBOL_ROTATION_90:
+		rotation = LD_DIAGRAM_SYMBOL_ROTATION_180;
+		break;
+	case LD_DIAGRAM_SYMBOL_ROTATION_180:
+		rotation = LD_DIAGRAM_SYMBOL_ROTATION_270;
+		break;
+	case LD_DIAGRAM_SYMBOL_ROTATION_270:
+		rotation = LD_DIAGRAM_SYMBOL_ROTATION_0;
+		break;
+	}
+
+	g_object_set (symbol, "rotation", rotation, NULL);
+	queue_object_draw (self, LD_DIAGRAM_OBJECT (symbol));
 }
 
 static LdSymbol *
@@ -1846,17 +1938,25 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 	AddObjectData *data;
 	LdDiagramObject *object;
 
-	if (event->button != 1)
-		return FALSE;
-	if (!gtk_widget_has_focus (widget))
-		gtk_widget_grab_focus (widget);
-
 	point.x = event->x;
 	point.y = event->y;
 
 	self = LD_CANVAS (widget);
 	if (!self->priv->diagram)
 		return FALSE;
+
+	if (event->button == 3 && self->priv->operation == OPER_0)
+	{
+		object = get_object_at_point (self, &point);
+		if (object && LD_IS_DIAGRAM_SYMBOL (object))
+			rotate_symbol (self, LD_DIAGRAM_SYMBOL (object));
+		return FALSE;
+	}
+
+	if (event->button != 1)
+		return FALSE;
+	if (!gtk_widget_has_focus (widget))
+		gtk_widget_grab_focus (widget);
 
 	self->priv->drag_operation = OPER_0;
 	switch (self->priv->operation)
@@ -2151,6 +2251,7 @@ draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data)
 	LdSymbol *symbol;
 	LdRectangle clip_rect;
 	gdouble x, y;
+	gint rotation;
 
 	symbol = resolve_symbol (data->self, diagram_symbol);
 
@@ -2175,11 +2276,24 @@ draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data)
 		clip_rect.width, clip_rect.height);
 	cairo_clip (data->cr);
 
-	/* TODO: Rotate the space for other orientations. */
-	g_object_get (diagram_symbol, "x", &x, "y", &y, NULL);
+	g_object_get (diagram_symbol, "x", &x, "y", &y,
+		"rotation", &rotation, NULL);
 	ld_canvas_diagram_to_widget_coords (data->self, x, y, &x, &y);
 	cairo_translate (data->cr, x, y);
 	cairo_scale (data->cr, data->scale, data->scale);
+
+	switch (rotation)
+	{
+	case LD_DIAGRAM_SYMBOL_ROTATION_90:
+		cairo_rotate (data->cr, G_PI * 0.5);
+		break;
+	case LD_DIAGRAM_SYMBOL_ROTATION_180:
+		cairo_rotate (data->cr, G_PI);
+		break;
+	case LD_DIAGRAM_SYMBOL_ROTATION_270:
+		cairo_rotate (data->cr, G_PI * 1.5);
+		break;
+	}
 
 	ld_symbol_draw (symbol, data->cr);
 	cairo_restore (data->cr);

@@ -50,11 +50,21 @@ struct _LdDiagramSymbolClass
 };
 
 
+enum
+{
+	LD_DIAGRAM_SYMBOL_ROTATION_0,
+	LD_DIAGRAM_SYMBOL_ROTATION_90,
+	LD_DIAGRAM_SYMBOL_ROTATION_180,
+	LD_DIAGRAM_SYMBOL_ROTATION_270
+};
+
 GType ld_diagram_symbol_get_type (void) G_GNUC_CONST;
 
 LdDiagramSymbol *ld_diagram_symbol_new (JsonObject *storage);
 gchar *ld_diagram_symbol_get_class (LdDiagramSymbol *self);
 void ld_diagram_symbol_set_class (LdDiagramSymbol *self, const gchar *klass);
+gint ld_diagram_symbol_get_rotation (LdDiagramSymbol *self);
+void ld_diagram_symbol_set_rotation (LdDiagramSymbol *self, gint rotation);
 
 
 G_END_DECLS

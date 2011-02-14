@@ -23,7 +23,8 @@
 enum
 {
 	PROP_0,
-	PROP_CLASS
+	PROP_CLASS,
+	PROP_ROTATION
 };
 
 static void ld_diagram_symbol_get_property (GObject *object, guint property_id,
@@ -53,6 +54,16 @@ ld_diagram_symbol_class_init (LdDiagramSymbolClass *klass)
 		"The class of this symbol.",
 		"", G_PARAM_READWRITE);
 	g_object_class_install_property (object_class, PROP_CLASS, pspec);
+
+/**
+ * LdDiagramSymbol:rotation:
+ *
+ * Rotation of this symbol.
+ */
+	pspec = g_param_spec_int ("rotation", "Rotation",
+		"Rotation of this symbol.",
+		0, 3, 0, G_PARAM_READWRITE);
+	g_object_class_install_property (object_class, PROP_ROTATION, pspec);
 }
 
 static void
@@ -70,6 +81,7 @@ ld_diagram_symbol_get_property (GObject *object, guint property_id,
 	switch (property_id)
 	{
 	case PROP_CLASS:
+	case PROP_ROTATION:
 		ld_diagram_object_get_data_for_param (self, value, pspec);
 		break;
 	default:
@@ -87,6 +99,7 @@ ld_diagram_symbol_set_property (GObject *object, guint property_id,
 	switch (property_id)
 	{
 	case PROP_CLASS:
+	case PROP_ROTATION:
 		ld_diagram_object_set_data_for_param (self, value, pspec);
 		break;
 	default:
@@ -138,4 +151,34 @@ ld_diagram_symbol_set_class (LdDiagramSymbol *self, const gchar *klass)
 {
 	g_return_if_fail (LD_IS_DIAGRAM_SYMBOL (self));
 	g_object_set (self, "class", klass, NULL);
+}
+
+/**
+ * ld_diagram_symbol_get_rotation:
+ * @self: an #LdDiagramSymbol object.
+ *
+ * Return value: rotation of the symbol.
+ */
+gint
+ld_diagram_symbol_get_rotation (LdDiagramSymbol *self)
+{
+	gint rotation;
+
+	g_return_val_if_fail (LD_IS_DIAGRAM_SYMBOL (self), 0);
+	g_object_get (self, "rotation", &rotation, NULL);
+	return rotation;
+}
+
+/**
+ * ld_diagram_symbol_set_rotation:
+ * @self: an #LdDiagramSymbol object.
+ * @rotation: the rotation.
+ *
+ * Set rotation of the symbol.
+ */
+void
+ld_diagram_symbol_set_rotation (LdDiagramSymbol *self, gint rotation)
+{
+	g_return_if_fail (LD_IS_DIAGRAM_SYMBOL (self));
+	g_object_set (self, "rotation", rotation, NULL);
 }

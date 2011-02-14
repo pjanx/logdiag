@@ -87,8 +87,6 @@ void ld_canvas_zoom_out (LdCanvas *self);
 
 void ld_canvas_add_object_begin (LdCanvas *self, LdDiagramObject *object);
 
-/* TODO: The rest of the interface. */
-
 
 G_END_DECLS
 

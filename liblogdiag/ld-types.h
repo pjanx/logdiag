@@ -18,10 +18,6 @@ G_BEGIN_DECLS
 #define LD_TYPE_POINT_ARRAY (ld_point_array_get_type ())
 #define LD_TYPE_RECTANGLE (ld_rectangle_get_type ())
 
-typedef struct _LdPoint LdPoint;
-typedef struct _LdPointArray LdPointArray;
-typedef struct _LdRectangle LdRectangle;
-
 
 /**
  * LdPoint:
@@ -30,10 +26,11 @@ typedef struct _LdRectangle LdRectangle;
  *
  * Defines a point.
  */
-struct _LdPoint
+typedef struct
 {
 	gdouble x, y;
-};
+}
+LdPoint;
 
 GType ld_point_get_type (void) G_GNUC_CONST;
 
@@ -50,12 +47,13 @@ gdouble ld_point_distance (const LdPoint *self, gdouble x, gdouble y);
  *
  * Defines an array of points.
  */
-struct _LdPointArray
+typedef struct
 {
 	LdPoint *points;
 	guint length;
 	guint size;
-};
+}
+LdPointArray;
 
 GType ld_point_array_get_type (void) G_GNUC_CONST;
 
@@ -78,11 +76,12 @@ void ld_point_array_set_size (LdPointArray *self, guint size);
  *
  * Defines a rectangle.
  */
-struct _LdRectangle
+typedef struct
 {
 	gdouble x, y;
 	gdouble width, height;
-};
+}
+LdRectangle;
 
 GType ld_rectangle_get_type (void) G_GNUC_CONST;
 

@@ -20,9 +20,6 @@ local terminals = {{-2, 1}, {2, 1}, {2, -1}}
 -- Rendering
 local render = function (cr)
 	-- The terminals
-	cr.move_to (-2, 1)
-	cr.line_to (0, 1)
-
 	cr.move_to (0, 1)
 	cr.line_to (2, 1)
 
@@ -39,6 +36,11 @@ end
 local render_jfet_n = function (cr)
 	render (cr)
 
+	-- The left-side terminal
+	cr.move_to (-2, 1)
+	cr.line_to (0, 1)
+
+	-- The arrow
 	cr.move_to (-1, 0.6)
 	cr.line_to (-0.5, 1)
 	cr.line_to (-1, 1.4)
@@ -49,9 +51,14 @@ end
 local render_jfet_p = function (cr)
 	render (cr)
 
-	cr.move_to (-0.4, 0.6)
-	cr.line_to (-1, 1)
-	cr.line_to (-0.4, 1.4)
+	-- The left-side terminal
+	cr.move_to (-2, -1)
+	cr.line_to (0, -1)
+
+	-- The arrow
+	cr.move_to (-0.4, -0.6)
+	cr.line_to (-1, -1)
+	cr.line_to (-0.4, -1.4)
 
 	cr.stroke ()
 end

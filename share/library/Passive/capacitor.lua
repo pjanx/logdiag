@@ -40,11 +40,12 @@ end
 local render_polar = function (cr)
 	render (cr)
 
-	cr.move_to (0.6, -1)
-	cr.line_to (1.4, -1)
+	-- The plus sign
+	cr.move_to (-0.6, -1)
+	cr.line_to (-1.4, -1)
 
-	cr.move_to (1, -1.4)
-	cr.line_to (1, -0.6)
+	cr.move_to (-1, -1.4)
+	cr.line_to (-1, -0.6)
 
 	cr.stroke ()
 end

@@ -20,8 +20,7 @@ local terminals = {{-2, 1}, {2, 1}, {2, 0}, {2, -1}}
 -- Rendering
 local render = function (cr)
 	-- The terminals
-	cr.move_to (-2, 1)
-	cr.line_to (-0.3, 1)
+	cr.move_to (-0.3, 1)
 	cr.line_to (-0.3, -1)
 
 	cr.move_to (0, 1)
@@ -49,6 +48,11 @@ end
 local render_igfet_n = function (cr)
 	render (cr)
 
+	-- The left-side terminal
+	cr.move_to (-2, 1)
+	cr.line_to (-0.3, 1)
+
+	-- The arrow
 	cr.move_to (0.9, -0.4)
 	cr.line_to (0.4, 0)
 	cr.line_to (0.9, 0.4)
@@ -59,6 +63,11 @@ end
 local render_igfet_p = function (cr)
 	render (cr)
 
+	-- The left-side terminal
+	cr.move_to (-2, -1)
+	cr.line_to (-0.3, -1)
+
+	-- The arrow
 	cr.move_to (0.4, -0.4)
 	cr.line_to (0.9, 0)
 	cr.line_to (0.4, 0.4)

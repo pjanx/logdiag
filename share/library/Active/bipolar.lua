@@ -40,8 +40,8 @@ local render_npn = function (cr)
 	render (cr)
 
 	cr.save ()
-	cr.translate (0, -0.5)
-	cr.rotate (math.atan2 (-2, -1.5))
+	cr.translate (0, 0.5)
+	cr.rotate (math.atan2 (-2, 1.5))
 
 	cr.move_to (-0.4, 0.8)
 	cr.line_to (0, 1.4)

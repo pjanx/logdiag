@@ -431,7 +431,7 @@ ld_canvas_init (LdCanvas *self)
 	ld_canvas_color_set (COLOR_GET (self, COLOR_BASE), 1, 1, 1, 1);
 	ld_canvas_color_set (COLOR_GET (self, COLOR_GRID), 0.5, 0.5, 0.5, 1);
 	ld_canvas_color_set (COLOR_GET (self, COLOR_OBJECT), 0, 0, 0, 1);
-	ld_canvas_color_set (COLOR_GET (self, COLOR_SELECTION), 0, 0, 1, 1);
+	ld_canvas_color_set (COLOR_GET (self, COLOR_SELECTION), 1, 0, 0, 1);
 	ld_canvas_color_set (COLOR_GET (self, COLOR_TERMINAL), 1, 0.5, 0.5, 1);
 
 	g_signal_connect (self, "size-allocate",

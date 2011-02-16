@@ -61,25 +61,25 @@ struct _SymbolMenuData
 
 enum
 {
-	CANVAS_HANDLER_EXPOSE,
-	CANVAS_HANDLER_MOTION_NOTIFY,
-	CANVAS_HANDLER_BUTTON_PRESS,
-	CANVAS_HANDLER_BUTTON_RELEASE,
-	CANVAS_HANDLER_COUNT
+	VIEW_HANDLER_EXPOSE,
+	VIEW_HANDLER_MOTION_NOTIFY,
+	VIEW_HANDLER_BUTTON_PRESS,
+	VIEW_HANDLER_BUTTON_RELEASE,
+	VIEW_HANDLER_COUNT
 };
 
 /*
  * LdLibraryToolbarPrivate:
- * @library: a library object assigned to this canvas as a model.
- * @canvas: a canvas object for showing symbol menus.
- * @canvas_handlers: signal handlers that hook the canvas.
+ * @library: a library object assigned as a model.
+ * @view: a view widget for showing symbol menus.
+ * @view_handlers: signal handlers that hook the view.
  * @symbol_menu: data related to menus.
  */
 struct _LdLibraryToolbarPrivate
 {
 	LdLibrary *library;
-	LdCanvas *canvas;
-	gulong canvas_handlers[CANVAS_HANDLER_COUNT];
+	LdDiagramView *view;
+	gulong view_handlers[VIEW_HANDLER_COUNT];
 	SymbolMenuData symbol_menu;
 };
 
@@ -87,7 +87,7 @@ enum
 {
 	PROP_0,
 	PROP_LIBRARY,
-	PROP_CANVAS
+	PROP_VIEW
 };
 
 static void ld_library_toolbar_get_property (GObject *object, guint property_id,
@@ -106,16 +106,16 @@ static void emit_symbol_signal (LdLibraryToolbar *self,
 static void on_category_toggle (GtkToggleButton *toggle_button,
 	gpointer user_data);
 
-static inline void block_canvas_handlers (LdLibraryToolbar *self);
-static inline void unblock_canvas_handlers (LdLibraryToolbar *self);
-static inline void disconnect_canvas_handlers (LdLibraryToolbar *self);
-static gboolean on_canvas_exposed (GtkWidget *widget,
+static inline void block_view_handlers (LdLibraryToolbar *self);
+static inline void unblock_view_handlers (LdLibraryToolbar *self);
+static inline void disconnect_view_handlers (LdLibraryToolbar *self);
+static gboolean on_view_exposed (GtkWidget *widget,
 	GdkEventExpose *event, gpointer user_data);
-static gboolean on_canvas_motion_notify (GtkWidget *widget,
+static gboolean on_view_motion_notify (GtkWidget *widget,
 	GdkEventMotion *event, gpointer user_data);
-static gboolean on_canvas_button_press (GtkWidget *widget,
+static gboolean on_view_button_press (GtkWidget *widget,
 	GdkEventButton *event, gpointer user_data);
-static gboolean on_canvas_button_release (GtkWidget *widget,
+static gboolean on_view_button_release (GtkWidget *widget,
 	GdkEventButton *event, gpointer user_data);
 
 
@@ -138,22 +138,22 @@ ld_library_toolbar_class_init (LdLibraryToolbarClass *klass)
 /**
  * LdLibraryToolbar:library:
  *
- * The #LdLibrary that this canvas retrieves symbols from.
+ * The #LdLibrary that this toolbar retrieves symbols from.
  */
 	pspec = g_param_spec_object ("library", "Library",
-		"The library that this canvas retrieves symbols from.",
+		"The library that this toolbar retrieves symbols from.",
 		LD_TYPE_LIBRARY, G_PARAM_READWRITE);
 	g_object_class_install_property (object_class, PROP_LIBRARY, pspec);
 
 /**
- * LdLibraryToolbar:canvas:
+ * LdLibraryToolbar:view:
  *
- * The #LdCanvas misused for showing symbol menus.
+ * The #LdDiagramView widget misused for showing symbol menus.
  */
-	pspec = g_param_spec_object ("canvas", "Canvas",
-		"The canvas misused for showing symbol menus.",
-		LD_TYPE_CANVAS, G_PARAM_READWRITE);
-	g_object_class_install_property (object_class, PROP_CANVAS, pspec);
+	pspec = g_param_spec_object ("view", "View",
+		"The view widget misused for showing symbol menus.",
+		LD_TYPE_DIAGRAM_VIEW, G_PARAM_READWRITE);
+	g_object_class_install_property (object_class, PROP_VIEW, pspec);
 
 /**
  * LdLibraryToolbar::symbol-chosen:
@@ -218,7 +218,7 @@ ld_library_toolbar_dispose (GObject *gobject)
 	self = LD_LIBRARY_TOOLBAR (gobject);
 
 	ld_library_toolbar_set_library (self, NULL);
-	ld_library_toolbar_set_canvas (self, NULL);
+	ld_library_toolbar_set_view (self, NULL);
 
 	/* Chain up to the parent class. */
 	G_OBJECT_CLASS (ld_library_toolbar_parent_class)->dispose (gobject);
@@ -236,8 +236,8 @@ ld_library_toolbar_get_property (GObject *object, guint property_id,
 	case PROP_LIBRARY:
 		g_value_set_object (value, ld_library_toolbar_get_library (self));
 		break;
-	case PROP_CANVAS:
-		g_value_set_object (value, ld_library_toolbar_get_canvas (self));
+	case PROP_VIEW:
+		g_value_set_object (value, ld_library_toolbar_get_view (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -257,9 +257,9 @@ ld_library_toolbar_set_property (GObject *object, guint property_id,
 		ld_library_toolbar_set_library (self,
 			LD_LIBRARY (g_value_get_object (value)));
 		break;
-	case PROP_CANVAS:
-		ld_library_toolbar_set_canvas (self,
-			LD_CANVAS (g_value_get_object (value)));
+	case PROP_VIEW:
+		ld_library_toolbar_set_view (self,
+			LD_DIAGRAM_VIEW (g_value_get_object (value)));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -281,7 +281,7 @@ ld_library_toolbar_new (void)
 /**
  * ld_library_toolbar_set_library:
  * @self: an #LdLibraryToolbar object.
- * @library: (allow-none): the #LdLibrary to be assigned to the toolbar.
+ * @library: (allow-none): the library to be assigned to the toolbar.
  *
  * Assign an #LdLibrary object to the toolbar.
  */
@@ -315,8 +315,8 @@ ld_library_toolbar_set_library (LdLibraryToolbar *self, LdLibrary *library)
  * ld_library_toolbar_get_library:
  * @self: an #LdLibraryToolbar object.
  *
- * Get the #LdLibrary object assigned to this toolbar.
- * The reference count on the library is not incremented.
+ * Return value: (transfer: none): the #LdLibrary object
+ *               assigned to the toolbar.
  */
 LdLibrary *
 ld_library_toolbar_get_library (LdLibraryToolbar *self)
@@ -326,59 +326,59 @@ ld_library_toolbar_get_library (LdLibraryToolbar *self)
 }
 
 /**
- * ld_library_toolbar_set_canvas:
+ * ld_library_toolbar_set_view:
  * @self: an #LdLibraryToolbar object.
- * @canvas: (allow-none): the #LdCanvas to be assigned to the toolbar.
+ * @view: (allow-none): the widget to be assigned to the toolbar.
  *
- * Assign an #LdCanvas object to the toolbar.
+ * Assign an #LdDiagramView widget to the toolbar.
  */
 void
-ld_library_toolbar_set_canvas (LdLibraryToolbar *self, LdCanvas *canvas)
+ld_library_toolbar_set_view (LdLibraryToolbar *self, LdDiagramView *view)
 {
 	g_return_if_fail (LD_IS_LIBRARY_TOOLBAR (self));
-	g_return_if_fail (LD_IS_CANVAS (canvas) || canvas == NULL);
+	g_return_if_fail (LD_IS_DIAGRAM_VIEW (view) || view == NULL);
 
-	if (self->priv->canvas)
+	if (self->priv->view)
 	{
-		disconnect_canvas_handlers (self);
-		g_object_unref (self->priv->canvas);
+		disconnect_view_handlers (self);
+		g_object_unref (self->priv->view);
 	}
 
-	self->priv->canvas = canvas;
+	self->priv->view = view;
 
-	if (canvas)
+	if (view)
 	{
-		self->priv->canvas_handlers[CANVAS_HANDLER_EXPOSE]
-			= g_signal_connect (canvas, "expose-event",
-			G_CALLBACK (on_canvas_exposed), self);
-		self->priv->canvas_handlers[CANVAS_HANDLER_MOTION_NOTIFY]
-			= g_signal_connect (canvas, "motion-notify-event",
-			G_CALLBACK (on_canvas_motion_notify), self);
-		self->priv->canvas_handlers[CANVAS_HANDLER_BUTTON_PRESS]
-			= g_signal_connect (canvas, "button-press-event",
-			G_CALLBACK (on_canvas_button_press), self);
-		self->priv->canvas_handlers[CANVAS_HANDLER_BUTTON_RELEASE]
-			= g_signal_connect (canvas, "button-release-event",
-			G_CALLBACK (on_canvas_button_release), self);
+		self->priv->view_handlers[VIEW_HANDLER_EXPOSE]
+			= g_signal_connect (view, "expose-event",
+			G_CALLBACK (on_view_exposed), self);
+		self->priv->view_handlers[VIEW_HANDLER_MOTION_NOTIFY]
+			= g_signal_connect (view, "motion-notify-event",
+			G_CALLBACK (on_view_motion_notify), self);
+		self->priv->view_handlers[VIEW_HANDLER_BUTTON_PRESS]
+			= g_signal_connect (view, "button-press-event",
+			G_CALLBACK (on_view_button_press), self);
+		self->priv->view_handlers[VIEW_HANDLER_BUTTON_RELEASE]
+			= g_signal_connect (view, "button-release-event",
+			G_CALLBACK (on_view_button_release), self);
 
-		block_canvas_handlers (self);
-		g_object_ref (canvas);
+		block_view_handlers (self);
+		g_object_ref (view);
 	}
-	g_object_notify (G_OBJECT (self), "canvas");
+	g_object_notify (G_OBJECT (self), "view");
 }
 
 /**
- * ld_library_toolbar_get_canvas:
+ * ld_library_toolbar_get_view:
  * @self: an #LdLibraryToolbar object.
  *
- * Get the #LdLibrary object assigned to this toolbar.
- * The reference count on the canvas is not incremented.
+ * Return value: (transfer: none): the #LdDiagramView widget
+ *               assigned to the toolbar.
  */
-LdCanvas *
-ld_library_toolbar_get_canvas (LdLibraryToolbar *self)
+LdDiagramView *
+ld_library_toolbar_get_view (LdLibraryToolbar *self)
 {
 	g_return_val_if_fail (LD_IS_LIBRARY_TOOLBAR (self), NULL);
-	return self->priv->canvas;
+	return self->priv->view;
 }
 
 static void
@@ -439,7 +439,7 @@ load_category_cb (gpointer data, gpointer user_data)
 	gtk_container_add (GTK_CONTAINER (button), img);
 	gtk_container_add (GTK_CONTAINER (item), button);
 
-	/* Don't steal focus from the canvas. */
+	/* Don't steal focus from the view. */
 	g_object_set (button, "can-focus", FALSE, NULL);
 
 	/* Assign the category to the toggle button. */
@@ -498,7 +498,7 @@ redraw_symbol_menu (LdLibraryToolbar *self)
 	g_return_if_fail (LD_IS_LIBRARY_TOOLBAR (self));
 	data = &self->priv->symbol_menu;
 
-	gtk_widget_queue_draw_area (GTK_WIDGET (self->priv->canvas),
+	gtk_widget_queue_draw_area (GTK_WIDGET (self->priv->view),
 		0, data->menu_y - 1, data->menu_width + 2, data->menu_height + 2);
 }
 
@@ -541,7 +541,7 @@ on_category_toggle (GtkToggleButton *toggle_button, gpointer user_data)
 	{
 		gint i;
 
-		block_canvas_handlers (self);
+		block_view_handlers (self);
 
 		g_object_unref (data->active_button);
 		data->active_button = NULL;
@@ -559,7 +559,7 @@ on_category_toggle (GtkToggleButton *toggle_button, gpointer user_data)
 		g_free (data->items);
 		data->items = NULL;
 
-		gtk_grab_remove (GTK_WIDGET (self->priv->canvas));
+		gtk_grab_remove (GTK_WIDGET (self->priv->view));
 	}
 	else
 	{
@@ -568,12 +568,12 @@ on_category_toggle (GtkToggleButton *toggle_button, gpointer user_data)
 		gint x, y, menu_width;
 
 		g_return_if_fail (gtk_widget_translate_coordinates (GTK_WIDGET
-			(toggle_button), GTK_WIDGET (priv->canvas), 0, 0, &x, &y));
+			(toggle_button), GTK_WIDGET (priv->view), 0, 0, &x, &y));
 
 		data->menu_y = y;
 		data->menu_height = GTK_WIDGET (toggle_button)->allocation.height;
 
-		unblock_canvas_handlers (self);
+		unblock_view_handlers (self);
 
 		data->active_button = toggle_button;
 		g_object_ref (data->active_button);
@@ -616,28 +616,28 @@ on_category_toggle (GtkToggleButton *toggle_button, gpointer user_data)
 		}
 		data->menu_width = menu_width;
 
-		gtk_grab_add (GTK_WIDGET (self->priv->canvas));
+		gtk_grab_add (GTK_WIDGET (self->priv->view));
 	}
 	redraw_symbol_menu (self);
 }
 
-#define DEFINE_CANVAS_HANDLER_FUNC(name) \
+#define DEFINE_VIEW_HANDLER_FUNC(name) \
 static inline void \
-name ## _canvas_handlers (LdLibraryToolbar *self) \
+name ## _view_handlers (LdLibraryToolbar *self) \
 { \
 	gint i; \
-	g_return_if_fail (LD_IS_CANVAS (self->priv->canvas)); \
-	for (i = 0; i < CANVAS_HANDLER_COUNT; i++) \
-		g_signal_handler_ ## name (self->priv->canvas, \
-			self->priv->canvas_handlers[i]); \
+	g_return_if_fail (LD_IS_DIAGRAM_VIEW (self->priv->view)); \
+	for (i = 0; i < VIEW_HANDLER_COUNT; i++) \
+		g_signal_handler_ ## name (self->priv->view, \
+			self->priv->view_handlers[i]); \
 }
 
-DEFINE_CANVAS_HANDLER_FUNC (block)
-DEFINE_CANVAS_HANDLER_FUNC (unblock)
-DEFINE_CANVAS_HANDLER_FUNC (disconnect)
+DEFINE_VIEW_HANDLER_FUNC (block)
+DEFINE_VIEW_HANDLER_FUNC (unblock)
+DEFINE_VIEW_HANDLER_FUNC (disconnect)
 
 static gboolean
-on_canvas_exposed (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
+on_view_exposed (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 {
 	cairo_t *cr;
 	LdLibraryToolbar *self;
@@ -702,7 +702,7 @@ on_canvas_exposed (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 }
 
 static gboolean
-on_canvas_motion_notify (GtkWidget *widget, GdkEventMotion *event,
+on_view_motion_notify (GtkWidget *widget, GdkEventMotion *event,
 	gpointer user_data)
 {
 	LdLibraryToolbar *self;
@@ -715,7 +715,7 @@ on_canvas_motion_notify (GtkWidget *widget, GdkEventMotion *event,
 	if (widget->window != event->window
 		|| event->x < 0 || event->y < data->menu_y
 		|| event->y >= data->menu_y + data->menu_height)
-		goto on_canvas_motion_notify_end;
+		goto on_view_motion_notify_end;
 
 	for (x = i = 0; i < data->n_items; i++)
 	{
@@ -727,7 +727,7 @@ on_canvas_motion_notify (GtkWidget *widget, GdkEventMotion *event,
 		}
 	}
 
-on_canvas_motion_notify_end:
+on_view_motion_notify_end:
 	if (data->active_item != at_cursor)
 	{
 		emit_symbol_signal (self, LD_LIBRARY_TOOLBAR_GET_CLASS (self)
@@ -743,7 +743,7 @@ on_canvas_motion_notify_end:
 }
 
 static gboolean
-on_canvas_button_press (GtkWidget *widget, GdkEventButton *event,
+on_view_button_press (GtkWidget *widget, GdkEventButton *event,
 	gpointer user_data)
 {
 	LdLibraryToolbar *self;
@@ -764,7 +764,7 @@ on_canvas_button_press (GtkWidget *widget, GdkEventButton *event,
 }
 
 static gboolean
-on_canvas_button_release (GtkWidget *widget, GdkEventButton *event,
+on_view_button_release (GtkWidget *widget, GdkEventButton *event,
 	gpointer user_data)
 {
 	LdLibraryToolbar *self;

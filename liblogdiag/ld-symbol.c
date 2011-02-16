@@ -15,9 +15,9 @@
 /**
  * SECTION:ld-symbol
  * @short_description: A symbol
- * @see_also: #LdDiagramSymbol, #LdCanvas
+ * @see_also: #LdDiagramSymbol, #LdDiagramView
  *
- * #LdSymbol represents a symbol to be drawn onto a #LdCanvas.
+ * #LdSymbol represents a symbol to be drawn by #LdDiagramView.
  *
  * All implementations of this abstract class are required to use
  * cairo_save() and cairo_restore() when drawing to store the state.

@@ -59,9 +59,9 @@ GtkWidget *ld_library_toolbar_new (void);
 void ld_library_toolbar_set_library (LdLibraryToolbar *self,
 	LdLibrary *library);
 LdLibrary *ld_library_toolbar_get_library (LdLibraryToolbar *self);
-void ld_library_toolbar_set_canvas (LdLibraryToolbar *self,
-	LdCanvas *canvas);
-LdCanvas *ld_library_toolbar_get_canvas (LdLibraryToolbar *self);
+void ld_library_toolbar_set_view (LdLibraryToolbar *self,
+	LdDiagramView *view);
+LdDiagramView *ld_library_toolbar_get_view (LdLibraryToolbar *self);
 
 
 G_END_DECLS

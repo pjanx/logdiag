@@ -1,5 +1,5 @@
 /*
- * ld-canvas.c
+ * ld-diagram-view.c
  *
  * This file is a part of logdiag.
  * Copyright Přemysl Janouch 2010 - 2011. All rights reserved.
@@ -17,11 +17,12 @@
 
 
 /**
- * SECTION:ld-canvas
- * @short_description: A canvas
+ * SECTION:ld-diagram-view
+ * @short_description: A widget that displays an LdDiagram
  * @see_also: #LdDiagram
  *
- * #LdCanvas displays and enables the user to manipulate with an #LdDiagram.
+ * #LdDiagramView displays and enables the user to manipulate with
+ * an #LdDiagram.
  */
 
 /* Milimetres per inch. */
@@ -55,7 +56,7 @@
  *
  * Called upon ending an operation.
  */
-typedef void (*OperationEnd) (LdCanvas *self);
+typedef void (*OperationEnd) (LdDiagramView *self);
 
 enum
 {
@@ -103,9 +104,9 @@ enum
 	COLOR_COUNT
 };
 
-typedef struct _LdCanvasColor LdCanvasColor;
+typedef struct _Color Color;
 
-struct _LdCanvasColor
+struct _Color
 {
 	gdouble r;
 	gdouble g;
@@ -114,14 +115,14 @@ struct _LdCanvasColor
 };
 
 /*
- * LdCanvasPrivate:
- * @diagram: a diagram object assigned to this canvas as a model.
- * @library: a library object assigned to this canvas as a model.
+ * LdDiagramViewPrivate:
+ * @diagram: a diagram object assigned as a model.
+ * @library: a library object assigned as a model.
  * @adjustment_h: an adjustment object for the horizontal axis, if any.
  * @adjustment_v: an adjustment object for the vertical axis, if any.
  * @x: the X coordinate of the center of view.
  * @y: the Y coordinate of the center of view.
- * @zoom: the current zoom of the canvas.
+ * @zoom: the current zoom.
  * @terminal: position of the highlighted terminal.
  * @terminal_hovered: whether a terminal is hovered.
  * @drag_start_pos: position of the mouse pointer when dragging started.
@@ -131,7 +132,7 @@ struct _LdCanvasColor
  * @operation_end: a callback to end the operation.
  * @palette: colors used by the widget.
  */
-struct _LdCanvasPrivate
+struct _LdDiagramViewPrivate
 {
 	LdDiagram *diagram;
 	LdLibrary *library;
@@ -160,7 +161,7 @@ struct _LdCanvasPrivate
 	operation_data;
 	OperationEnd operation_end;
 
-	LdCanvasColor palette[COLOR_COUNT];
+	Color palette[COLOR_COUNT];
 };
 
 #define OPER_DATA(self, member) ((self)->priv->operation_data.member)
@@ -168,7 +169,7 @@ struct _LdCanvasPrivate
 
 /*
  * DrawData:
- * @self: our #LdCanvas.
+ * @self: our #LdDiagramView.
  * @cr: a cairo context to draw on.
  * @exposed_rect: the area that is to be redrawn.
  * @scale: computed size of one diagram unit in pixels.
@@ -177,7 +178,7 @@ typedef struct _DrawData DrawData;
 
 struct _DrawData
 {
-	LdCanvas *self;
+	LdDiagramView *self;
 	cairo_t *cr;
 	LdRectangle exposed_rect;
 	gdouble scale;
@@ -191,102 +192,106 @@ enum
 	PROP_ZOOM
 };
 
-static void ld_canvas_get_property (GObject *object, guint property_id,
+static void ld_diagram_view_get_property (GObject *object, guint property_id,
 	GValue *value, GParamSpec *pspec);
-static void ld_canvas_set_property (GObject *object, guint property_id,
+static void ld_diagram_view_set_property (GObject *object, guint property_id,
 	const GValue *value, GParamSpec *pspec);
-static void ld_canvas_finalize (GObject *gobject);
+static void ld_diagram_view_finalize (GObject *gobject);
 
-static void ld_canvas_real_set_scroll_adjustments
-	(LdCanvas *self, GtkAdjustment *horizontal, GtkAdjustment *vertical);
+static void ld_diagram_view_real_set_scroll_adjustments
+	(LdDiagramView *self, GtkAdjustment *horizontal, GtkAdjustment *vertical);
 static void on_adjustment_value_changed
-	(GtkAdjustment *adjustment, LdCanvas *self);
+	(GtkAdjustment *adjustment, LdDiagramView *self);
 static void on_size_allocate (GtkWidget *widget, GtkAllocation *allocation,
 	gpointer user_data);
-static void update_adjustments (LdCanvas *self);
-static void ld_canvas_real_move (LdCanvas *self, gdouble dx, gdouble dy);
+static void update_adjustments (LdDiagramView *self);
+static void ld_diagram_view_real_move (LdDiagramView *self,
+	gdouble dx, gdouble dy);
 
-static void diagram_connect_signals (LdCanvas *self);
-static void diagram_disconnect_signals (LdCanvas *self);
+static void diagram_connect_signals (LdDiagramView *self);
+static void diagram_disconnect_signals (LdDiagramView *self);
 
-static gdouble ld_canvas_get_base_unit_in_px (GtkWidget *self);
-static gdouble ld_canvas_get_scale_in_px (LdCanvas *self);
+static gdouble ld_diagram_view_get_base_unit_in_px (GtkWidget *self);
+static gdouble ld_diagram_view_get_scale_in_px (LdDiagramView *self);
 
 /* Helper functions. */
-static void ld_canvas_color_set (LdCanvasColor *color,
+static void color_set (Color *color,
 	gdouble r, gdouble g, gdouble b, gdouble a);
-static void ld_canvas_color_apply (LdCanvasColor *color, cairo_t *cr);
-static guint32 ld_canvas_color_to_cairo_argb (LdCanvasColor *color);
+static void color_apply (Color *color, cairo_t *cr);
+static guint32 color_to_cairo_argb (Color *color);
 
 static gdouble point_to_line_segment_distance
 	(const LdPoint *point, const LdPoint *p1, const LdPoint *p2);
 
 /* Generic functions. */
-static gboolean object_hit_test (LdCanvas *self,
+static gboolean object_hit_test (LdDiagramView *self,
 	LdDiagramObject *object, const LdPoint *point);
-static gboolean get_object_clip_area (LdCanvas *self,
+static gboolean get_object_clip_area (LdDiagramView *self,
 	LdDiagramObject *object, LdRectangle *rect);
 
-static void move_object_to_point (LdCanvas *self, LdDiagramObject *object,
+static void move_object_to_point (LdDiagramView *self, LdDiagramObject *object,
 	const LdPoint *point);
-static LdDiagramObject *get_object_at_point (LdCanvas *self,
+static LdDiagramObject *get_object_at_point (LdDiagramView *self,
 	const LdPoint *point);
 
-static void move_selection (LdCanvas *self, gdouble dx, gdouble dy);
-static gboolean is_object_selected (LdCanvas *self, LdDiagramObject *object);
+static void move_selection (LdDiagramView *self, gdouble dx, gdouble dy);
+static gboolean is_object_selected (LdDiagramView *self,
+	LdDiagramObject *object);
 
-static void queue_draw (LdCanvas *self, LdRectangle *rect);
-static void queue_object_draw (LdCanvas *self, LdDiagramObject *object);
+static void queue_draw (LdDiagramView *self, LdRectangle *rect);
+static void queue_object_draw (LdDiagramView *self, LdDiagramObject *object);
 
 /* Symbol terminals. */
-static void check_terminals (LdCanvas *self, const LdPoint *point);
+static void check_terminals (LdDiagramView *self, const LdPoint *point);
 static void rotate_terminal (LdPoint *terminal, gint symbol_rotation);
-static void hide_terminals (LdCanvas *self);
-static void queue_terminal_draw (LdCanvas *self, LdPoint *terminal);
+static void hide_terminals (LdDiagramView *self);
+static void queue_terminal_draw (LdDiagramView *self, LdPoint *terminal);
 
 /* Diagram symbol. */
-static gboolean symbol_hit_test (LdCanvas *self,
+static gboolean symbol_hit_test (LdDiagramView *self,
 	LdDiagramSymbol *symbol, const LdPoint *point);
-static gboolean get_symbol_clip_area (LdCanvas *self,
+static gboolean get_symbol_clip_area (LdDiagramView *self,
 	LdDiagramSymbol *symbol, LdRectangle *rect);
 
-static gboolean get_symbol_area (LdCanvas *self,
+static gboolean get_symbol_area (LdDiagramView *self,
 	LdDiagramSymbol *symbol, LdRectangle *rect);
 static void rotate_symbol_area (LdRectangle *area, gint rotation);
-static void rotate_symbol (LdCanvas *self, LdDiagramSymbol *symbol);
-static LdSymbol *resolve_symbol (LdCanvas *self,
+static void rotate_symbol (LdDiagramView *self, LdDiagramSymbol *symbol);
+static LdSymbol *resolve_symbol (LdDiagramView *self,
 	LdDiagramSymbol *diagram_symbol);
 
 /* Diagram connection. */
-static gboolean connection_hit_test (LdCanvas *self,
+static gboolean connection_hit_test (LdDiagramView *self,
 	LdDiagramConnection *connection, const LdPoint *point);
-static gboolean get_connection_clip_area (LdCanvas *self,
+static gboolean get_connection_clip_area (LdDiagramView *self,
 	LdDiagramConnection *connection, LdRectangle *rect);
 
-static gboolean get_connection_area (LdCanvas *self,
+static gboolean get_connection_area (LdDiagramView *self,
 	LdDiagramConnection *connection, LdRectangle *rect);
 
 /* Operations. */
-static void ld_canvas_real_cancel_operation (LdCanvas *self);
-static void oper_add_object_end (LdCanvas *self);
+static void ld_diagram_view_real_cancel_operation (LdDiagramView *self);
+static void oper_add_object_end (LdDiagramView *self);
 
-static void oper_connect_begin (LdCanvas *self, const LdPoint *point);
-static void oper_connect_end (LdCanvas *self);
-static void oper_connect_motion (LdCanvas *self, const LdPoint *point);
+static void oper_connect_begin (LdDiagramView *self, const LdPoint *point);
+static void oper_connect_end (LdDiagramView *self);
+static void oper_connect_motion (LdDiagramView *self, const LdPoint *point);
 
-static void oper_select_begin (LdCanvas *self, const LdPoint *point);
-static void oper_select_end (LdCanvas *self);
-static void oper_select_get_rectangle (LdCanvas *self, LdRectangle *rect);
-static void oper_select_queue_draw (LdCanvas *self);
+static void oper_select_begin (LdDiagramView *self, const LdPoint *point);
+static void oper_select_end (LdDiagramView *self);
+static void oper_select_get_rectangle (LdDiagramView *self, LdRectangle *rect);
+static void oper_select_queue_draw (LdDiagramView *self);
 static void oper_select_draw (GtkWidget *widget, DrawData *data);
-static void oper_select_motion (LdCanvas *self, const LdPoint *point);
+static void oper_select_motion (LdDiagramView *self, const LdPoint *point);
 
-static void oper_move_selection_begin (LdCanvas *self, const LdPoint *point);
-static void oper_move_selection_end (LdCanvas *self);
-static void oper_move_selection_motion (LdCanvas *self, const LdPoint *point);
+static void oper_move_selection_begin (LdDiagramView *self,
+	const LdPoint *point);
+static void oper_move_selection_end (LdDiagramView *self);
+static void oper_move_selection_motion (LdDiagramView *self,
+	const LdPoint *point);
 
 /* Events, rendering. */
-static void simulate_motion (LdCanvas *self);
+static void simulate_motion (LdDiagramView *self);
 static gboolean on_motion_notify (GtkWidget *widget, GdkEventMotion *event,
 	gpointer user_data);
 static gboolean on_leave_notify (GtkWidget *widget, GdkEventCrossing *event,
@@ -308,10 +313,10 @@ static void draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data);
 static void draw_connection (LdDiagramConnection *connection, DrawData *data);
 
 
-G_DEFINE_TYPE (LdCanvas, ld_canvas, GTK_TYPE_DRAWING_AREA);
+G_DEFINE_TYPE (LdDiagramView, ld_diagram_view, GTK_TYPE_DRAWING_AREA);
 
 static void
-ld_canvas_class_init (LdCanvasClass *klass)
+ld_diagram_view_class_init (LdDiagramViewClass *klass)
 {
 	GObjectClass *object_class;
 	GtkWidgetClass *widget_class;
@@ -321,13 +326,13 @@ ld_canvas_class_init (LdCanvasClass *klass)
 	widget_class = GTK_WIDGET_CLASS (klass);
 
 	object_class = G_OBJECT_CLASS (klass);
-	object_class->get_property = ld_canvas_get_property;
-	object_class->set_property = ld_canvas_set_property;
-	object_class->finalize = ld_canvas_finalize;
+	object_class->get_property = ld_diagram_view_get_property;
+	object_class->set_property = ld_diagram_view_set_property;
+	object_class->finalize = ld_diagram_view_finalize;
 
-	klass->set_scroll_adjustments = ld_canvas_real_set_scroll_adjustments;
-	klass->cancel_operation = ld_canvas_real_cancel_operation;
-	klass->move = ld_canvas_real_move;
+	klass->set_scroll_adjustments = ld_diagram_view_real_set_scroll_adjustments;
+	klass->cancel_operation = ld_diagram_view_real_cancel_operation;
+	klass->move = ld_diagram_view_real_move;
 
 	binding_set = gtk_binding_set_by_class (klass);
 	gtk_binding_entry_add_signal (binding_set, GDK_Escape, 0,
@@ -342,67 +347,67 @@ ld_canvas_class_init (LdCanvasClass *klass)
 		"move", 2, G_TYPE_DOUBLE, (gdouble) 0, G_TYPE_DOUBLE, (gdouble) 1);
 
 /**
- * LdCanvas:diagram:
+ * LdDiagramView:diagram:
  *
- * The underlying #LdDiagram object of this canvas.
+ * The underlying #LdDiagram object of this view.
  */
 	pspec = g_param_spec_object ("diagram", "Diagram",
-		"The underlying diagram object of this canvas.",
+		"The underlying diagram object of this view.",
 		LD_TYPE_DIAGRAM, G_PARAM_READWRITE);
 	g_object_class_install_property (object_class, PROP_DIAGRAM, pspec);
 
 /**
- * LdCanvas:library:
+ * LdDiagramView:library:
  *
- * The #LdLibrary that this canvas retrieves symbols from.
+ * The #LdLibrary from which symbols are retrieved.
  */
 	pspec = g_param_spec_object ("library", "Library",
-		"The library that this canvas retrieves symbols from.",
+		"The library from which symbols are retrieved.",
 		LD_TYPE_LIBRARY, G_PARAM_READWRITE);
 	g_object_class_install_property (object_class, PROP_LIBRARY, pspec);
 
 /**
- * LdCanvas:zoom:
+ * LdDiagramView:zoom:
  *
- * The zoom of this canvas.
+ * The zoom of this view.
  */
 	pspec = g_param_spec_double ("zoom", "Zoom",
-		"The zoom of this canvas.",
+		"The zoom of this view.",
 		ZOOM_MIN, ZOOM_MAX, ZOOM_DEFAULT, G_PARAM_READWRITE);
 	g_object_class_install_property (object_class, PROP_ZOOM, pspec);
 
 /**
- * LdCanvas::set-scroll-adjustments:
- * @self: an #LdCanvas object.
+ * LdDiagramView::set-scroll-adjustments:
+ * @self: an #LdDiagramView object.
  * @horizontal: the horizontal #GtkAdjustment.
  * @vertical: the vertical #GtkAdjustment.
  *
- * Set scroll adjustments for the canvas.
+ * Set scroll adjustments for the widget.
  */
 	widget_class->set_scroll_adjustments_signal = g_signal_new
 		("set-scroll-adjustments", G_TYPE_FROM_CLASS (widget_class),
 		G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
-		G_STRUCT_OFFSET (LdCanvasClass, set_scroll_adjustments),
+		G_STRUCT_OFFSET (LdDiagramViewClass, set_scroll_adjustments),
 		NULL, NULL,
 		ld_marshal_VOID__OBJECT_OBJECT,
 		G_TYPE_NONE, 2, GTK_TYPE_ADJUSTMENT, GTK_TYPE_ADJUSTMENT);
 
 /**
- * LdCanvas::cancel-operation:
- * @self: an #LdCanvas object.
+ * LdDiagramView::cancel-operation:
+ * @self: an #LdDiagramView object.
  *
  * Cancel any current operation.
  */
 	klass->cancel_operation_signal = g_signal_new
 		("cancel-operation", G_TYPE_FROM_CLASS (klass),
 		G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
-		G_STRUCT_OFFSET (LdCanvasClass, cancel_operation), NULL, NULL,
+		G_STRUCT_OFFSET (LdDiagramViewClass, cancel_operation), NULL, NULL,
 		g_cclosure_marshal_VOID__VOID,
 		G_TYPE_NONE, 0);
 
 /**
- * LdCanvas::move:
- * @self: an #LdCanvas object.
+ * LdDiagramView::move:
+ * @self: an #LdDiagramView object.
  * @dx: The difference by which to move on the horizontal axis.
  * @dy: The difference by which to move on the vertical axis.
  *
@@ -411,28 +416,28 @@ ld_canvas_class_init (LdCanvasClass *klass)
 	klass->move_signal = g_signal_new
 		("move", G_TYPE_FROM_CLASS (klass),
 		G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
-		G_STRUCT_OFFSET (LdCanvasClass, move), NULL, NULL,
+		G_STRUCT_OFFSET (LdDiagramViewClass, move), NULL, NULL,
 		ld_marshal_VOID__DOUBLE_DOUBLE,
 		G_TYPE_NONE, 2, G_TYPE_DOUBLE, G_TYPE_DOUBLE);
 
-	g_type_class_add_private (klass, sizeof (LdCanvasPrivate));
+	g_type_class_add_private (klass, sizeof (LdDiagramViewPrivate));
 }
 
 static void
-ld_canvas_init (LdCanvas *self)
+ld_diagram_view_init (LdDiagramView *self)
 {
 	self->priv = G_TYPE_INSTANCE_GET_PRIVATE
-		(self, LD_TYPE_CANVAS, LdCanvasPrivate);
+		(self, LD_TYPE_DIAGRAM_VIEW, LdDiagramViewPrivate);
 
 	self->priv->x = 0;
 	self->priv->y = 0;
 	self->priv->zoom = ZOOM_DEFAULT;
 
-	ld_canvas_color_set (COLOR_GET (self, COLOR_BASE), 1, 1, 1, 1);
-	ld_canvas_color_set (COLOR_GET (self, COLOR_GRID), 0.5, 0.5, 0.5, 1);
-	ld_canvas_color_set (COLOR_GET (self, COLOR_OBJECT), 0, 0, 0, 1);
-	ld_canvas_color_set (COLOR_GET (self, COLOR_SELECTION), 1, 0, 0, 1);
-	ld_canvas_color_set (COLOR_GET (self, COLOR_TERMINAL), 1, 0.5, 0.5, 1);
+	color_set (COLOR_GET (self, COLOR_BASE), 1, 1, 1, 1);
+	color_set (COLOR_GET (self, COLOR_GRID), 0.5, 0.5, 0.5, 1);
+	color_set (COLOR_GET (self, COLOR_OBJECT), 0, 0, 0, 1);
+	color_set (COLOR_GET (self, COLOR_SELECTION), 1, 0, 0, 1);
+	color_set (COLOR_GET (self, COLOR_TERMINAL), 1, 0.5, 0.5, 1);
 
 	g_signal_connect (self, "size-allocate",
 		G_CALLBACK (on_size_allocate), NULL);
@@ -459,13 +464,13 @@ ld_canvas_init (LdCanvas *self)
 }
 
 static void
-ld_canvas_finalize (GObject *gobject)
+ld_diagram_view_finalize (GObject *gobject)
 {
-	LdCanvas *self;
+	LdDiagramView *self;
 
-	self = LD_CANVAS (gobject);
+	self = LD_DIAGRAM_VIEW (gobject);
 
-	ld_canvas_real_set_scroll_adjustments (self, NULL, NULL);
+	ld_diagram_view_real_set_scroll_adjustments (self, NULL, NULL);
 
 	if (self->priv->diagram)
 	{
@@ -476,26 +481,26 @@ ld_canvas_finalize (GObject *gobject)
 		g_object_unref (self->priv->library);
 
 	/* Chain up to the parent class. */
-	G_OBJECT_CLASS (ld_canvas_parent_class)->finalize (gobject);
+	G_OBJECT_CLASS (ld_diagram_view_parent_class)->finalize (gobject);
 }
 
 static void
-ld_canvas_get_property (GObject *object, guint property_id,
+ld_diagram_view_get_property (GObject *object, guint property_id,
 	GValue *value, GParamSpec *pspec)
 {
-	LdCanvas *self;
+	LdDiagramView *self;
 
-	self = LD_CANVAS (object);
+	self = LD_DIAGRAM_VIEW (object);
 	switch (property_id)
 	{
 	case PROP_DIAGRAM:
-		g_value_set_object (value, ld_canvas_get_diagram (self));
+		g_value_set_object (value, ld_diagram_view_get_diagram (self));
 		break;
 	case PROP_LIBRARY:
-		g_value_set_object (value, ld_canvas_get_library (self));
+		g_value_set_object (value, ld_diagram_view_get_library (self));
 		break;
 	case PROP_ZOOM:
-		g_value_set_double (value, ld_canvas_get_zoom (self));
+		g_value_set_double (value, ld_diagram_view_get_zoom (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -503,22 +508,24 @@ ld_canvas_get_property (GObject *object, guint property_id,
 }
 
 static void
-ld_canvas_set_property (GObject *object, guint property_id,
+ld_diagram_view_set_property (GObject *object, guint property_id,
 	const GValue *value, GParamSpec *pspec)
 {
-	LdCanvas *self;
+	LdDiagramView *self;
 
-	self = LD_CANVAS (object);
+	self = LD_DIAGRAM_VIEW (object);
 	switch (property_id)
 	{
 	case PROP_DIAGRAM:
-		ld_canvas_set_diagram (self, LD_DIAGRAM (g_value_get_object (value)));
+		ld_diagram_view_set_diagram (self,
+			LD_DIAGRAM (g_value_get_object (value)));
 		break;
 	case PROP_LIBRARY:
-		ld_canvas_set_library (self, LD_LIBRARY (g_value_get_object (value)));
+		ld_diagram_view_set_library (self,
+			LD_LIBRARY (g_value_get_object (value)));
 		break;
 	case PROP_ZOOM:
-		ld_canvas_set_zoom (self, g_value_get_double (value));
+		ld_diagram_view_set_zoom (self, g_value_get_double (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -526,15 +533,15 @@ ld_canvas_set_property (GObject *object, guint property_id,
 }
 
 static void
-ld_canvas_real_set_scroll_adjustments (LdCanvas *self,
+ld_diagram_view_real_set_scroll_adjustments (LdDiagramView *self,
 	GtkAdjustment *horizontal, GtkAdjustment *vertical)
 {
-	/* TODO: Infinite canvas. */
+	/* TODO: Infinite area. */
 	GtkWidget *widget;
 	gdouble scale;
 
 	widget = GTK_WIDGET (self);
-	scale = ld_canvas_get_scale_in_px (self);
+	scale = ld_diagram_view_get_scale_in_px (self);
 
 	if (horizontal != self->priv->adjustment_h)
 	{
@@ -592,13 +599,13 @@ ld_canvas_real_set_scroll_adjustments (LdCanvas *self,
 }
 
 static void
-on_adjustment_value_changed (GtkAdjustment *adjustment, LdCanvas *self)
+on_adjustment_value_changed (GtkAdjustment *adjustment, LdDiagramView *self)
 {
 	GtkWidget *widget;
 	gdouble scale;
 
 	widget = GTK_WIDGET (self);
-	scale = ld_canvas_get_scale_in_px (self);
+	scale = ld_diagram_view_get_scale_in_px (self);
 
 	if (adjustment == self->priv->adjustment_h)
 	{
@@ -618,9 +625,9 @@ static void
 on_size_allocate (GtkWidget *widget, GtkAllocation *allocation,
 	gpointer user_data)
 {
-	LdCanvas *self;
+	LdDiagramView *self;
 
-	self = LD_CANVAS (widget);
+	self = LD_DIAGRAM_VIEW (widget);
 
 	/* FIXME: If the new allocation is bigger, we may see more than
 	 *        what we're supposed to be able to see -> adjust X and Y.
@@ -632,11 +639,11 @@ on_size_allocate (GtkWidget *widget, GtkAllocation *allocation,
 }
 
 static void
-update_adjustments (LdCanvas *self)
+update_adjustments (LdDiagramView *self)
 {
 	gdouble scale;
 
-	scale = ld_canvas_get_scale_in_px (self);
+	scale = ld_diagram_view_get_scale_in_px (self);
 
 	if (self->priv->adjustment_h)
 	{
@@ -657,7 +664,7 @@ update_adjustments (LdCanvas *self)
 }
 
 static void
-ld_canvas_real_move (LdCanvas *self, gdouble dx, gdouble dy)
+ld_diagram_view_real_move (LdDiagramView *self, gdouble dx, gdouble dy)
 {
 	LdDiagram *diagram;
 
@@ -685,27 +692,27 @@ ld_canvas_real_move (LdCanvas *self, gdouble dx, gdouble dy)
 /* ===== Generic interface etc. ============================================ */
 
 /**
- * ld_canvas_new:
+ * ld_diagram_view_new:
  *
  * Create an instance.
  */
 GtkWidget *
-ld_canvas_new (void)
+ld_diagram_view_new (void)
 {
-	return g_object_new (LD_TYPE_CANVAS, NULL);
+	return g_object_new (LD_TYPE_DIAGRAM_VIEW, NULL);
 }
 
 /**
- * ld_canvas_set_diagram:
- * @self: an #LdCanvas object.
- * @diagram: the #LdDiagram to be assigned to the canvas.
+ * ld_diagram_view_set_diagram:
+ * @self: an #LdDiagramView object.
+ * @diagram: the #LdDiagram to be assigned to the view.
  *
- * Assign an #LdDiagram object to the canvas.
+ * Assign an #LdDiagram object to the view.
  */
 void
-ld_canvas_set_diagram (LdCanvas *self, LdDiagram *diagram)
+ld_diagram_view_set_diagram (LdDiagramView *self, LdDiagram *diagram)
 {
-	g_return_if_fail (LD_IS_CANVAS (self));
+	g_return_if_fail (LD_IS_DIAGRAM_VIEW (self));
 	g_return_if_fail (LD_IS_DIAGRAM (diagram));
 
 	if (self->priv->diagram)
@@ -722,21 +729,21 @@ ld_canvas_set_diagram (LdCanvas *self, LdDiagram *diagram)
 }
 
 /**
- * ld_canvas_get_diagram:
- * @self: an #LdCanvas object.
+ * ld_diagram_view_get_diagram:
+ * @self: an #LdDiagramView object.
  *
- * Get the #LdDiagram object assigned to this canvas.
+ * Get the #LdDiagram object assigned to this view.
  * The reference count on the diagram is not incremented.
  */
 LdDiagram *
-ld_canvas_get_diagram (LdCanvas *self)
+ld_diagram_view_get_diagram (LdDiagramView *self)
 {
-	g_return_val_if_fail (LD_IS_CANVAS (self), NULL);
+	g_return_val_if_fail (LD_IS_DIAGRAM_VIEW (self), NULL);
 	return self->priv->diagram;
 }
 
 static void
-diagram_connect_signals (LdCanvas *self)
+diagram_connect_signals (LdDiagramView *self)
 {
 	g_return_if_fail (LD_IS_DIAGRAM (self->priv->diagram));
 
@@ -747,7 +754,7 @@ diagram_connect_signals (LdCanvas *self)
 }
 
 static void
-diagram_disconnect_signals (LdCanvas *self)
+diagram_disconnect_signals (LdDiagramView *self)
 {
 	g_return_if_fail (LD_IS_DIAGRAM (self->priv->diagram));
 
@@ -757,16 +764,16 @@ diagram_disconnect_signals (LdCanvas *self)
 }
 
 /**
- * ld_canvas_set_library:
- * @self: an #LdCanvas object.
- * @library: the #LdLibrary to be assigned to the canvas.
+ * ld_diagram_view_set_library:
+ * @self: an #LdDiagramView object.
+ * @library: the #LdLibrary to be assigned to the view.
  *
- * Assign an #LdLibrary object to the canvas.
+ * Assign an #LdLibrary object to the view.
  */
 void
-ld_canvas_set_library (LdCanvas *self, LdLibrary *library)
+ld_diagram_view_set_library (LdDiagramView *self, LdLibrary *library)
 {
-	g_return_if_fail (LD_IS_CANVAS (self));
+	g_return_if_fail (LD_IS_DIAGRAM_VIEW (self));
 	g_return_if_fail (LD_IS_LIBRARY (library));
 
 	if (self->priv->library)
@@ -779,27 +786,27 @@ ld_canvas_set_library (LdCanvas *self, LdLibrary *library)
 }
 
 /**
- * ld_canvas_get_library:
- * @self: an #LdCanvas object.
+ * ld_diagram_view_get_library:
+ * @self: an #LdDiagramView object.
  *
- * Get the #LdLibrary object assigned to this canvas.
+ * Get the #LdLibrary object assigned to this view.
  * The reference count on the library is not incremented.
  */
 LdLibrary *
-ld_canvas_get_library (LdCanvas *self)
+ld_diagram_view_get_library (LdDiagramView *self)
 {
-	g_return_val_if_fail (LD_IS_CANVAS (self), NULL);
+	g_return_val_if_fail (LD_IS_DIAGRAM_VIEW (self), NULL);
 	return self->priv->library;
 }
 
 /*
- * ld_canvas_get_base_unit_in_px:
+ * ld_diagram_view_get_base_unit_in_px:
  * @self: a #GtkWidget object to retrieve DPI from (indirectly).
  *
  * Return value: length of the base unit in pixels.
  */
 static gdouble
-ld_canvas_get_base_unit_in_px (GtkWidget *self)
+ld_diagram_view_get_base_unit_in_px (GtkWidget *self)
 {
 	gdouble resolution;
 
@@ -810,50 +817,49 @@ ld_canvas_get_base_unit_in_px (GtkWidget *self)
 		resolution = DEFAULT_SCREEN_RESOLUTION;
 
 	/* XXX: It might look better if the unit was rounded to a whole number. */
-	return resolution / MM_PER_INCH * LD_CANVAS_BASE_UNIT_LENGTH;
+	return resolution / MM_PER_INCH * LD_DIAGRAM_VIEW_BASE_UNIT_LENGTH;
 }
 
 /*
- * ld_canvas_get_scale_in_px:
- * @self: an #LdCanvas object.
+ * ld_diagram_view_get_scale_in_px:
+ * @self: an #LdDiagramView object.
  *
  * Return value: displayed length of the base unit in pixels.
  */
 static gdouble
-ld_canvas_get_scale_in_px (LdCanvas *self)
+ld_diagram_view_get_scale_in_px (LdDiagramView *self)
 {
-	g_return_val_if_fail (LD_IS_CANVAS (self), 1);
+	g_return_val_if_fail (LD_IS_DIAGRAM_VIEW (self), 1);
 
-	return ld_canvas_get_base_unit_in_px (GTK_WIDGET (self))
+	return ld_diagram_view_get_base_unit_in_px (GTK_WIDGET (self))
 		* self->priv->zoom;
 }
 
 /**
- * ld_canvas_widget_to_diagram_coords:
- * @self: an #LdCanvas object.
+ * ld_diagram_view_widget_to_diagram_coords:
+ * @self: an #LdDiagramView object.
  * @wx: the X coordinate to be translated.
  * @wy: the Y coordinate to be translated.
  * @dx: (out): the translated X coordinate.
  * @dy: (out): the translated Y coordinate.
  *
- * Translate coordinates located inside the canvas window
- * into diagram coordinates.
+ * Translate widget coordinates into diagram coordinates.
  */
 void
-ld_canvas_widget_to_diagram_coords (LdCanvas *self,
+ld_diagram_view_widget_to_diagram_coords (LdDiagramView *self,
 	gdouble wx, gdouble wy, gdouble *dx, gdouble *dy)
 {
 	GtkWidget *widget;
 	gdouble scale;
 
-	g_return_if_fail (LD_IS_CANVAS (self));
+	g_return_if_fail (LD_IS_DIAGRAM_VIEW (self));
 	g_return_if_fail (dx != NULL);
 	g_return_if_fail (dy != NULL);
 
 	widget = GTK_WIDGET (self);
-	scale = ld_canvas_get_scale_in_px (self);
+	scale = ld_diagram_view_get_scale_in_px (self);
 
-	/* We know diagram coordinates of the center of the canvas, so we may
+	/* We know diagram coordinates of the center of view, so we may
 	 * translate the given X and Y coordinates to this center and then scale
 	 * them by dividing them by the current scale.
 	 */
@@ -862,60 +868,60 @@ ld_canvas_widget_to_diagram_coords (LdCanvas *self,
 }
 
 /**
- * ld_canvas_diagram_to_widget_coords:
- * @self: an #LdCanvas object.
+ * ld_diagram_view_diagram_to_widget_coords:
+ * @self: an #LdDiagramView object.
  * @dx: the X coordinate to be translated.
  * @dy: the Y coordinate to be translated.
  * @wx: (out): the translated X coordinate.
  * @wy: (out): the translated Y coordinate.
  *
- * Translate diagram coordinates into canvas coordinates.
+ * Translate diagram coordinates into widget coordinates.
  */
 void
-ld_canvas_diagram_to_widget_coords (LdCanvas *self,
+ld_diagram_view_diagram_to_widget_coords (LdDiagramView *self,
 	gdouble dx, gdouble dy, gdouble *wx, gdouble *wy)
 {
 	GtkWidget *widget;
 	gdouble scale;
 
-	g_return_if_fail (LD_IS_CANVAS (self));
+	g_return_if_fail (LD_IS_DIAGRAM_VIEW (self));
 	g_return_if_fail (wx != NULL);
 	g_return_if_fail (wy != NULL);
 
 	widget = GTK_WIDGET (self);
-	scale = ld_canvas_get_scale_in_px (self);
+	scale = ld_diagram_view_get_scale_in_px (self);
 
-	/* Just the reversal of ld_canvas_widget_to_diagram_coords(). */
+	/* Just the reversal of ld_diagram_view_widget_to_diagram_coords(). */
 	*wx = scale * (dx - self->priv->x) + 0.5 * widget->allocation.width;
 	*wy = scale * (dy - self->priv->y) + 0.5 * widget->allocation.height;
 }
 
 /**
- * ld_canvas_get_zoom:
- * @self: an #LdCanvas object.
+ * ld_diagram_view_get_zoom:
+ * @self: an #LdDiagramView object.
  *
- * Return value: zoom of the canvas.
+ * Return value: zoom of the view.
  */
 gdouble
-ld_canvas_get_zoom (LdCanvas *self)
+ld_diagram_view_get_zoom (LdDiagramView *self)
 {
-	g_return_val_if_fail (LD_IS_CANVAS (self), -1);
+	g_return_val_if_fail (LD_IS_DIAGRAM_VIEW (self), -1);
 	return self->priv->zoom;
 }
 
 /**
- * ld_canvas_set_zoom:
- * @self: an #LdCanvas object.
+ * ld_diagram_view_set_zoom:
+ * @self: an #LdDiagramView object.
  * @zoom: the zoom.
  *
- * Set zoom of the canvas.
+ * Set zoom of the view.
  */
 void
-ld_canvas_set_zoom (LdCanvas *self, gdouble zoom)
+ld_diagram_view_set_zoom (LdDiagramView *self, gdouble zoom)
 {
 	gdouble clamped_zoom;
 
-	g_return_if_fail (LD_IS_CANVAS (self));
+	g_return_if_fail (LD_IS_DIAGRAM_VIEW (self));
 
 	clamped_zoom = CLAMP (zoom, ZOOM_MIN, ZOOM_MAX);
 	if (self->priv->zoom == clamped_zoom)
@@ -931,63 +937,62 @@ ld_canvas_set_zoom (LdCanvas *self, gdouble zoom)
 }
 
 /**
- * ld_canvas_can_zoom_in:
- * @self: an #LdCanvas object.
+ * ld_diagram_view_can_zoom_in:
+ * @self: an #LdDiagramView object.
  *
  * Return value: %TRUE if the view can be zoomed in.
  */
 gboolean
-ld_canvas_can_zoom_in (LdCanvas *self)
+ld_diagram_view_can_zoom_in (LdDiagramView *self)
 {
-	g_return_val_if_fail (LD_IS_CANVAS (self), FALSE);
+	g_return_val_if_fail (LD_IS_DIAGRAM_VIEW (self), FALSE);
 	return self->priv->zoom < ZOOM_MAX;
 }
 
 /**
- * ld_canvas_can_zoom_out:
- * @self: an #LdCanvas object.
+ * ld_diagram_view_can_zoom_out:
+ * @self: an #LdDiagramView object.
  *
  * Return value: %TRUE if the view can be zoomed out.
  */
 gboolean
-ld_canvas_can_zoom_out (LdCanvas *self)
+ld_diagram_view_can_zoom_out (LdDiagramView *self)
 {
-	g_return_val_if_fail (LD_IS_CANVAS (self), FALSE);
+	g_return_val_if_fail (LD_IS_DIAGRAM_VIEW (self), FALSE);
 	return self->priv->zoom > ZOOM_MIN;
 }
 
 /**
- * ld_canvas_zoom_in:
- * @self: an #LdCanvas object.
+ * ld_diagram_view_zoom_in:
+ * @self: an #LdDiagramView object.
  *
  * Zoom the view in.
  */
 void
-ld_canvas_zoom_in (LdCanvas *self)
+ld_diagram_view_zoom_in (LdDiagramView *self)
 {
-	g_return_if_fail (LD_IS_CANVAS (self));
-	ld_canvas_set_zoom (self, self->priv->zoom * ZOOM_STEP);
+	g_return_if_fail (LD_IS_DIAGRAM_VIEW (self));
+	ld_diagram_view_set_zoom (self, self->priv->zoom * ZOOM_STEP);
 }
 
 /**
- * ld_canvas_zoom_out:
- * @self: an #LdCanvas object.
+ * ld_diagram_view_zoom_out:
+ * @self: an #LdDiagramView object.
  *
  * Zoom the view out.
  */
 void
-ld_canvas_zoom_out (LdCanvas *self)
+ld_diagram_view_zoom_out (LdDiagramView *self)
 {
-	g_return_if_fail (LD_IS_CANVAS (self));
-	ld_canvas_set_zoom (self, self->priv->zoom / ZOOM_STEP);
+	g_return_if_fail (LD_IS_DIAGRAM_VIEW (self));
+	ld_diagram_view_set_zoom (self, self->priv->zoom / ZOOM_STEP);
 }
 
 
 /* ===== Helper functions ================================================== */
 
 static void
-ld_canvas_color_set (LdCanvasColor *color,
-	gdouble r, gdouble g, gdouble b, gdouble a)
+color_set (Color *color, gdouble r, gdouble g, gdouble b, gdouble a)
 {
 	color->r = r;
 	color->g = g;
@@ -996,13 +1001,13 @@ ld_canvas_color_set (LdCanvasColor *color,
 }
 
 static void
-ld_canvas_color_apply (LdCanvasColor *color, cairo_t *cr)
+color_apply (Color *color, cairo_t *cr)
 {
 	cairo_set_source_rgba (cr, color->r, color->g, color->b, color->a);
 }
 
 static guint32
-ld_canvas_color_to_cairo_argb (LdCanvasColor *color)
+color_to_cairo_argb (Color *color)
 {
 	return (guint) (color->a            * 255) << 24
 	     | (guint) (color->r * color->a * 255) << 16
@@ -1040,7 +1045,8 @@ point_to_line_segment_distance
 /* ===== Generic functions ================================================= */
 
 static gboolean
-object_hit_test (LdCanvas *self, LdDiagramObject *object, const LdPoint *point)
+object_hit_test (LdDiagramView *self, LdDiagramObject *object,
+	const LdPoint *point)
 {
 	if (LD_IS_DIAGRAM_SYMBOL (object))
 		return symbol_hit_test (self,
@@ -1052,7 +1058,7 @@ object_hit_test (LdCanvas *self, LdDiagramObject *object, const LdPoint *point)
 }
 
 static gboolean
-get_object_clip_area (LdCanvas *self,
+get_object_clip_area (LdDiagramView *self,
 	LdDiagramObject *object, LdRectangle *rect)
 {
 	if (LD_IS_DIAGRAM_SYMBOL (object))
@@ -1065,12 +1071,12 @@ get_object_clip_area (LdCanvas *self,
 }
 
 static void
-move_object_to_point (LdCanvas *self, LdDiagramObject *object,
+move_object_to_point (LdDiagramView *self, LdDiagramObject *object,
 	const LdPoint *point)
 {
 	gdouble diagram_x, diagram_y;
 
-	ld_canvas_widget_to_diagram_coords (self,
+	ld_diagram_view_widget_to_diagram_coords (self,
 		point->x, point->y, &diagram_x, &diagram_y);
 	g_object_set (object,
 		"x", floor (diagram_x + 0.5),
@@ -1079,7 +1085,7 @@ move_object_to_point (LdCanvas *self, LdDiagramObject *object,
 }
 
 static LdDiagramObject *
-get_object_at_point (LdCanvas *self, const LdPoint *point)
+get_object_at_point (LdDiagramView *self, const LdPoint *point)
 {
 	GList *objects, *iter;
 
@@ -1097,7 +1103,7 @@ get_object_at_point (LdCanvas *self, const LdPoint *point)
 }
 
 static void
-move_selection (LdCanvas *self, gdouble dx, gdouble dy)
+move_selection (LdDiagramView *self, gdouble dx, gdouble dy)
 {
 	LdDiagram *diagram;
 	GList *selection, *iter;
@@ -1124,14 +1130,14 @@ move_selection (LdCanvas *self, gdouble dx, gdouble dy)
 }
 
 static gboolean
-is_object_selected (LdCanvas *self, LdDiagramObject *object)
+is_object_selected (LdDiagramView *self, LdDiagramObject *object)
 {
 	return g_list_find (ld_diagram_get_selection (self->priv->diagram),
 		object) != NULL;
 }
 
 static void
-queue_draw (LdCanvas *self, LdRectangle *rect)
+queue_draw (LdDiagramView *self, LdRectangle *rect)
 {
 	LdRectangle area;
 
@@ -1142,7 +1148,7 @@ queue_draw (LdCanvas *self, LdRectangle *rect)
 }
 
 static void
-queue_object_draw (LdCanvas *self, LdDiagramObject *object)
+queue_object_draw (LdDiagramView *self, LdDiagramObject *object)
 {
 	LdRectangle rect;
 
@@ -1155,7 +1161,7 @@ queue_object_draw (LdCanvas *self, LdDiagramObject *object)
 /* ===== Symbol terminals ================================================== */
 
 static void
-check_terminals (LdCanvas *self, const LdPoint *point)
+check_terminals (LdDiagramView *self, const LdPoint *point)
 {
 	GList *objects, *iter;
 	LdDiagramSymbol *closest_symbol = NULL;
@@ -1194,7 +1200,7 @@ check_terminals (LdCanvas *self, const LdPoint *point)
 			cur_term.x += object_x;
 			cur_term.y += object_y;
 
-			ld_canvas_diagram_to_widget_coords (self,
+			ld_diagram_view_diagram_to_widget_coords (self,
 				cur_term.x, cur_term.y, &widget_coords.x, &widget_coords.y);
 			distance = ld_point_distance (&widget_coords, point->x, point->y);
 			if (distance <= closest_distance)
@@ -1241,7 +1247,7 @@ rotate_terminal (LdPoint *terminal, gint symbol_rotation)
 }
 
 static void
-hide_terminals (LdCanvas *self)
+hide_terminals (LdDiagramView *self)
 {
 	if (self->priv->terminal_hovered)
 	{
@@ -1251,12 +1257,12 @@ hide_terminals (LdCanvas *self)
 }
 
 static void
-queue_terminal_draw (LdCanvas *self, LdPoint *terminal)
+queue_terminal_draw (LdDiagramView *self, LdPoint *terminal)
 {
 	LdRectangle rect;
 	LdPoint widget_coords;
 
-	ld_canvas_diagram_to_widget_coords (self,
+	ld_diagram_view_diagram_to_widget_coords (self,
 		terminal->x, terminal->y, &widget_coords.x, &widget_coords.y);
 
 	rect.x = widget_coords.x - TERMINAL_RADIUS;
@@ -1271,7 +1277,8 @@ queue_terminal_draw (LdCanvas *self, LdPoint *terminal)
 /* ===== Diagram symbol ==================================================== */
 
 static gboolean
-symbol_hit_test (LdCanvas *self, LdDiagramSymbol *symbol, const LdPoint *point)
+symbol_hit_test (LdDiagramView *self, LdDiagramSymbol *symbol,
+	const LdPoint *point)
 {
 	LdRectangle rect;
 
@@ -1282,7 +1289,7 @@ symbol_hit_test (LdCanvas *self, LdDiagramSymbol *symbol, const LdPoint *point)
 }
 
 static gboolean
-get_symbol_clip_area (LdCanvas *self,
+get_symbol_clip_area (LdDiagramView *self,
 	LdDiagramSymbol *symbol, LdRectangle *rect)
 {
 	LdRectangle object_rect;
@@ -1296,7 +1303,8 @@ get_symbol_clip_area (LdCanvas *self,
 }
 
 static gboolean
-get_symbol_area (LdCanvas *self, LdDiagramSymbol *symbol, LdRectangle *rect)
+get_symbol_area (LdDiagramView *self, LdDiagramSymbol *symbol,
+	LdRectangle *rect)
 {
 	gdouble object_x, object_y;
 	LdSymbol *library_symbol;
@@ -1316,11 +1324,11 @@ get_symbol_area (LdCanvas *self, LdDiagramSymbol *symbol, LdRectangle *rect)
 
 	rotate_symbol_area (&area, rotation);
 
-	ld_canvas_diagram_to_widget_coords (self,
+	ld_diagram_view_diagram_to_widget_coords (self,
 		object_x + area.x,
 		object_y + area.y,
 		&x1, &y1);
-	ld_canvas_diagram_to_widget_coords (self,
+	ld_diagram_view_diagram_to_widget_coords (self,
 		object_x + area.x + area.width,
 		object_y + area.y + area.height,
 		&x2, &y2);
@@ -1372,7 +1380,7 @@ rotate_symbol_area (LdRectangle *area, gint rotation)
 }
 
 static void
-rotate_symbol (LdCanvas *self, LdDiagramSymbol *symbol)
+rotate_symbol (LdDiagramView *self, LdDiagramSymbol *symbol)
 {
 	gint rotation;
 
@@ -1400,7 +1408,7 @@ rotate_symbol (LdCanvas *self, LdDiagramSymbol *symbol)
 }
 
 static LdSymbol *
-resolve_symbol (LdCanvas *self, LdDiagramSymbol *diagram_symbol)
+resolve_symbol (LdDiagramView *self, LdDiagramSymbol *diagram_symbol)
 {
 	LdSymbol *symbol;
 	gchar *klass;
@@ -1418,7 +1426,7 @@ resolve_symbol (LdCanvas *self, LdDiagramSymbol *diagram_symbol)
 /* ===== Diagram connection ================================================ */
 
 static gboolean
-connection_hit_test (LdCanvas *self, LdDiagramConnection *connection,
+connection_hit_test (LdDiagramView *self, LdDiagramConnection *connection,
 	const LdPoint *point)
 {
 	gdouble object_x, object_y, length;
@@ -1436,7 +1444,7 @@ connection_hit_test (LdCanvas *self, LdDiagramConnection *connection,
 
 	for (i = 0; i < points->length; i++)
 	{
-		ld_canvas_diagram_to_widget_coords (self,
+		ld_diagram_view_diagram_to_widget_coords (self,
 			points->points[i].x + object_x,
 			points->points[i].y + object_y,
 			&points->points[i].x,
@@ -1458,14 +1466,14 @@ connection_hit_test (LdCanvas *self, LdDiagramConnection *connection,
 }
 
 static gboolean
-get_connection_clip_area (LdCanvas *self,
+get_connection_clip_area (LdDiagramView *self,
 	LdDiagramConnection *connection, LdRectangle *rect)
 {
 	return get_connection_area (self, connection, rect);
 }
 
 static gboolean
-get_connection_area (LdCanvas *self,
+get_connection_area (LdDiagramView *self,
 	LdDiagramConnection *connection, LdRectangle *rect)
 {
 	gdouble x_origin, y_origin;
@@ -1482,7 +1490,7 @@ get_connection_area (LdCanvas *self,
 
 	g_object_get (connection, "x", &x_origin, "y", &y_origin, NULL);
 
-	ld_canvas_diagram_to_widget_coords (self,
+	ld_diagram_view_diagram_to_widget_coords (self,
 		x_origin + points->points[0].x,
 		y_origin + points->points[0].y,
 		&x, &y);
@@ -1492,7 +1500,7 @@ get_connection_area (LdCanvas *self,
 
 	for (i = 1; i < points->length; i++)
 	{
-		ld_canvas_diagram_to_widget_coords (self,
+		ld_diagram_view_diagram_to_widget_coords (self,
 			x_origin + points->points[i].x,
 			y_origin + points->points[i].y,
 			&x, &y);
@@ -1521,9 +1529,9 @@ get_connection_area (LdCanvas *self,
 /* ===== Operations ======================================================== */
 
 static void
-ld_canvas_real_cancel_operation (LdCanvas *self)
+ld_diagram_view_real_cancel_operation (LdDiagramView *self)
 {
-	g_return_if_fail (LD_IS_CANVAS (self));
+	g_return_if_fail (LD_IS_DIAGRAM_VIEW (self));
 
 	if (self->priv->operation)
 	{
@@ -1535,22 +1543,22 @@ ld_canvas_real_cancel_operation (LdCanvas *self)
 }
 
 /**
- * ld_canvas_add_object_begin:
- * @self: an #LdCanvas object.
+ * ld_diagram_view_add_object_begin:
+ * @self: an #LdDiagramView object.
  * @object: (transfer full): the object to be added to the diagram.
  *
  * Begin an operation for adding an object into the diagram.
  */
 void
-ld_canvas_add_object_begin (LdCanvas *self, LdDiagramObject *object)
+ld_diagram_view_add_object_begin (LdDiagramView *self, LdDiagramObject *object)
 {
 	AddObjectData *data;
 
-	g_return_if_fail (LD_IS_CANVAS (self));
+	g_return_if_fail (LD_IS_DIAGRAM_VIEW (self));
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (object));
 
 	g_signal_emit (self,
-		LD_CANVAS_GET_CLASS (self)->cancel_operation_signal, 0);
+		LD_DIAGRAM_VIEW_GET_CLASS (self)->cancel_operation_signal, 0);
 
 	self->priv->operation = OPER_ADD_OBJECT;
 	self->priv->operation_end = oper_add_object_end;
@@ -1560,7 +1568,7 @@ ld_canvas_add_object_begin (LdCanvas *self, LdDiagramObject *object)
 }
 
 static void
-oper_add_object_end (LdCanvas *self)
+oper_add_object_end (LdDiagramView *self)
 {
 	AddObjectData *data;
 
@@ -1574,12 +1582,12 @@ oper_add_object_end (LdCanvas *self)
 }
 
 static void
-oper_connect_begin (LdCanvas *self, const LdPoint *point)
+oper_connect_begin (LdDiagramView *self, const LdPoint *point)
 {
 	ConnectData *data;
 
 	g_signal_emit (self,
-		LD_CANVAS_GET_CLASS (self)->cancel_operation_signal, 0);
+		LD_DIAGRAM_VIEW_GET_CLASS (self)->cancel_operation_signal, 0);
 
 	self->priv->operation = OPER_CONNECT;
 	self->priv->operation_end = oper_connect_end;
@@ -1599,7 +1607,7 @@ oper_connect_begin (LdCanvas *self, const LdPoint *point)
 }
 
 static void
-oper_connect_end (LdCanvas *self)
+oper_connect_end (LdDiagramView *self)
 {
 	ConnectData *data;
 
@@ -1613,7 +1621,7 @@ oper_connect_end (LdCanvas *self)
 }
 
 static void
-oper_connect_motion (LdCanvas *self, const LdPoint *point)
+oper_connect_motion (LdDiagramView *self, const LdPoint *point)
 {
 	ConnectData *data;
 	LdPointArray *points;
@@ -1629,7 +1637,7 @@ oper_connect_motion (LdCanvas *self, const LdPoint *point)
 	points->points[0].x = 0;
 	points->points[0].y = 0;
 
-	ld_canvas_widget_to_diagram_coords (self,
+	ld_diagram_view_widget_to_diagram_coords (self,
 		point->x, point->y, &diagram_x, &diagram_y);
 	points->points[3].x = floor (diagram_x - data->origin.x + 0.5);
 	points->points[3].y = floor (diagram_y - data->origin.y + 0.5);
@@ -1662,12 +1670,12 @@ oper_connect_motion (LdCanvas *self, const LdPoint *point)
 }
 
 static void
-oper_select_begin (LdCanvas *self, const LdPoint *point)
+oper_select_begin (LdDiagramView *self, const LdPoint *point)
 {
 	SelectData *data;
 
 	g_signal_emit (self,
-		LD_CANVAS_GET_CLASS (self)->cancel_operation_signal, 0);
+		LD_DIAGRAM_VIEW_GET_CLASS (self)->cancel_operation_signal, 0);
 
 	self->priv->operation = OPER_SELECT;
 	self->priv->operation_end = oper_select_end;
@@ -1680,13 +1688,13 @@ oper_select_begin (LdCanvas *self, const LdPoint *point)
 }
 
 static void
-oper_select_end (LdCanvas *self)
+oper_select_end (LdDiagramView *self)
 {
 	oper_select_queue_draw (self);
 }
 
 static void
-oper_select_get_rectangle (LdCanvas *self, LdRectangle *rect)
+oper_select_get_rectangle (LdDiagramView *self, LdRectangle *rect)
 {
 	SelectData *data;
 
@@ -1698,7 +1706,7 @@ oper_select_get_rectangle (LdCanvas *self, LdRectangle *rect)
 }
 
 static void
-oper_select_queue_draw (LdCanvas *self)
+oper_select_queue_draw (LdDiagramView *self)
 {
 	LdRectangle rect;
 	SelectData *data;
@@ -1716,7 +1724,7 @@ oper_select_draw (GtkWidget *widget, DrawData *data)
 
 	g_return_if_fail (data->self->priv->operation == OPER_SELECT);
 
-	ld_canvas_color_apply (COLOR_GET (data->self, COLOR_GRID), data->cr);
+	color_apply (COLOR_GET (data->self, COLOR_GRID), data->cr);
 	cairo_set_line_width (data->cr, 1);
 	cairo_set_line_cap (data->cr, CAIRO_LINE_CAP_SQUARE);
 	cairo_set_dash (data->cr, dashes, G_N_ELEMENTS (dashes), 0);
@@ -1732,7 +1740,7 @@ oper_select_draw (GtkWidget *widget, DrawData *data)
 }
 
 static void
-oper_select_motion (LdCanvas *self, const LdPoint *point)
+oper_select_motion (LdDiagramView *self, const LdPoint *point)
 {
 	SelectData *data;
 	GList *objects, *iter;
@@ -1774,12 +1782,12 @@ oper_select_motion (LdCanvas *self, const LdPoint *point)
 }
 
 static void
-oper_move_selection_begin (LdCanvas *self, const LdPoint *point)
+oper_move_selection_begin (LdDiagramView *self, const LdPoint *point)
 {
 	MoveSelectionData *data;
 
 	g_signal_emit (self,
-		LD_CANVAS_GET_CLASS (self)->cancel_operation_signal, 0);
+		LD_DIAGRAM_VIEW_GET_CLASS (self)->cancel_operation_signal, 0);
 
 	self->priv->operation = OPER_MOVE_SELECTION;
 	self->priv->operation_end = oper_move_selection_end;
@@ -1793,19 +1801,19 @@ oper_move_selection_begin (LdCanvas *self, const LdPoint *point)
 }
 
 static void
-oper_move_selection_end (LdCanvas *self)
+oper_move_selection_end (LdDiagramView *self)
 {
 	ld_diagram_end_user_action (self->priv->diagram);
 }
 
 static void
-oper_move_selection_motion (LdCanvas *self, const LdPoint *point)
+oper_move_selection_motion (LdDiagramView *self, const LdPoint *point)
 {
 	MoveSelectionData *data;
 	gdouble scale, dx, dy, move_x, move_y;
 	gdouble move = FALSE;
 
-	scale = ld_canvas_get_scale_in_px (self);
+	scale = ld_diagram_view_get_scale_in_px (self);
 	data = &OPER_DATA (self, move_selection);
 
 	dx = point->x - data->move_origin.x;
@@ -1833,7 +1841,7 @@ oper_move_selection_motion (LdCanvas *self, const LdPoint *point)
 /* ===== Events, rendering ================================================= */
 
 static void
-simulate_motion (LdCanvas *self)
+simulate_motion (LdDiagramView *self)
 {
 	GdkEventMotion event;
 	GtkWidget *widget;
@@ -1860,13 +1868,13 @@ static gboolean
 on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 {
 	LdPoint point;
-	LdCanvas *self;
+	LdDiagramView *self;
 	AddObjectData *add_data;
 
 	point.x = event->x;
 	point.y = event->y;
 
-	self = LD_CANVAS (widget);
+	self = LD_DIAGRAM_VIEW (widget);
 	switch (self->priv->operation)
 	{
 	case OPER_ADD_OBJECT:
@@ -1913,9 +1921,9 @@ on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 static gboolean
 on_leave_notify (GtkWidget *widget, GdkEventCrossing *event, gpointer user_data)
 {
-	LdCanvas *self;
+	LdDiagramView *self;
 
-	self = LD_CANVAS (widget);
+	self = LD_DIAGRAM_VIEW (widget);
 	switch (self->priv->operation)
 	{
 		AddObjectData *data;
@@ -1934,14 +1942,14 @@ static gboolean
 on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
 	LdPoint point;
-	LdCanvas *self;
+	LdDiagramView *self;
 	AddObjectData *data;
 	LdDiagramObject *object;
 
 	point.x = event->x;
 	point.y = event->y;
 
-	self = LD_CANVAS (widget);
+	self = LD_DIAGRAM_VIEW (widget);
 	if (!self->priv->diagram)
 		return FALSE;
 
@@ -1970,7 +1978,7 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 
 		/* XXX: "cancel" causes confusion. */
 		g_signal_emit (self,
-			LD_CANVAS_GET_CLASS (self)->cancel_operation_signal, 0);
+			LD_DIAGRAM_VIEW_GET_CLASS (self)->cancel_operation_signal, 0);
 		break;
 	case OPER_0:
 		self->priv->drag_start_pos = point;
@@ -2005,7 +2013,7 @@ static gboolean
 on_button_release (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
 	LdPoint point;
-	LdCanvas *self;
+	LdDiagramView *self;
 	LdDiagramObject *object;
 
 	if (event->button != 1)
@@ -2014,7 +2022,7 @@ on_button_release (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 	point.x = event->x;
 	point.y = event->y;
 
-	self = LD_CANVAS (widget);
+	self = LD_DIAGRAM_VIEW (widget);
 	if (!self->priv->diagram)
 		return FALSE;
 
@@ -2024,7 +2032,7 @@ on_button_release (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 	case OPER_MOVE_SELECTION:
 	case OPER_CONNECT:
 		g_signal_emit (self,
-			LD_CANVAS_GET_CLASS (self)->cancel_operation_signal, 0);
+			LD_DIAGRAM_VIEW_GET_CLASS (self)->cancel_operation_signal, 0);
 		break;
 	case OPER_0:
 		object = get_object_at_point (self, &point);
@@ -2045,28 +2053,28 @@ on_scroll (GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
 	gdouble prev_x, prev_y;
 	gdouble new_x, new_y;
 	LdPoint point;
-	LdCanvas *self;
+	LdDiagramView *self;
 
 	point.x = event->x;
 	point.y = event->y;
-	self = LD_CANVAS (widget);
+	self = LD_DIAGRAM_VIEW (widget);
 
-	ld_canvas_widget_to_diagram_coords (self,
+	ld_diagram_view_widget_to_diagram_coords (self,
 		event->x, event->y, &prev_x, &prev_y);
 
 	switch (event->direction)
 	{
 	case GDK_SCROLL_UP:
-		ld_canvas_zoom_in (self);
+		ld_diagram_view_zoom_in (self);
 		break;
 	case GDK_SCROLL_DOWN:
-		ld_canvas_zoom_out (self);
+		ld_diagram_view_zoom_out (self);
 		break;
 	default:
 		return FALSE;
 	}
 
-	ld_canvas_widget_to_diagram_coords (self,
+	ld_diagram_view_widget_to_diagram_coords (self,
 		event->x, event->y, &new_x, &new_y);
 
 	/* Focus on the point under the cursor. */
@@ -2083,8 +2091,8 @@ on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 	DrawData data;
 
 	data.cr = gdk_cairo_create (widget->window);
-	data.self = LD_CANVAS (widget);
-	data.scale = ld_canvas_get_scale_in_px (data.self);
+	data.self = LD_DIAGRAM_VIEW (widget);
+	data.scale = ld_diagram_view_get_scale_in_px (data.self);
 	data.exposed_rect.x = event->area.x;
 	data.exposed_rect.y = event->area.y;
 	data.exposed_rect.width = event->area.width;
@@ -2093,7 +2101,7 @@ on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 	gdk_cairo_rectangle (data.cr, &event->area);
 	cairo_clip (data.cr);
 
-	ld_canvas_color_apply (COLOR_GET (data.self, COLOR_BASE), data.cr);
+	color_apply (COLOR_GET (data.self, COLOR_BASE), data.cr);
 	cairo_paint (data.cr);
 
 	draw_grid (widget, &data);
@@ -2136,7 +2144,7 @@ draw_grid (GtkWidget *widget, DrawData *data)
 		data->exposed_rect.width, data->exposed_rect.height, stride);
 
 	/* Get coordinates of the top-left point. */
-	ld_canvas_widget_to_diagram_coords (data->self,
+	ld_diagram_view_widget_to_diagram_coords (data->self,
 		data->exposed_rect.x, data->exposed_rect.y, &x_init, &y_init);
 
 	x_init = ceil (x_init);
@@ -2144,7 +2152,7 @@ draw_grid (GtkWidget *widget, DrawData *data)
 	y_init = ceil (y_init);
 	y_init = y_init - (gint) y_init % grid_factor;
 
-	ld_canvas_diagram_to_widget_coords (data->self,
+	ld_diagram_view_diagram_to_widget_coords (data->self,
 		x_init, y_init, &x_init, &y_init);
 
 	x_init -= data->exposed_rect.x;
@@ -2155,7 +2163,7 @@ draw_grid (GtkWidget *widget, DrawData *data)
 	while (y_init < 0)
 		y_init += grid_step;
 
-	color = ld_canvas_color_to_cairo_argb (COLOR_GET (data->self, COLOR_GRID));
+	color = color_to_cairo_argb (COLOR_GET (data->self, COLOR_GRID));
 
 	for     (x = x_init; x < data->exposed_rect.width;  x += grid_step)
 		for (y = y_init; y < data->exposed_rect.height; y += grid_step)
@@ -2172,18 +2180,18 @@ draw_grid (GtkWidget *widget, DrawData *data)
 static void
 draw_terminal (GtkWidget *widget, DrawData *data)
 {
-	LdCanvasPrivate *priv;
+	LdDiagramViewPrivate *priv;
 	LdPoint widget_coords;
 
 	priv = data->self->priv;
 	if (!priv->terminal_hovered)
 		return;
 
-	ld_canvas_color_apply (COLOR_GET (data->self, COLOR_TERMINAL), data->cr);
+	color_apply (COLOR_GET (data->self, COLOR_TERMINAL), data->cr);
 	cairo_set_line_width (data->cr, 1);
 
 	cairo_new_path (data->cr);
-	ld_canvas_diagram_to_widget_coords (data->self,
+	ld_diagram_view_diagram_to_widget_coords (data->self,
 		priv->terminal.x, priv->terminal.y,
 		&widget_coords.x, &widget_coords.y);
 	cairo_arc (data->cr, widget_coords.x, widget_coords.y,
@@ -2233,11 +2241,9 @@ draw_object (LdDiagramObject *diagram_object, DrawData *data)
 	g_return_if_fail (data != NULL);
 
 	if (is_object_selected (data->self, diagram_object))
-		ld_canvas_color_apply (COLOR_GET (data->self,
-			COLOR_SELECTION), data->cr);
+		color_apply (COLOR_GET (data->self, COLOR_SELECTION), data->cr);
 	else
-		ld_canvas_color_apply (COLOR_GET (data->self,
-			COLOR_OBJECT), data->cr);
+		color_apply (COLOR_GET (data->self, COLOR_OBJECT), data->cr);
 
 	if (LD_IS_DIAGRAM_SYMBOL (diagram_object))
 		draw_symbol (LD_DIAGRAM_SYMBOL (diagram_object), data);
@@ -2278,7 +2284,7 @@ draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data)
 
 	g_object_get (diagram_symbol, "x", &x, "y", &y,
 		"rotation", &rotation, NULL);
-	ld_canvas_diagram_to_widget_coords (data->self, x, y, &x, &y);
+	ld_diagram_view_diagram_to_widget_coords (data->self, x, y, &x, &y);
 	cairo_translate (data->cr, x, y);
 	cairo_scale (data->cr, data->scale, data->scale);
 
@@ -2318,7 +2324,7 @@ draw_connection (LdDiagramConnection *connection, DrawData *data)
 	cairo_save (data->cr);
 
 	g_object_get (connection, "x", &x, "y", &y, NULL);
-	ld_canvas_diagram_to_widget_coords (data->self, x, y, &x, &y);
+	ld_diagram_view_diagram_to_widget_coords (data->self, x, y, &x, &y);
 	cairo_translate (data->cr, x, y);
 	cairo_scale (data->cr, data->scale, data->scale);
 

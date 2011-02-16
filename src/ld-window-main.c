@@ -32,8 +32,8 @@ struct _LdWindowMainPrivate
 	LdDiagram *diagram;
 	gchar *filename;
 
-	GtkWidget *canvas_window;
-	LdCanvas *canvas;
+	GtkWidget *scrolled_window;
+	LdDiagramView *view;
 
 	GtkWidget *statusbar;
 	guint statusbar_symbol_context_id;
@@ -59,7 +59,7 @@ static void update_title (LdWindowMain *self);
 static void action_set_sensitive (LdWindowMain *self, const gchar *name,
 	gboolean sensitive);
 
-static void on_canvas_zoom_changed (LdCanvas *canvas,
+static void on_view_zoom_changed (LdDiagramView *view,
 	GParamSpec *pspec, LdWindowMain *self);
 
 static void on_diagram_changed (LdDiagram *diagram, LdWindowMain *self);
@@ -242,10 +242,10 @@ ld_window_main_init (LdWindowMain *self)
 	gtk_toolbar_set_orientation (GTK_TOOLBAR (priv->library_toolbar),
 		GTK_ORIENTATION_VERTICAL);
 
-	priv->canvas = LD_CANVAS (ld_canvas_new ());
-	priv->canvas_window = gtk_scrolled_window_new (NULL, NULL);
-	gtk_container_add (GTK_CONTAINER (priv->canvas_window),
-		GTK_WIDGET (priv->canvas));
+	priv->view = LD_DIAGRAM_VIEW (ld_diagram_view_new ());
+	priv->scrolled_window = gtk_scrolled_window_new (NULL, NULL);
+	gtk_container_add (GTK_CONTAINER (priv->scrolled_window),
+		GTK_WIDGET (priv->view));
 
 	priv->statusbar = gtk_statusbar_new ();
 	priv->statusbar_menu_context_id = gtk_statusbar_get_context_id
@@ -257,7 +257,7 @@ ld_window_main_init (LdWindowMain *self)
 	priv->hbox = gtk_hbox_new (FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (priv->hbox), priv->library_toolbar,
 		FALSE, FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (priv->hbox), priv->canvas_window,
+	gtk_box_pack_start (GTK_BOX (priv->hbox), priv->scrolled_window,
 		TRUE, TRUE, 0);
 
 	priv->vbox = gtk_vbox_new (FALSE, 0);
@@ -292,16 +292,16 @@ ld_window_main_init (LdWindowMain *self)
 	priv->library = ld_library_new ();
 	ld_library_load (priv->library, PROJECT_SHARE_DIR "library");
 
-	ld_canvas_set_diagram (priv->canvas, priv->diagram);
-	ld_canvas_set_library (priv->canvas, priv->library);
+	ld_diagram_view_set_diagram (priv->view, priv->diagram);
+	ld_diagram_view_set_library (priv->view, priv->library);
 
-	g_signal_connect (priv->canvas, "notify::zoom",
-		G_CALLBACK (on_canvas_zoom_changed), self);
+	g_signal_connect (priv->view, "notify::zoom",
+		G_CALLBACK (on_view_zoom_changed), self);
 
 	ld_library_toolbar_set_library (LD_LIBRARY_TOOLBAR (priv->library_toolbar),
 		priv->library);
-	ld_library_toolbar_set_canvas (LD_LIBRARY_TOOLBAR (priv->library_toolbar),
-		priv->canvas);
+	ld_library_toolbar_set_view (LD_LIBRARY_TOOLBAR (priv->library_toolbar),
+		priv->view);
 
 	g_signal_connect_after (priv->library_toolbar, "symbol-selected",
 		G_CALLBACK (on_symbol_selected), self);
@@ -317,7 +317,7 @@ ld_window_main_init (LdWindowMain *self)
 	action_set_sensitive (self, "Delete", FALSE);
 	action_set_sensitive (self, "NormalSize", FALSE);
 
-	gtk_widget_grab_focus (GTK_WIDGET (priv->canvas));
+	gtk_widget_grab_focus (GTK_WIDGET (priv->view));
 
 	/* Realize the window. */
 	gtk_widget_show_all (GTK_WIDGET (self));
@@ -529,8 +529,8 @@ diagram_new (LdWindowMain *self)
 	ld_diagram_clear (self->priv->diagram);
 	ld_diagram_set_modified (self->priv->diagram, FALSE);
 
-	/* TODO: Reset canvas view to the center. */
-	ld_canvas_set_zoom (self->priv->canvas, 1);
+	/* TODO: Reset view to the center. */
+	ld_diagram_view_set_zoom (self->priv->view, 1);
 
 	diagram_set_filename (self, NULL);
 }
@@ -805,19 +805,20 @@ on_symbol_chosen (LdLibraryToolbar *toolbar, LdSymbol *symbol,
 	diagram_symbol = ld_diagram_symbol_new (NULL);
 	ld_diagram_symbol_set_class (diagram_symbol, klass);
 
-	ld_canvas_add_object_begin (self->priv->canvas,
+	ld_diagram_view_add_object_begin (self->priv->view,
 		LD_DIAGRAM_OBJECT (diagram_symbol));
 }
 
 static void
-on_canvas_zoom_changed (LdCanvas *canvas, GParamSpec *pspec, LdWindowMain *self)
+on_view_zoom_changed (LdDiagramView *view, GParamSpec *pspec,
+	LdWindowMain *self)
 {
 	action_set_sensitive (self, "ZoomIn",
-		ld_canvas_can_zoom_in (self->priv->canvas));
+		ld_diagram_view_can_zoom_in (self->priv->view));
 	action_set_sensitive (self, "ZoomOut",
-		ld_canvas_can_zoom_out (self->priv->canvas));
+		ld_diagram_view_can_zoom_out (self->priv->view));
 	action_set_sensitive (self, "NormalSize",
-		ld_canvas_get_zoom (self->priv->canvas) != 1);
+		ld_diagram_view_get_zoom (self->priv->view) != 1);
 }
 
 static void
@@ -889,17 +890,17 @@ on_action_select_all (GtkAction *action, LdWindowMain *self)
 static void
 on_action_zoom_in (GtkAction *action, LdWindowMain *self)
 {
-	ld_canvas_zoom_in (self->priv->canvas);
+	ld_diagram_view_zoom_in (self->priv->view);
 }
 
 static void
 on_action_zoom_out (GtkAction *action, LdWindowMain *self)
 {
-	ld_canvas_zoom_out (self->priv->canvas);
+	ld_diagram_view_zoom_out (self->priv->view);
 }
 
 static void
 on_action_normal_size (GtkAction *action, LdWindowMain *self)
 {
-	ld_canvas_set_zoom (self->priv->canvas, 1);
+	ld_diagram_view_set_zoom (self->priv->view, 1);
 }

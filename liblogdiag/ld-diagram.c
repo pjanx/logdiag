@@ -15,7 +15,7 @@
 /**
  * SECTION:ld-diagram
  * @short_description: A model for diagrams
- * @see_also: #LdCanvas
+ * @see_also: #LdDiagramView
  *
  * #LdDiagram is a model used for storing diagrams.
  */

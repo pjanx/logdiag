@@ -17,7 +17,7 @@
 /**
  * SECTION:ld-diagram-object
  * @short_description: A diagram object
- * @see_also: #LdDiagram, #LdCanvas
+ * @see_also: #LdDiagram, #LdDiagramView
  *
  * #LdDiagramObject represents an object in an #LdDiagram.
  */

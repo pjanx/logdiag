@@ -27,7 +27,7 @@
 #include "ld-diagram-connection.h"
 #include "ld-diagram.h"
 
-#include "ld-canvas.h"
+#include "ld-diagram-view.h"
 #include "ld-library-toolbar.h"
 
 #include "ld-lua.h"

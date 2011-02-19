@@ -67,32 +67,31 @@ enum
 	OPER_MOVE_SELECTION
 };
 
-typedef struct _AddObjectData AddObjectData;
-typedef struct _ConnectData ConnectData;
-typedef struct _SelectData SelectData;
-typedef struct _MoveSelectionData MoveSelectionData;
-
-struct _AddObjectData
+typedef struct
 {
 	LdDiagramObject *object;
 	gboolean visible;
-};
+}
+AddObjectData;
 
-struct _ConnectData
+typedef struct
 {
 	LdDiagramConnection *connection;
 	LdPoint origin;
-};
+}
+ConnectData;
 
-struct _SelectData
+typedef struct
 {
 	LdPoint drag_last_pos;
-};
+}
+SelectData;
 
-struct _MoveSelectionData
+typedef struct
 {
 	LdPoint move_origin;
-};
+}
+MoveSelectionData;
 
 enum
 {
@@ -104,15 +103,14 @@ enum
 	COLOR_COUNT
 };
 
-typedef struct _Color Color;
-
-struct _Color
+typedef struct
 {
 	gdouble r;
 	gdouble g;
 	gdouble b;
 	gdouble a;
-};
+}
+Color;
 
 /*
  * LdDiagramViewPrivate:
@@ -174,15 +172,14 @@ struct _LdDiagramViewPrivate
  * @exposed_rect: the area that is to be redrawn.
  * @scale: computed size of one diagram unit in pixels.
  */
-typedef struct _DrawData DrawData;
-
-struct _DrawData
+typedef struct
 {
 	LdDiagramView *self;
 	cairo_t *cr;
 	LdRectangle exposed_rect;
 	gdouble scale;
-};
+}
+DrawData;
 
 enum
 {

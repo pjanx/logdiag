@@ -19,7 +19,6 @@
 int
 main (int argc, char *argv[])
 {
-	GtkWidget *window;
 	GError *error;
 #ifdef _WIN32
 	gchar *install_dir;
@@ -48,11 +47,15 @@ main (int argc, char *argv[])
 		return 1;
 	}
 
-	/* TODO: Open the file in the parameter, if present. */
 	gtk_window_set_default_icon_name (PROJECT_NAME);
-	window = ld_window_main_new ();
-	gtk_main ();
 
+	/* TODO: Accept multiple files. */
+	if (argc < 2)
+		ld_window_main_new (NULL);
+	else
+		ld_window_main_new (argv[1]);
+
+	gtk_main ();
 	return 0;
 }
 

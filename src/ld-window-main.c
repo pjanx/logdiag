@@ -174,13 +174,20 @@ static GtkActionEntry wm_action_entries[] =
 
 /**
  * ld_window_main_new:
+ * @filename: (allow-none): a file to open.
  *
  * Create an instance.
  */
 GtkWidget *
-ld_window_main_new (void)
+ld_window_main_new (const gchar *filename)
 {
-	return g_object_new (LD_TYPE_WINDOW_MAIN, NULL);
+	GtkWidget *self;
+	self = g_object_new (LD_TYPE_WINDOW_MAIN, NULL);
+
+	if (filename)
+		diagram_open (LD_WINDOW_MAIN (self), filename);
+
+	return self;
 }
 
 G_DEFINE_TYPE (LdWindowMain, ld_window_main, GTK_TYPE_WINDOW);

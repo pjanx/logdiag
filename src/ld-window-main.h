@@ -47,7 +47,7 @@ struct _LdWindowMainClass
 
 GType ld_window_main_get_type (void) G_GNUC_CONST;
 
-GtkWidget *ld_window_main_new (void);
+GtkWidget *ld_window_main_new (const gchar *filename);
 
 
 G_END_DECLS

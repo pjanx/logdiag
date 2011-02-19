@@ -25,10 +25,12 @@
 /*
  * LdDiagramObjectPrivate:
  * @storage: storage for object parameters.
+ * @lock_history: lock emitting of changes.
  */
 struct _LdDiagramObjectPrivate
 {
 	JsonObject *storage;
+	gboolean lock_history;
 };
 
 typedef struct _SetParamActionData SetParamActionData;
@@ -309,7 +311,10 @@ ld_diagram_object_get_data_warn:
 
 ld_diagram_object_get_data_default:
 	g_param_value_set_default (pspec, data);
+
+	self->priv->lock_history = TRUE;
 	g_object_set_property (G_OBJECT (self), name, data);
+	self->priv->lock_history = FALSE;
 }
 
 /**
@@ -328,7 +333,7 @@ ld_diagram_object_set_data_for_param (LdDiagramObject *self,
 	SetParamActionData *action_data;
 	JsonObject *storage;
 	const gchar *name;
-	JsonNode *node;
+	JsonNode *new_node, *old_node;
 
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (self));
 	g_return_if_fail (G_IS_VALUE (data));
@@ -337,23 +342,31 @@ ld_diagram_object_set_data_for_param (LdDiagramObject *self,
 	storage = ld_diagram_object_get_storage (self);
 	name = g_param_spec_get_name (pspec);
 
-	action_data = g_slice_new (SetParamActionData);
-	action_data->self = g_object_ref (self);
-	action_data->param_name = g_strdup (g_param_spec_get_name (pspec));
+	if (!self->priv->lock_history)
+	{
+		action_data = g_slice_new (SetParamActionData);
+		action_data->self = g_object_ref (self);
+		action_data->param_name = g_strdup (g_param_spec_get_name (pspec));
 
-	node = json_object_get_member (storage, name);
-	action_data->old_node = node ? json_node_copy (node) : NULL;
+		old_node = json_object_get_member (storage, name);
+		action_data->old_node = old_node ? json_node_copy (old_node) : NULL;
+	}
 
-	node = json_node_new (JSON_NODE_VALUE);
-	json_node_set_value (node, data);
-	action_data->new_node = json_node_copy (node);
+	new_node = json_node_new (JSON_NODE_VALUE);
+	json_node_set_value (new_node, data);
 
-	json_object_set_member (storage, name, node);
+	if (!self->priv->lock_history)
+		action_data->new_node = json_node_copy (new_node);
 
-	action = ld_undo_action_new (on_set_param_undo, on_set_param_redo,
-		on_set_param_destroy, action_data);
-	ld_diagram_object_changed (self, action);
-	g_object_unref (action);
+	json_object_set_member (storage, name, new_node);
+
+	if (!self->priv->lock_history)
+	{
+		action = ld_undo_action_new (on_set_param_undo, on_set_param_redo,
+			on_set_param_destroy, action_data);
+		ld_diagram_object_changed (self, action);
+		g_object_unref (action);
+	}
 }
 
 static void

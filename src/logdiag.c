@@ -53,7 +53,27 @@ main (int argc, char *argv[])
 	if (argc < 2)
 		ld_window_main_new (NULL);
 	else
-		ld_window_main_new (argv[1]);
+	{
+		gchar *arg_utf8, *arg_filename;
+
+		arg_utf8 = g_locale_to_utf8 (argv[1], -1, NULL, NULL, &error);
+		if (error)
+		{
+			g_warning ("%s", error->message);
+			g_error_free (error);
+			return 1;
+		}
+		arg_filename = g_filename_from_utf8 (arg_utf8, -1, NULL, NULL, &error);
+		if (error)
+		{
+			g_warning ("%s", error->message);
+			g_error_free (error);
+			return 1;
+		}
+		ld_window_main_new (arg_filename);
+		g_free (arg_filename);
+		g_free (arg_utf8);
+	}
 
 	gtk_main ();
 	return 0;

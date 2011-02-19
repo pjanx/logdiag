@@ -12,24 +12,21 @@ local names_dc =
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)
-local area_ac = {-3, -0.5, 3, 0.5}
-local area_dc = {-3, -1.25, 3, 0.5}
+local area = {-3, -2, 3, 2}
 
 -- Terminal points
 local terminals = {{-3, 0}, {3, 0}}
 
 -- Rendering
 local render = function (cr)
-	-- The circles
-	cr.arc (-2, 0, 0.3, 0, math.pi * 2)
-	cr.new_sub_path ()
-	cr.arc (2, 0, 0.3, 0, math.pi * 2)
+	-- The circle
+	cr.arc (0, 0, 2, 0, math.pi * 2)
 
 	-- The terminals
 	cr.move_to (-3, 0)
-	cr.line_to (-2.3, 0)
+	cr.line_to (-2, 0)
 
-	cr.move_to (2.3, 0)
+	cr.move_to (2, 0)
 	cr.line_to (3, 0)
 
 	cr.stroke ()
@@ -59,17 +56,17 @@ local render_dc = function (cr)
 	cr.line_to (1, 0.25)
 
 	-- Polarity sign
-	cr.move_to (2, -0.75)
-	cr.line_to (2, -1.25)
+	cr.move_to (2.6, -0.6)
+	cr.line_to (2.6, -1.4)
 
-	cr.move_to (1.75, -1)
-	cr.line_to (2.25, -1)
+	cr.move_to (2.2, -1)
+	cr.line_to (3.0, -1)
 
 	cr.stroke ()
 end
 
 -- Register the symbol
-logdiag.register ("ACSource", names_ac, area_ac, terminals, render_ac)
-logdiag.register ("DCSource", names_dc, area_dc, terminals, render_dc)
+logdiag.register ("ACSource", names_ac, area, terminals, render_ac)
+logdiag.register ("DCSource", names_dc, area, terminals, render_dc)
 
 

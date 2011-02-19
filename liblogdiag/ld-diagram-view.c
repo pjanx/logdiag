@@ -189,6 +189,8 @@ enum
 	PROP_0,
 	PROP_DIAGRAM,
 	PROP_LIBRARY,
+	PROP_X,
+	PROP_Y,
 	PROP_ZOOM
 };
 
@@ -367,6 +369,26 @@ ld_diagram_view_class_init (LdDiagramViewClass *klass)
 	g_object_class_install_property (object_class, PROP_LIBRARY, pspec);
 
 /**
+ * LdDiagramView:x:
+ *
+ * The X coordinate of the center of view.
+ */
+	pspec = g_param_spec_double ("x", "X",
+		"The X coordinate of the center of view.",
+		-G_MAXDOUBLE, G_MAXDOUBLE, 0, G_PARAM_READWRITE);
+	g_object_class_install_property (object_class, PROP_X, pspec);
+
+/**
+ * LdDiagramView:y:
+ *
+ * The Y coordinate of the center of view.
+ */
+	pspec = g_param_spec_double ("y", "Y",
+		"The Y coordinate of the center of view.",
+		-G_MAXDOUBLE, G_MAXDOUBLE, 0, G_PARAM_READWRITE);
+	g_object_class_install_property (object_class, PROP_Y, pspec);
+
+/**
  * LdDiagramView:zoom:
  *
  * The zoom of this view.
@@ -499,6 +521,12 @@ ld_diagram_view_get_property (GObject *object, guint property_id,
 	case PROP_LIBRARY:
 		g_value_set_object (value, ld_diagram_view_get_library (self));
 		break;
+	case PROP_X:
+		g_value_set_double (value, ld_diagram_view_get_x (self));
+		break;
+	case PROP_Y:
+		g_value_set_double (value, ld_diagram_view_get_y (self));
+		break;
 	case PROP_ZOOM:
 		g_value_set_double (value, ld_diagram_view_get_zoom (self));
 		break;
@@ -523,6 +551,12 @@ ld_diagram_view_set_property (GObject *object, guint property_id,
 	case PROP_LIBRARY:
 		ld_diagram_view_set_library (self,
 			LD_LIBRARY (g_value_get_object (value)));
+		break;
+	case PROP_X:
+		ld_diagram_view_set_x (self, g_value_get_double (value));
+		break;
+	case PROP_Y:
+		ld_diagram_view_set_y (self, g_value_get_double (value));
 		break;
 	case PROP_ZOOM:
 		ld_diagram_view_set_zoom (self, g_value_get_double (value));
@@ -608,17 +642,11 @@ on_adjustment_value_changed (GtkAdjustment *adjustment, LdDiagramView *self)
 	scale = ld_diagram_view_get_scale_in_px (self);
 
 	if (adjustment == self->priv->adjustment_h)
-	{
-		self->priv->x = adjustment->value
-			+ widget->allocation.width / scale / 2;
-		gtk_widget_queue_draw (widget);
-	}
+		ld_diagram_view_set_x (self, adjustment->value
+			+ widget->allocation.width / scale / 2);
 	else if (adjustment == self->priv->adjustment_v)
-	{
-		self->priv->y = adjustment->value
-			+ widget->allocation.height / scale / 2;
-		gtk_widget_queue_draw (widget);
-	}
+		ld_diagram_view_set_y (self, adjustment->value
+			+ widget->allocation.height / scale / 2);
 }
 
 static void
@@ -672,20 +700,13 @@ ld_diagram_view_real_move (LdDiagramView *self, gdouble dx, gdouble dy)
 	if (!diagram)
 		return;
 
-	/* TODO: Check/move boundaries, also implement normal
-	 *       getters and setters for priv->x and priv->y.
-	 */
 	if (ld_diagram_get_selection (diagram))
 		move_selection (self, dx, dy);
 	else
 	{
-		self->priv->x += dx;
-		self->priv->y += dy;
-
-		simulate_motion (self);
-		update_adjustments (self);
+		ld_diagram_view_set_x (self, self->priv->x + dx);
+		ld_diagram_view_set_y (self, self->priv->y + dy);
 	}
-	gtk_widget_queue_draw (GTK_WIDGET (self));
 }
 
 
@@ -894,6 +915,74 @@ ld_diagram_view_diagram_to_widget_coords (LdDiagramView *self,
 	/* Just the reversal of ld_diagram_view_widget_to_diagram_coords(). */
 	*wx = scale * (dx - self->priv->x) + 0.5 * widget->allocation.width;
 	*wy = scale * (dy - self->priv->y) + 0.5 * widget->allocation.height;
+}
+
+/**
+ * ld_diagram_view_get_x:
+ * @self: an #LdDiagramView object.
+ *
+ * Return value: the X coordinate of the center of view.
+ */
+gdouble
+ld_diagram_view_get_x (LdDiagramView *self)
+{
+	g_return_val_if_fail (LD_IS_DIAGRAM_VIEW (self), 0);
+	return self->priv->x;
+}
+
+/**
+ * ld_diagram_view_set_x:
+ * @self: an #LdDiagramView object.
+ *
+ * Set the X coordinate of the center of view.
+ */
+void
+ld_diagram_view_set_x (LdDiagramView *self, gdouble x)
+{
+	g_return_if_fail (LD_IS_DIAGRAM_VIEW (self));
+
+	/* TODO: Check boundaries. */
+	self->priv->x = x;
+
+	simulate_motion (self);
+	update_adjustments (self);
+	gtk_widget_queue_draw (GTK_WIDGET (self));
+
+	g_object_notify (G_OBJECT (self), "x");
+}
+
+/**
+ * ld_diagram_view_get_x:
+ * @self: an #LdDiagramView object.
+ *
+ * Return value: the X coordinate of the center of view.
+ */
+gdouble
+ld_diagram_view_get_y (LdDiagramView *self)
+{
+	g_return_val_if_fail (LD_IS_DIAGRAM_VIEW (self), 0);
+	return self->priv->y;
+}
+
+/**
+ * ld_diagram_view_set_y:
+ * @self: an #LdDiagramView object.
+ *
+ * Set the Y coordinate of the center of view.
+ */
+void
+ld_diagram_view_set_y (LdDiagramView *self, gdouble y)
+{
+	g_return_if_fail (LD_IS_DIAGRAM_VIEW (self));
+
+	/* TODO: Check boundaries. */
+	self->priv->y = y;
+
+	simulate_motion (self);
+	update_adjustments (self);
+	gtk_widget_queue_draw (GTK_WIDGET (self));
+
+	g_object_notify (G_OBJECT (self), "y");
 }
 
 /**
@@ -1121,10 +1210,14 @@ move_selection (LdDiagramView *self, gdouble dx, gdouble dy)
 	{
 		gdouble x, y;
 
+		queue_object_draw (self, iter->data);
 		g_object_get (iter->data, "x", &x, "y", &y, NULL);
+
 		x += dx;
 		y += dy;
+
 		g_object_set (iter->data, "x", x, "y", y, NULL);
+		queue_object_draw (self, iter->data);
 	}
 	ld_diagram_end_user_action (diagram);
 }
@@ -2078,10 +2171,9 @@ on_scroll (GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
 		event->x, event->y, &new_x, &new_y);
 
 	/* Focus on the point under the cursor. */
-	self->priv->x += prev_x - new_x;
-	self->priv->y += prev_y - new_y;
+	ld_diagram_view_set_x (self, self->priv->x + prev_x - new_x);
+	ld_diagram_view_set_y (self, self->priv->y + prev_y - new_y);
 
-	check_terminals (self, &point);
 	return TRUE;
 }
 

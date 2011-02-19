@@ -78,6 +78,11 @@ void ld_diagram_view_widget_to_diagram_coords (LdDiagramView *self,
 void ld_diagram_view_diagram_to_widget_coords (LdDiagramView *self,
 	gdouble dx, gdouble dy, gdouble *wx, gdouble *wy);
 
+gdouble ld_diagram_view_get_x (LdDiagramView *self);
+void ld_diagram_view_set_x (LdDiagramView *self, gdouble x);
+gdouble ld_diagram_view_get_y (LdDiagramView *self);
+void ld_diagram_view_set_y (LdDiagramView *self, gdouble y);
+
 gdouble ld_diagram_view_get_zoom (LdDiagramView *self);
 void ld_diagram_view_set_zoom (LdDiagramView *self, gdouble zoom);
 gboolean ld_diagram_view_can_zoom_in (LdDiagramView *self);

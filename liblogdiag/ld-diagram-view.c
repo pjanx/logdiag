@@ -181,6 +181,18 @@ typedef struct
 }
 DrawData;
 
+/*
+ * CheckTerminalsData:
+ */
+typedef struct
+{
+	gboolean found;
+	gdouble distance;
+	LdPoint point;
+	LdPoint terminal;
+}
+CheckTerminalsData;
+
 enum
 {
 	PROP_0,
@@ -240,9 +252,15 @@ static gboolean is_object_selected (LdDiagramView *self,
 static void queue_draw (LdDiagramView *self, LdRectangle *rect);
 static void queue_object_draw (LdDiagramView *self, LdDiagramObject *object);
 
-/* Symbol terminals. */
+/* Terminals. */
 static void check_terminals (LdDiagramView *self, const LdPoint *point);
-static void rotate_terminal (LdPoint *terminal, gint symbol_rotation);
+static void check_terminals_point (LdDiagramView *self, const LdPoint *point,
+	CheckTerminalsData *data);
+void check_connection_terminals (LdDiagramView *self,
+	LdDiagramConnection *connection, CheckTerminalsData *data);
+void check_symbol_terminals (LdDiagramView *self,
+	LdDiagramSymbol *diagram_symbol, CheckTerminalsData *data);
+static void rotate_symbol_terminal (LdPoint *terminal, gint symbol_rotation);
 static void hide_terminals (LdDiagramView *self);
 static void queue_terminal_draw (LdDiagramView *self, LdPoint *terminal);
 
@@ -1248,72 +1266,118 @@ queue_object_draw (LdDiagramView *self, LdDiagramObject *object)
 }
 
 
-/* ===== Symbol terminals ================================================== */
+/* ===== Terminals ========================================================= */
 
 static void
 check_terminals (LdDiagramView *self, const LdPoint *point)
 {
 	GList *objects, *iter;
-	LdDiagramSymbol *closest_symbol = NULL;
-	gdouble closest_distance = TERMINAL_HOVER_TOLERANCE;
-	LdPoint closest_terminal;
+	CheckTerminalsData data;
+
+	data.found = FALSE;
+	data.point = *point;
+	data.distance = TERMINAL_HOVER_TOLERANCE;
 
 	objects = (GList *) ld_diagram_get_objects (self->priv->diagram);
 	for (iter = objects; iter; iter = g_list_next (iter))
 	{
-		gdouble object_x, object_y;
-		LdDiagramSymbol *diagram_symbol;
-		LdSymbol *symbol;
-		const LdPointArray *terminals;
-		guint i;
-		gint rotation;
-
-		if (!LD_IS_DIAGRAM_SYMBOL (iter->data))
-			continue;
-
-		diagram_symbol = LD_DIAGRAM_SYMBOL (iter->data);
-		symbol = resolve_symbol (self, diagram_symbol);
-		if (!symbol)
-			continue;
-
-		g_object_get (diagram_symbol, "x", &object_x, "y", &object_y,
-			"rotation", &rotation, NULL);
-
-		terminals = ld_symbol_get_terminals (symbol);
-		for (i = 0; i < terminals->length; i++)
-		{
-			LdPoint cur_term, widget_coords;
-			gdouble distance;
-
-			cur_term = terminals->points[i];
-			rotate_terminal (&cur_term, rotation);
-			cur_term.x += object_x;
-			cur_term.y += object_y;
-
-			ld_diagram_view_diagram_to_widget_coords (self,
-				cur_term.x, cur_term.y, &widget_coords.x, &widget_coords.y);
-			distance = ld_point_distance (&widget_coords, point->x, point->y);
-			if (distance <= closest_distance)
-			{
-				closest_symbol = diagram_symbol;
-				closest_distance = distance;
-				closest_terminal = cur_term;
-			}
-		}
+		if (LD_IS_DIAGRAM_CONNECTION (iter->data))
+			check_connection_terminals (self, iter->data, &data);
+		else if (LD_IS_DIAGRAM_SYMBOL (iter->data))
+			check_symbol_terminals (self, iter->data, &data);
 	}
 
 	hide_terminals (self);
 
-	if (closest_symbol)
+	if (data.found)
 	{
 		self->priv->terminal_hovered = TRUE;
-		self->priv->terminal = closest_terminal;
-		queue_terminal_draw (self, &closest_terminal);
+		self->priv->terminal = data.terminal;
+		queue_terminal_draw (self, &data.terminal);
 	}
 }
 
 static void
-rotate_terminal (LdPoint *terminal, gint symbol_rotation)
+check_terminals_point (LdDiagramView *self, const LdPoint *point,
+	CheckTerminalsData *data)
+{
+	LdPoint widget_coords;
+	gdouble distance;
+
+	ld_diagram_view_diagram_to_widget_coords (self,
+		point->x, point->y, &widget_coords.x, &widget_coords.y);
+	distance = ld_point_distance (&widget_coords,
+		data->point.x, data->point.y);
+	if (distance <= data->distance)
+	{
+		data->distance = distance;
+		data->terminal = *point;
+		data->found = TRUE;
+	}
+}
+
+void
+check_connection_terminals (LdDiagramView *self,
+	LdDiagramConnection *connection, CheckTerminalsData *data)
+{
+	LdPointArray *points;
+	gdouble object_x, object_y;
+	guint last;
+
+	g_object_get (connection, "x", &object_x, "y", &object_y, NULL);
+
+	points = ld_diagram_connection_get_points (connection);
+	if (points->length < 2)
+	{
+		ld_point_array_free (points);
+		return;
+	}
+
+	points->points[0].x += object_x;
+	points->points[0].y += object_y;
+	check_terminals_point (self, &points->points[0], data);
+
+	last = points->length - 1;
+	points->points[last].x += object_x;
+	points->points[last].y += object_y;
+	check_terminals_point (self, &points->points[last], data);
+
+	ld_point_array_free (points);
+}
+
+void
+check_symbol_terminals (LdDiagramView *self,
+	LdDiagramSymbol *diagram_symbol, CheckTerminalsData *data)
+{
+	gdouble object_x, object_y;
+	LdSymbol *symbol;
+	const LdPointArray *terminals;
+	guint i;
+	gint rotation;
+
+	symbol = resolve_symbol (self, diagram_symbol);
+	if (!symbol)
+		return;
+
+	g_object_get (diagram_symbol, "x", &object_x, "y", &object_y,
+		"rotation", &rotation, NULL);
+
+	terminals = ld_symbol_get_terminals (symbol);
+	for (i = 0; i < terminals->length; i++)
+	{
+		LdPoint cur_term;
+
+		cur_term = terminals->points[i];
+		rotate_symbol_terminal (&cur_term, rotation);
+		cur_term.x += object_x;
+		cur_term.y += object_y;
+
+		check_terminals_point (self, &cur_term, data);
+	}
+}
+
+static void
+rotate_symbol_terminal (LdPoint *terminal, gint symbol_rotation)
 {
 	gdouble temp;
 

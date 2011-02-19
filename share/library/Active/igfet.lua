@@ -1,11 +1,11 @@
 -- Symbol names
-local names_igfet_n =
+local names_n =
 {
 	en = "N-channel IGFET transistor",
 	cs = "Tranzistor IGFET s kanálem N"
 }
 
-local names_igfet_p =
+local names_p =
 {
 	en = "P-channel IGFET transistor",
 	cs = "Tranzistor IGFET s kanálem P"
@@ -15,7 +15,8 @@ local names_igfet_p =
 local area = {-2, -1.5, 2, 1.5}
 
 -- Terminal points
-local terminals = {{-2, 1}, {2, 1}, {2, 0}, {2, -1}}
+local terminals_n = {{-2, 1}, {2, 1}, {2, 0}, {2, -1}}
+local terminals_p = {{-2, -1}, {2, 1}, {2, 0}, {2, -1}}
 
 -- Rendering
 local render = function (cr)
@@ -45,7 +46,7 @@ local render = function (cr)
 	cr.stroke ()
 end
 
-local render_igfet_n = function (cr)
+local render_n = function (cr)
 	render (cr)
 
 	-- The left-side terminal
@@ -60,7 +61,7 @@ local render_igfet_n = function (cr)
 	cr.stroke ()
 end
 
-local render_igfet_p = function (cr)
+local render_p = function (cr)
 	render (cr)
 
 	-- The left-side terminal
@@ -76,7 +77,7 @@ local render_igfet_p = function (cr)
 end
 
 -- Register the symbols
-logdiag.register ("IGFET-N", names_igfet_n, area, terminals, render_igfet_n)
-logdiag.register ("IGFET-P", names_igfet_p, area, terminals, render_igfet_p)
+logdiag.register ("IGFET-N", names_n, area, terminals_n, render_n)
+logdiag.register ("IGFET-P", names_p, area, terminals_p, render_p)
 
 

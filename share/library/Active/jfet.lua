@@ -1,11 +1,11 @@
 -- Symbol names
-local names_jfet_n =
+local names_n =
 {
 	en = "N-channel JFET transistor",
 	cs = "Tranzistor JFET s kanálem N"
 }
 
-local names_jfet_p =
+local names_p =
 {
 	en = "P-channel JFET transistor",
 	cs = "Tranzistor JFET s kanálem P"
@@ -15,7 +15,8 @@ local names_jfet_p =
 local area = {-2, -1.5, 2, 1.5}
 
 -- Terminal points
-local terminals = {{-2, 1}, {2, 1}, {2, -1}}
+local terminals_n = {{-2, 1}, {2, 1}, {2, -1}}
+local terminals_p = {{-2, -1}, {2, 1}, {2, -1}}
 
 -- Rendering
 local render = function (cr)
@@ -33,7 +34,7 @@ local render = function (cr)
 	cr.stroke ()
 end
 
-local render_jfet_n = function (cr)
+local render_n = function (cr)
 	render (cr)
 
 	-- The left-side terminal
@@ -48,7 +49,7 @@ local render_jfet_n = function (cr)
 	cr.stroke ()
 end
 
-local render_jfet_p = function (cr)
+local render_p = function (cr)
 	render (cr)
 
 	-- The left-side terminal
@@ -64,7 +65,7 @@ local render_jfet_p = function (cr)
 end
 
 -- Register the symbols
-logdiag.register ("JFET-N", names_jfet_n, area, terminals, render_jfet_n)
-logdiag.register ("JFET-P", names_jfet_p, area, terminals, render_jfet_p)
+logdiag.register ("JFET-N", names_n, area, terminals_n, render_n)
+logdiag.register ("JFET-P", names_p, area, terminals_p, render_p)
 
 

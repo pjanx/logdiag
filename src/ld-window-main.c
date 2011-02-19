@@ -536,7 +536,8 @@ diagram_new (LdWindowMain *self)
 	ld_diagram_clear (self->priv->diagram);
 	ld_diagram_set_modified (self->priv->diagram, FALSE);
 
-	/* TODO: Reset view to the center. */
+	ld_diagram_view_set_x (self->priv->view, 0);
+	ld_diagram_view_set_y (self->priv->view, 0);
 	ld_diagram_view_set_zoom (self->priv->view, 1);
 
 	diagram_set_filename (self, NULL);

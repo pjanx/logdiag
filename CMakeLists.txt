@@ -298,7 +298,7 @@ else (WIN32)
 # Don't install the documentation yet as we don't install any library
 #	install (DIRECTORY "${project_DOC_DIR}/html/"
 #		DESTINATION share/gtk-doc/html/${CMAKE_PROJECT_NAME})
-	install (FILES LICENSE DESTINATION share/doc/${CMAKE_PROJECT_NAME})
+	install (FILES LICENSE NEWS DESTINATION share/doc/${CMAKE_PROJECT_NAME})
 endif (WIN32)
 
 # CPack

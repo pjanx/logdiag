@@ -1,3 +1,13 @@
+Version 0.1.1
+ - Rotation of symbols made possible.
+ - Connections can also be created at ends of other connections.
+ - Added more symbols.
+ - Internationalization, added Czech translation.
+ - Visual enhancement of symbol menus.
+ - The grid is drawn much faster.
+ - Diagrams can be opened from command line.
+ - The diagram file type is registered on Windows.
+
 Version 0.1.0
  - The first release.
 

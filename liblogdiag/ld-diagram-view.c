@@ -675,9 +675,6 @@ on_size_allocate (GtkWidget *widget, GtkAllocation *allocation,
 
 	/* FIXME: If the new allocation is bigger, we may see more than
 	 *        what we're supposed to be able to see -> adjust X and Y.
-	 *
-	 *        If the visible area is so large that we simply must see more,
-	 *        let's disable the scrollbars in question.
 	 */
 	update_adjustments (self);
 }

@@ -18,7 +18,7 @@
 
 /**
  * SECTION:ld-diagram-view
- * @short_description: A widget that displays an LdDiagram
+ * @short_description: A widget that displays diagrams
  * @see_also: #LdDiagram
  *
  * #LdDiagramView displays and enables the user to manipulate with
@@ -946,6 +946,7 @@ ld_diagram_view_get_x (LdDiagramView *self)
 /**
  * ld_diagram_view_set_x:
  * @self: an #LdDiagramView object.
+ * @x: the X coordinate.
  *
  * Set the X coordinate of the center of view.
  */
@@ -980,6 +981,7 @@ ld_diagram_view_get_y (LdDiagramView *self)
 /**
  * ld_diagram_view_set_y:
  * @self: an #LdDiagramView object.
+ * @y: the Y coordinate.
  *
  * Set the Y coordinate of the center of view.
  */

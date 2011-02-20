@@ -315,7 +315,7 @@ ld_library_toolbar_set_library (LdLibraryToolbar *self, LdLibrary *library)
  * ld_library_toolbar_get_library:
  * @self: an #LdLibraryToolbar object.
  *
- * Return value: (transfer: none): the #LdLibrary object
+ * Return value: (transfer none): the #LdLibrary object
  *               assigned to the toolbar.
  */
 LdLibrary *
@@ -371,7 +371,7 @@ ld_library_toolbar_set_view (LdLibraryToolbar *self, LdDiagramView *view)
  * ld_library_toolbar_get_view:
  * @self: an #LdLibraryToolbar object.
  *
- * Return value: (transfer: none): the #LdDiagramView widget
+ * Return value: (transfer none): the #LdDiagramView widget
  *               assigned to the toolbar.
  */
 LdDiagramView *

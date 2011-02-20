@@ -293,6 +293,7 @@ static void oper_add_object_end (LdDiagramView *self);
 static void oper_connect_begin (LdDiagramView *self, const LdPoint *point);
 static void oper_connect_end (LdDiagramView *self);
 static void oper_connect_motion (LdDiagramView *self, const LdPoint *point);
+static LdPointArray *create_connection_path (const LdPoint *end_point);
 
 static void oper_select_begin (LdDiagramView *self, const LdPoint *point);
 static void oper_select_end (LdDiagramView *self);
@@ -1779,48 +1780,73 @@ oper_connect_motion (LdDiagramView *self, const LdPoint *point)
 {
 	ConnectData *data;
 	LdPointArray *points;
+	LdPoint end_point;
 	gdouble diagram_x, diagram_y;
 
 	data = &OPER_DATA (self, connect);
 
-	/* Find an orthogonal path between the points. */
-	/* TODO: This alghorithm is pretty lame, needs to be improved. */
-	points = ld_point_array_sized_new (4);
-	points->length = 4;
-
-	points->points[0].x = 0;
-	points->points[0].y = 0;
-
 	ld_diagram_view_widget_to_diagram_coords (self,
 		point->x, point->y, &diagram_x, &diagram_y);
-	points->points[3].x = floor (diagram_x - data->origin.x + 0.5);
-	points->points[3].y = floor (diagram_y - data->origin.y + 0.5);
+	end_point.x = floor (diagram_x - data->origin.x + 0.5);
+	end_point.y = floor (diagram_y - data->origin.y + 0.5);
 
-	if (ABS (points->points[3].x) > ABS (points->points[3].y))
-	{
-		points->points[1].x = points->points[3].x / 2;
-		points->points[1].y = 0;
-		points->points[2].x = points->points[3].x / 2;
-		points->points[2].y = points->points[3].y;
-	}
-	else
-	{
-		points->points[1].x = 0;
-		points->points[1].y = points->points[3].y / 2;
-		points->points[2].x = points->points[3].x;
-		points->points[2].y = points->points[3].y / 2;
-	}
+	points = create_connection_path (&end_point);
 
 	queue_object_draw (self, LD_DIAGRAM_OBJECT (data->connection));
 	ld_diagram_connection_set_points (data->connection, points);
-	queue_object_draw (self, LD_DIAGRAM_OBJECT (data->connection));
 	ld_point_array_free (points);
+	queue_object_draw (self, LD_DIAGRAM_OBJECT (data->connection));
 
 	check_terminals (self, point);
 
 	if (self->priv->terminal.x == data->origin.x
 		&& self->priv->terminal.y == data->origin.y)
 		self->priv->terminal_hovered = FALSE;
+}
+
+/* create_connection_path:
+ * @end_point: the end point of the path. The start point is always at {0, 0}.
+ *
+ * Create an orthogonal path between two points.
+ */
+static LdPointArray *
+create_connection_path (const LdPoint *end_point)
+{
+	LdPointArray *points;
+
+	if (end_point->x == 0 || end_point->y == 0)
+	{
+		points = ld_point_array_sized_new (2);
+		points->length = 2;
+
+		points->points[0].x = 0;
+		points->points[0].y = 0;
+		points->points[1] = *end_point;
+		return points;
+	}
+
+	points = ld_point_array_sized_new (4);
+	points->length = 4;
+
+	points->points[0].x = 0;
+	points->points[0].y = 0;
+	points->points[3] = *end_point;
+
+	if (ABS (end_point->x) > ABS (end_point->y))
+	{
+		points->points[1].x = end_point->x / 2;
+		points->points[1].y = 0;
+		points->points[2].x = end_point->x / 2;
+		points->points[2].y = end_point->y;
+	}
+	else
+	{
+		points->points[1].x = 0;
+		points->points[1].y = end_point->y / 2;
+		points->points[2].x = end_point->x;
+		points->points[2].y = end_point->y / 2;
+	}
+	return points;
 }
 
 static void

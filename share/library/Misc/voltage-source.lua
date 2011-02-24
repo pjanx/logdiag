@@ -12,22 +12,16 @@ local names_dc =
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)
-local area = {-3, -2, 3, 2}
+local area_ac = {-2, -2, 2, 2}
+local area_dc = {-2, -2, 3, 2}
 
 -- Terminal points
-local terminals = {{-3, 0}, {3, 0}}
+local terminals = {{-2, 0}, {2, 0}, {0, -2}, {0, 2}}
 
 -- Rendering
 local render = function (cr)
 	-- The circle
 	cr.arc (0, 0, 2, 0, math.pi * 2)
-
-	-- The terminals
-	cr.move_to (-3, 0)
-	cr.line_to (-2, 0)
-
-	cr.move_to (2, 0)
-	cr.line_to (3, 0)
 
 	cr.stroke ()
 end
@@ -66,7 +60,7 @@ local render_dc = function (cr)
 end
 
 -- Register the symbol
-logdiag.register ("ACSource", names_ac, area, terminals, render_ac)
-logdiag.register ("DCSource", names_dc, area, terminals, render_dc)
+logdiag.register ("ACSource", names_ac, area_ac, terminals, render_ac)
+logdiag.register ("DCSource", names_dc, area_dc, terminals, render_dc)
 
 

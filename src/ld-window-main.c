@@ -868,6 +868,7 @@ on_action_about (GtkAction *action, LdWindowMain *self)
 	gtk_show_about_dialog (GTK_WINDOW (self),
 		"program-name", PROJECT_NAME,
 		"version", PROJECT_VERSION,
+		"translator-credits", _("translator-credits"),
 		"copyright", "Copyright Přemysl Janouch 2010 - 2011",
 		"website", PROJECT_URL,
 		NULL);

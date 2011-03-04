@@ -7,16 +7,16 @@ msgid ""
 msgstr ""
 "Project-Id-Version: logdiag\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-02-13 20:25+0100\n"
-"PO-Revision-Date: 2011-02-13 20:36+0100\n"
+"POT-Creation-Date: 2011-03-04 15:59+0100\n"
+"PO-Revision-Date: 2011-03-04 16:09+0100\n"
 "Last-Translator: Přemysl Janouch <p.janouch@gmail.com>\n"
-"Language-Team: Czech <LL@li.org>\n"
+"Language-Team: Czech <p.janouch@gmail.com>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../src/ld-window-main.c:736
+#: ../src/ld-window-main.c:746
 msgid "Close _without Saving"
 msgstr "Zavřít _bez uložení"
 
@@ -28,19 +28,19 @@ msgstr "Vytvoří nový diagram"
 msgid "Delete the contents of the selection"
 msgstr "Odstraní obsah výběru"
 
-#: ../src/ld-window-main.c:604
+#: ../src/ld-window-main.c:614
 msgid "Failed to open the file"
 msgstr "Nelze otevřít soubor"
 
-#: ../src/ld-window-main.c:569
+#: ../src/ld-window-main.c:579
 msgid "Failed to save the diagram"
 msgstr "Nelze uložit diagram"
 
-#: ../src/ld-window-main.c:734
+#: ../src/ld-window-main.c:744
 msgid "If you don't save, changes will be permanently lost."
 msgstr "Pokud je neuložíte, budou změny navždy ztraceny."
 
-#: ../src/ld-window-main.c:629
+#: ../src/ld-window-main.c:639
 msgid "Logdiag Diagrams (*.ldd)"
 msgstr "Diagramy logdiag (*.ldd)"
 
@@ -48,7 +48,7 @@ msgstr "Diagramy logdiag (*.ldd)"
 msgid "Open a diagram"
 msgstr "Otevře diagram"
 
-#: ../src/ld-window-main.c:650
+#: ../src/ld-window-main.c:660
 msgid "Open..."
 msgstr "Otevřít..."
 
@@ -64,7 +64,7 @@ msgstr "Provede posledně vrácenou akci"
 msgid "Reset zoom level back to the default"
 msgstr "Vrátí přiblížení na výchozí hodnotu"
 
-#: ../src/ld-window-main.c:681
+#: ../src/ld-window-main.c:691
 msgid "Save As..."
 msgstr "Uložit jako..."
 
@@ -72,19 +72,19 @@ msgstr "Uložit jako..."
 msgid "Save _As..."
 msgstr "Uložit _jako..."
 
-#: ../src/ld-window-main.c:525
+#: ../src/ld-window-main.c:534
 #, c-format
 msgid ""
 "Save the changes to diagram \"%s\" before closing it and creating a new one?"
 msgstr "Uložit změny v diagramu \"%s\" před jeho zavřením a vytvořením nového?"
 
-#: ../src/ld-window-main.c:646
+#: ../src/ld-window-main.c:656
 #, c-format
 msgid ""
 "Save the changes to diagram \"%s\" before closing it and opening another one?"
 msgstr "Uložit změny v diagramu \"%s\" před jeho zavřením a otevřením jiného?"
 
-#: ../src/ld-window-main.c:774
+#: ../src/ld-window-main.c:784
 #, c-format
 msgid "Save the changes to diagram \"%s\" before closing?"
 msgstr "Uložit změny v diagramu \"%s\" před jeho zavřením?"
@@ -109,11 +109,11 @@ msgstr "Vybere všechny objekty v diagramu"
 msgid "Show a dialog about this application"
 msgstr "Zobrazí dialog o této aplikaci"
 
-#: ../src/ld-window-main.c:607
+#: ../src/ld-window-main.c:617
 msgid "The file is probably corrupted."
 msgstr "Soubor je pravděpodobně poškozen."
 
-#: ../src/ld-window-main.c:572
+#: ../src/ld-window-main.c:582
 msgid "Try again or save it under another name."
 msgstr "Zkuste to znova nebo jej uložte pod jiným názvem."
 
@@ -121,7 +121,7 @@ msgstr "Zkuste to znova nebo jej uložte pod jiným názvem."
 msgid "Undo the last action"
 msgstr "Vrátí poslední akci"
 
-#: ../src/ld-window-main.c:493
+#: ../src/ld-window-main.c:502
 msgid "Unsaved Diagram"
 msgstr "Neuložený diagram"
 
@@ -137,7 +137,7 @@ msgstr "Přiblíží diagram"
 msgid "Zoom out of the diagram"
 msgstr "Oddálí diagram"
 
-#: ../src/logdiag.c:33
+#: ../src/logdiag.c:42
 msgid "[FILE] - Schematic editor"
 msgstr "[SOUBOR] - Editor schémat"
 
@@ -196,3 +196,7 @@ msgstr "_Zobrazení"
 #: ../src/ld-window-main.c:156
 msgid "_Zoom In"
 msgstr "_Přiblížit"
+
+#: ../src/ld-window-main.c:871
+msgid "translator-credits"
+msgstr "Přemysl Janouch <p.janouch@gmail.com>"

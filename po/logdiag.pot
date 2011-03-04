@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: logdiag \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-02-13 20:25+0100\n"
+"POT-Creation-Date: 2011-03-04 15:59+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -137,63 +137,67 @@ msgstr ""
 msgid "Show a dialog about this application"
 msgstr ""
 
-#: ../src/ld-window-main.c:493
+#: ../src/ld-window-main.c:502
 msgid "Unsaved Diagram"
 msgstr ""
 
-#: ../src/ld-window-main.c:525
+#: ../src/ld-window-main.c:534
 #, c-format
 msgid ""
 "Save the changes to diagram \"%s\" before closing it and creating a new one?"
 msgstr ""
 
-#: ../src/ld-window-main.c:569
+#: ../src/ld-window-main.c:579
 msgid "Failed to save the diagram"
 msgstr ""
 
-#: ../src/ld-window-main.c:572
+#: ../src/ld-window-main.c:582
 msgid "Try again or save it under another name."
 msgstr ""
 
-#: ../src/ld-window-main.c:604
+#: ../src/ld-window-main.c:614
 msgid "Failed to open the file"
 msgstr ""
 
-#: ../src/ld-window-main.c:607
+#: ../src/ld-window-main.c:617
 msgid "The file is probably corrupted."
 msgstr ""
 
-#: ../src/ld-window-main.c:629
+#: ../src/ld-window-main.c:639
 msgid "Logdiag Diagrams (*.ldd)"
 msgstr ""
 
-#: ../src/ld-window-main.c:646
+#: ../src/ld-window-main.c:656
 #, c-format
 msgid ""
 "Save the changes to diagram \"%s\" before closing it and opening another one?"
 msgstr ""
 
-#: ../src/ld-window-main.c:650
+#: ../src/ld-window-main.c:660
 msgid "Open..."
 msgstr ""
 
-#: ../src/ld-window-main.c:681
+#: ../src/ld-window-main.c:691
 msgid "Save As..."
 msgstr ""
 
-#: ../src/ld-window-main.c:734
+#: ../src/ld-window-main.c:744
 msgid "If you don't save, changes will be permanently lost."
 msgstr ""
 
-#: ../src/ld-window-main.c:736
+#: ../src/ld-window-main.c:746
 msgid "Close _without Saving"
 msgstr ""
 
-#: ../src/ld-window-main.c:774
+#: ../src/ld-window-main.c:784
 #, c-format
 msgid "Save the changes to diagram \"%s\" before closing?"
 msgstr ""
 
-#: ../src/logdiag.c:33
+#: ../src/ld-window-main.c:871
+msgid "translator-credits"
+msgstr ""
+
+#: ../src/logdiag.c:42
 msgid "[FILE] - Schematic editor"
 msgstr ""

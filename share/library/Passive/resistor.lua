@@ -2,19 +2,22 @@
 local names =
 {
 	en = "Resistor",
-	cs = "Rezistor"
+	cs = "Rezistor",
+	sk = "Rezistor"
 }
 
 local names_adj =
 {
 	en = "Adjustable resistor",
-	cs = "Nastavitelný rezistor"
+	cs = "Nastavitelný rezistor",
+	sk = "Nastaviteľný rezistor"
 }
 
 local names_pot =
 {
 	en = "Potentiometer",
-	cs = "Potenciometr"
+	cs = "Potenciometr",
+	sk = "Potenciometer"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

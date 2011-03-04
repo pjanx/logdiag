@@ -3,6 +3,7 @@ Type=Application
 Name=logdiag
 GenericName=Schematic Editor
 GenericName[cs]=Editor schémat
+GenericName[sk]=Editor schém
 Icon=logdiag
 Exec=logdiag %f
 MimeType=application/x-logdiag-diagram;

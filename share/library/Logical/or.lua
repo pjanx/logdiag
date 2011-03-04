@@ -2,7 +2,8 @@
 local names =
 {
 	en = "OR",
-	cs = "OR"
+	cs = "OR",
+	sk = "OR"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

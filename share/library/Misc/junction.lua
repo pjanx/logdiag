@@ -2,7 +2,8 @@
 local names =
 {
 	en = "Junction",
-	cs = "Spoj"
+	cs = "Spoj",
+	sk = "Spoj"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

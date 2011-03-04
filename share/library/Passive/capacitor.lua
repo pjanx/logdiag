@@ -2,13 +2,15 @@
 local names =
 {
 	en = "Capacitor",
-	cs = "Kondenzátor"
+	cs = "Kondenzátor",
+	sk = "Kondenzátor"
 }
 
 local names_polar =
 {
 	en = "Polarized capacitor",
-	cs = "Polarizovaný kondenzátor"
+	cs = "Polarizovaný kondenzátor",
+	sk = "Polarizovaný kondenzátor"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

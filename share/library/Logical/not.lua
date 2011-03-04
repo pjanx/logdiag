@@ -2,7 +2,8 @@
 local names =
 {
 	en = "NOT",
-	cs = "NOT"
+	cs = "NOT",
+	sk = "NOT"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

@@ -2,25 +2,29 @@
 local names =
 {
 	en = "Diode",
-	cs = "Dioda"
+	cs = "Dioda",
+	sk = "Dióda"
 }
 
 local names_zener =
 {
 	en = "Zener diode",
-	cs = "Zenerova dioda"
+	cs = "Zenerova dioda",
+	sk = "Zenerova dióda"
 }
 
 local names_led =
 {
 	en = "Light-emitting diode",
-	cs = "Svítivá dioda"
+	cs = "Svítivá dioda",
+	sk = "Svietivá dióda"
 }
 
 local names_photo =
 {
 	en = "Photodiode",
-	cs = "Fotodioda"
+	cs = "Fotodioda",
+	sk = "Fotodióda"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

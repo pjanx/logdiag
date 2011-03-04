@@ -2,7 +2,8 @@
 local names =
 {
 	en = "Lamp",
-	cs = "Světelný zdroj"
+	cs = "Světelný zdroj",
+	sk = "Svetelný zdroj"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

@@ -2,7 +2,8 @@
 local names =
 {
 	en = "Switch",
-	cs = "Spínač"
+	cs = "Spínač",
+	sk = "Spínač"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

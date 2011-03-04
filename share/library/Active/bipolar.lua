@@ -2,13 +2,15 @@
 local names_npn =
 {
 	en = "NPN transistor",
-	cs = "Tranzistor NPN"
+	cs = "Tranzistor NPN",
+	sk = "Tranzistor NPN"
 }
 
 local names_pnp =
 {
 	en = "PNP transistor",
-	cs = "Tranzistor PNP"
+	cs = "Tranzistor PNP",
+	sk = "Tranzistor PNP"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

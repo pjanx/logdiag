@@ -2,13 +2,15 @@
 local names_A =
 {
 	en = "Ammeter",
-	cs = "Ampérmetr"
+	cs = "Ampérmetr",
+	sk = "Ampérmeter"
 }
 
 local names_V =
 {
 	en = "Voltmeter",
-	cs = "Voltmetr"
+	cs = "Voltmetr",
+	sk = "Voltmeter"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

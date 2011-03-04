@@ -2,13 +2,15 @@
 local names =
 {
 	en = "Inductor",
-	cs = "Cívka"
+	cs = "Cívka",
+	sk = "Cievka"
 }
 
 local names_core =
 {
 	en = "Inductor with magnetic core",
-	cs = "Cívka s magnetickým jádrem"
+	cs = "Cívka s magnetickým jádrem",
+	sk = "Cievka s magnetickým jadrom"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

@@ -2,7 +2,8 @@
 local names =
 {
 	en = "Cell",
-	cs = "Článek"
+	cs = "Článek",
+	sk = "Článok"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

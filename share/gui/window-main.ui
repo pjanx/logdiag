@@ -26,6 +26,11 @@
 			<menuitem action="SelectAll" />
 		</menu>
 		<menu name="ViewMenu" action="ViewMenu">
+			<menuitem action="MainToolbar" />
+			<menuitem action="LibraryToolbar" />
+			<separator />
+			<menuitem action="ShowGrid" />
+			<separator />
 			<menuitem action="ZoomIn" />
 			<menuitem action="ZoomOut" />
 			<menuitem action="NormalSize" />

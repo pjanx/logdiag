@@ -101,6 +101,12 @@ static void on_action_redo (GtkAction *action, LdWindowMain *self);
 static void on_action_delete (GtkAction *action, LdWindowMain *self);
 static void on_action_select_all (GtkAction *action, LdWindowMain *self);
 
+static void on_action_main_toolbar (GtkToggleAction *action,
+	LdWindowMain *self);
+static void on_action_library_toolbar (GtkToggleAction *action,
+	LdWindowMain *self);
+static void on_action_grid (GtkToggleAction *action, LdWindowMain *self);
+
 static void on_action_zoom_in (GtkAction *action, LdWindowMain *self);
 static void on_action_zoom_out (GtkAction *action, LdWindowMain *self);
 static void on_action_normal_size (GtkAction *action, LdWindowMain *self);
@@ -169,6 +175,19 @@ static GtkActionEntry wm_action_entries[] =
 			G_CALLBACK (on_action_about)}
 };
 
+static GtkToggleActionEntry wm_toggle_action_entries[] =
+{
+	{"MainToolbar", NULL, N_("_Main Toolbar"), NULL,
+		N_("Toggle displaying of the main toolbar"),
+		G_CALLBACK (on_action_main_toolbar), TRUE},
+	{"LibraryToolbar", NULL, N_("_Library Toolbar"), NULL,
+		N_("Toggle displaying of the library toolbar"),
+		G_CALLBACK (on_action_library_toolbar), TRUE},
+	{"ShowGrid", NULL, N_("Show _Grid"), NULL,
+		N_("Toggle displaying of the grid"),
+		G_CALLBACK (on_action_grid), TRUE}
+};
+
 
 /* ===== Generic widget methods ============================================ */
 
@@ -226,8 +245,12 @@ ld_window_main_init (LdWindowMain *self)
 	priv->action_group = gtk_action_group_new ("MainActions");
 	gtk_action_group_set_translation_domain
 		(priv->action_group, GETTEXT_DOMAIN);
-	gtk_action_group_add_actions (priv->action_group, wm_action_entries,
+	gtk_action_group_add_actions
+		(priv->action_group, wm_action_entries,
 		G_N_ELEMENTS (wm_action_entries), self);
+	gtk_action_group_add_toggle_actions
+		(priv->action_group, wm_toggle_action_entries,
+		G_N_ELEMENTS (wm_toggle_action_entries), self);
 	gtk_ui_manager_insert_action_group (priv->ui_manager,
 		priv->action_group, 0);
 
@@ -896,6 +919,27 @@ static void
 on_action_select_all (GtkAction *action, LdWindowMain *self)
 {
 	ld_diagram_select_all (self->priv->diagram);
+}
+
+static void
+on_action_main_toolbar (GtkToggleAction *action, LdWindowMain *self)
+{
+	gtk_widget_set_visible (self->priv->toolbar,
+		gtk_toggle_action_get_active (action));
+}
+
+static void
+on_action_library_toolbar (GtkToggleAction *action, LdWindowMain *self)
+{
+	gtk_widget_set_visible (self->priv->library_toolbar,
+		gtk_toggle_action_get_active (action));
+}
+
+static void
+on_action_grid (GtkToggleAction *action, LdWindowMain *self)
+{
+	ld_diagram_view_set_show_grid (self->priv->view,
+		gtk_toggle_action_get_active (action));
 }
 
 static void

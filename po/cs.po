@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: logdiag\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-03-04 15:59+0100\n"
-"PO-Revision-Date: 2011-03-04 16:09+0100\n"
+"POT-Creation-Date: 2011-03-06 16:14+0100\n"
+"PO-Revision-Date: 2011-03-06 16:24+0100\n"
 "Last-Translator: Přemysl Janouch <p.janouch@gmail.com>\n"
 "Language-Team: Czech <p.janouch@gmail.com>\n"
 "Language: \n"
@@ -16,124 +16,140 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../src/ld-window-main.c:746
+#: ../src/ld-window-main.c:769
 msgid "Close _without Saving"
 msgstr "Zavřít _bez uložení"
 
-#: ../src/ld-window-main.c:116
+#: ../src/ld-window-main.c:122
 msgid "Create a new diagram"
 msgstr "Vytvoří nový diagram"
 
-#: ../src/ld-window-main.c:149
+#: ../src/ld-window-main.c:155
 msgid "Delete the contents of the selection"
 msgstr "Odstraní obsah výběru"
 
-#: ../src/ld-window-main.c:614
+#: ../src/ld-window-main.c:637
 msgid "Failed to open the file"
 msgstr "Nelze otevřít soubor"
 
-#: ../src/ld-window-main.c:579
+#: ../src/ld-window-main.c:602
 msgid "Failed to save the diagram"
 msgstr "Nelze uložit diagram"
 
-#: ../src/ld-window-main.c:744
+#: ../src/ld-window-main.c:767
 msgid "If you don't save, changes will be permanently lost."
 msgstr "Pokud je neuložíte, budou změny navždy ztraceny."
 
-#: ../src/ld-window-main.c:639
+#: ../src/ld-window-main.c:662
 msgid "Logdiag Diagrams (*.ldd)"
 msgstr "Diagramy logdiag (*.ldd)"
 
-#: ../src/ld-window-main.c:119
+#: ../src/ld-window-main.c:125
 msgid "Open a diagram"
 msgstr "Otevře diagram"
 
-#: ../src/ld-window-main.c:660
+#: ../src/ld-window-main.c:683
 msgid "Open..."
 msgstr "Otevřít..."
 
-#: ../src/ld-window-main.c:133
+#: ../src/ld-window-main.c:139
 msgid "Quit the application"
 msgstr "Ukončí aplikaci"
 
-#: ../src/ld-window-main.c:141
+#: ../src/ld-window-main.c:147
 msgid "Redo the last undone action"
 msgstr "Provede posledně vrácenou akci"
 
-#: ../src/ld-window-main.c:163
+#: ../src/ld-window-main.c:169
 msgid "Reset zoom level back to the default"
 msgstr "Vrátí přiblížení na výchozí hodnotu"
 
-#: ../src/ld-window-main.c:691
+#: ../src/ld-window-main.c:714
 msgid "Save As..."
 msgstr "Uložit jako..."
 
-#: ../src/ld-window-main.c:124
+#: ../src/ld-window-main.c:130
 msgid "Save _As..."
 msgstr "Uložit _jako..."
 
-#: ../src/ld-window-main.c:534
+#: ../src/ld-window-main.c:557
 #, c-format
 msgid ""
 "Save the changes to diagram \"%s\" before closing it and creating a new one?"
 msgstr "Uložit změny v diagramu \"%s\" před jeho zavřením a vytvořením nového?"
 
-#: ../src/ld-window-main.c:656
+#: ../src/ld-window-main.c:679
 #, c-format
 msgid ""
 "Save the changes to diagram \"%s\" before closing it and opening another one?"
 msgstr "Uložit změny v diagramu \"%s\" před jeho zavřením a otevřením jiného?"
 
-#: ../src/ld-window-main.c:784
+#: ../src/ld-window-main.c:807
 #, c-format
 msgid "Save the changes to diagram \"%s\" before closing?"
 msgstr "Uložit změny v diagramu \"%s\" před jeho zavřením?"
 
-#: ../src/ld-window-main.c:122
+#: ../src/ld-window-main.c:128
 msgid "Save the current diagram"
 msgstr "Uloží stávající diagram"
 
-#: ../src/ld-window-main.c:125
+#: ../src/ld-window-main.c:131
 msgid "Save the current diagram with another name"
 msgstr "Uloží stávající diagram pod jiným jménem"
 
-#: ../src/ld-window-main.c:151
+#: ../src/ld-window-main.c:157
 msgid "Select _All"
 msgstr "Vybrat _vše"
 
-#: ../src/ld-window-main.c:152
+#: ../src/ld-window-main.c:158
 msgid "Select all objects in the diagram"
 msgstr "Vybere všechny objekty v diagramu"
 
-#: ../src/ld-window-main.c:168
+#: ../src/ld-window-main.c:186
+msgid "Show _Grid"
+msgstr "Zobrazit _mřížku"
+
+#: ../src/ld-window-main.c:174
 msgid "Show a dialog about this application"
 msgstr "Zobrazí dialog o této aplikaci"
 
-#: ../src/ld-window-main.c:617
+#: ../src/ld-window-main.c:640
 msgid "The file is probably corrupted."
 msgstr "Soubor je pravděpodobně poškozen."
 
-#: ../src/ld-window-main.c:582
+#: ../src/ld-window-main.c:187
+msgid "Toggle displaying of the grid"
+msgstr "Přepne zobrazování mřížky"
+
+#: ../src/ld-window-main.c:184
+msgid "Toggle displaying of the library toolbar"
+msgstr "Přepne zobrazování panelu knihovny"
+
+#: ../src/ld-window-main.c:181
+msgid "Toggle displaying of the main toolbar"
+msgstr "Přepne zobrazování hlavního panelu nástrojů"
+
+#: ../src/ld-window-main.c:605
 msgid "Try again or save it under another name."
 msgstr "Zkuste to znova nebo jej uložte pod jiným názvem."
 
-#: ../src/ld-window-main.c:138
+#: ../src/ld-window-main.c:144
 msgid "Undo the last action"
 msgstr "Vrátí poslední akci"
 
-#: ../src/ld-window-main.c:502
+#: ../src/ld-window-main.c:525
 msgid "Unsaved Diagram"
 msgstr "Neuložený diagram"
 
-#: ../src/ld-window-main.c:159
+#: ../src/ld-window-main.c:165
 msgid "Zoom _Out"
 msgstr "_Oddálit"
 
-#: ../src/ld-window-main.c:157
+#: ../src/ld-window-main.c:163
 msgid "Zoom into the diagram"
 msgstr "Přiblíží diagram"
 
-#: ../src/ld-window-main.c:160
+#: ../src/ld-window-main.c:166
 msgid "Zoom out of the diagram"
 msgstr "Oddálí diagram"
 
@@ -141,62 +157,70 @@ msgstr "Oddálí diagram"
 msgid "[FILE] - Schematic editor"
 msgstr "[SOUBOR] - Editor schémat"
 
-#: ../src/ld-window-main.c:167
+#: ../src/ld-window-main.c:173
 msgid "_About"
 msgstr "_O programu"
 
-#: ../src/ld-window-main.c:148
+#: ../src/ld-window-main.c:154
 msgid "_Delete"
 msgstr "_Smazat"
 
-#: ../src/ld-window-main.c:136
+#: ../src/ld-window-main.c:142
 msgid "_Edit"
 msgstr "_Úpravy"
 
-#: ../src/ld-window-main.c:114
+#: ../src/ld-window-main.c:120
 msgid "_File"
 msgstr "_Soubor"
 
-#: ../src/ld-window-main.c:166
+#: ../src/ld-window-main.c:172
 msgid "_Help"
 msgstr "_Nápověda"
 
-#: ../src/ld-window-main.c:115
+#: ../src/ld-window-main.c:183
+msgid "_Library Toolbar"
+msgstr "Panel _knihovny"
+
+#: ../src/ld-window-main.c:180
+msgid "_Main Toolbar"
+msgstr "_Hlavní panel nástrojů"
+
+#: ../src/ld-window-main.c:121
 msgid "_New"
 msgstr "_Nový"
 
-#: ../src/ld-window-main.c:162
+#: ../src/ld-window-main.c:168
 msgid "_Normal Size"
 msgstr "_Normální velikost"
 
-#: ../src/ld-window-main.c:118
+#: ../src/ld-window-main.c:124
 msgid "_Open..."
 msgstr "_Otevřít..."
 
-#: ../src/ld-window-main.c:132
+#: ../src/ld-window-main.c:138
 msgid "_Quit"
 msgstr "_Ukončit"
 
-#: ../src/ld-window-main.c:140
+#: ../src/ld-window-main.c:146
 msgid "_Redo"
 msgstr "_Znovu"
 
-#: ../src/ld-window-main.c:121
+#: ../src/ld-window-main.c:127
 msgid "_Save"
 msgstr "_Uložit"
 
-#: ../src/ld-window-main.c:137
+#: ../src/ld-window-main.c:143
 msgid "_Undo"
 msgstr "_Zpět"
 
-#: ../src/ld-window-main.c:155
+#: ../src/ld-window-main.c:161
 msgid "_View"
 msgstr "_Zobrazení"
 
-#: ../src/ld-window-main.c:156
+#: ../src/ld-window-main.c:162
 msgid "_Zoom In"
 msgstr "_Přiblížit"
 
-#: ../src/ld-window-main.c:871
+#: ../src/ld-window-main.c:894
 msgid "translator-credits"
 msgstr "Přemysl Janouch <p.janouch@gmail.com>"

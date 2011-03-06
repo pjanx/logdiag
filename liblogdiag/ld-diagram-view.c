@@ -1784,10 +1784,24 @@ oper_connect_motion (LdDiagramView *self, const LdPoint *point)
 
 	data = &OPER_DATA (self, connect);
 
-	ld_diagram_view_widget_to_diagram_coords (self,
-		point->x, point->y, &diagram_x, &diagram_y);
-	end_point.x = floor (diagram_x - data->origin.x + 0.5);
-	end_point.y = floor (diagram_y - data->origin.y + 0.5);
+	check_terminals (self, point);
+
+	if (self->priv->terminal.x == data->origin.x
+		&& self->priv->terminal.y == data->origin.y)
+		self->priv->terminal_hovered = FALSE;
+
+	if (self->priv->terminal_hovered)
+	{
+		end_point.x = self->priv->terminal.x - data->origin.x;
+		end_point.y = self->priv->terminal.y - data->origin.y;
+	}
+	else
+	{
+		ld_diagram_view_widget_to_diagram_coords (self,
+			point->x, point->y, &diagram_x, &diagram_y);
+		end_point.x = floor (diagram_x - data->origin.x + 0.5);
+		end_point.y = floor (diagram_y - data->origin.y + 0.5);
+	}
 
 	points = create_connection_path (&end_point);
 
@@ -1795,12 +1809,6 @@ oper_connect_motion (LdDiagramView *self, const LdPoint *point)
 	ld_diagram_connection_set_points (data->connection, points);
 	ld_point_array_free (points);
 	queue_object_draw (self, LD_DIAGRAM_OBJECT (data->connection));
-
-	check_terminals (self, point);
-
-	if (self->priv->terminal.x == data->origin.x
-		&& self->priv->terminal.y == data->origin.y)
-		self->priv->terminal_hovered = FALSE;
 }
 
 /* create_connection_path:

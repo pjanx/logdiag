@@ -121,6 +121,7 @@ Color;
  * @x: the X coordinate of the center of view.
  * @y: the Y coordinate of the center of view.
  * @zoom: the current zoom.
+ * @show_grid: whether to show the grid.
  * @terminal: position of the highlighted terminal.
  * @terminal_hovered: whether a terminal is hovered.
  * @drag_start_pos: position of the mouse pointer when dragging started.
@@ -141,6 +142,8 @@ struct _LdDiagramViewPrivate
 	gdouble x;
 	gdouble y;
 	gdouble zoom;
+
+	gboolean show_grid;
 
 	LdPoint terminal;
 	gboolean terminal_hovered;
@@ -470,6 +473,8 @@ ld_diagram_view_init (LdDiagramView *self)
 	self->priv->x = 0;
 	self->priv->y = 0;
 	self->priv->zoom = ZOOM_DEFAULT;
+
+	self->priv->show_grid = TRUE;
 
 	color_set (COLOR_GET (self, COLOR_BASE), 1, 1, 1, 1);
 	color_set (COLOR_GET (self, COLOR_GRID), 0.5, 0.5, 0.5, 1);
@@ -1090,6 +1095,35 @@ ld_diagram_view_zoom_out (LdDiagramView *self)
 {
 	g_return_if_fail (LD_IS_DIAGRAM_VIEW (self));
 	ld_diagram_view_set_zoom (self, self->priv->zoom / ZOOM_STEP);
+}
+
+/**
+ * ld_diagram_view_get_show_grid:
+ * @self: an #LdDiagramView object.
+ *
+ * Return value: whether the grid is shown.
+ */
+gboolean
+ld_diagram_view_get_show_grid (LdDiagramView *self)
+{
+	g_return_val_if_fail (LD_IS_DIAGRAM_VIEW (self), FALSE);
+	return self->priv->show_grid;
+}
+
+/**
+ * ld_diagram_view_set_show_grid:
+ * @self: an #LdDiagramView object.
+ * @show_grid: whether to show the grid.
+ *
+ * Set whether the grid is shown.
+ */
+void
+ld_diagram_view_set_show_grid (LdDiagramView *self, gboolean show_grid)
+{
+	g_return_if_fail (LD_IS_DIAGRAM_VIEW (self));
+
+	self->priv->show_grid = show_grid;
+	gtk_widget_queue_draw (GTK_WIDGET (self));
 }
 
 
@@ -2298,7 +2332,9 @@ on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 	color_apply (COLOR_GET (data.self, COLOR_BASE), data.cr);
 	cairo_paint (data.cr);
 
-	draw_grid (widget, &data);
+	if (data.self->priv->show_grid)
+		draw_grid (widget, &data);
+
 	draw_diagram (widget, &data);
 	draw_terminal (widget, &data);
 

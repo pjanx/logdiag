@@ -90,6 +90,9 @@ void ld_diagram_view_zoom_in (LdDiagramView *self);
 gboolean ld_diagram_view_can_zoom_out (LdDiagramView *self);
 void ld_diagram_view_zoom_out (LdDiagramView *self);
 
+gboolean ld_diagram_view_get_show_grid (LdDiagramView *self);
+void ld_diagram_view_set_show_grid (LdDiagramView *self, gboolean show_grid);
+
 void ld_diagram_view_add_object_begin (LdDiagramView *self,
 	LdDiagramObject *object);
 

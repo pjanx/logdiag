@@ -2132,12 +2132,20 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 	if (!self->priv->diagram)
 		return FALSE;
 
-	if (event->button == 3 && self->priv->operation == OPER_0)
+	if (event->button == 3)
 	{
-		object = get_object_at_point (self, &point);
-		if (object && LD_IS_DIAGRAM_SYMBOL (object))
-			rotate_symbol (self, LD_DIAGRAM_SYMBOL (object));
-		return FALSE;
+		switch (self->priv->operation)
+		{
+		case OPER_ADD_OBJECT:
+			data = &OPER_DATA (self, add_object);
+			rotate_symbol (self, LD_DIAGRAM_SYMBOL (data->object));
+			break;
+		case OPER_0:
+			object = get_object_at_point (self, &point);
+			if (object && LD_IS_DIAGRAM_SYMBOL (object))
+				rotate_symbol (self, LD_DIAGRAM_SYMBOL (object));
+			return FALSE;
+		}
 	}
 
 	if (event->button != 1)

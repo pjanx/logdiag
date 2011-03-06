@@ -3,14 +3,16 @@ local names_plus =
 {
 	en = "Plus sign",
 	cs = "Znaménko plus",
-	sk = "Znamienko plus"
+	sk = "Znamienko plus",
+	pl = "Znaczek plus"
 }
 
 local names_minus =
 {
 	en = "Minus sign",
 	cs = "Znaménko mínus",
-	sk = "Znamienko mínus"
+	sk = "Znamienko mínus",
+	pl = "Znaczek minus"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

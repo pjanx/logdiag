@@ -3,14 +3,16 @@ local names_n =
 {
 	en = "N-channel IGFET transistor",
 	cs = "Tranzistor IGFET s kanálem N",
-	sk = "Tranzistor IGFET s kanálom N"
+	sk = "Tranzistor IGFET s kanálom N",
+	pl = "Tranzystor IGFET z kanałem N"
 }
 
 local names_p =
 {
 	en = "P-channel IGFET transistor",
 	cs = "Tranzistor IGFET s kanálem P",
-	sk = "Tranzistor IGFET s kanálom P"
+	sk = "Tranzistor IGFET s kanálom P",
+	pl = "Tranzystor IGFET z kanałem P"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

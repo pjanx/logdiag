@@ -3,7 +3,8 @@ local names =
 {
 	en = "Junction",
 	cs = "Spoj",
-	sk = "Spoj"
+	sk = "Spoj",
+	pl = "Złącze"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

@@ -1,0 +1,228 @@
+# Polish translation for logdiag.
+# Copyright (C) 2011 Přemysl Janouch
+# This file is distributed under the same license as the logdiag package.
+# Robert Svoboda <ravath@gmail.com>, 2011.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: logdiag\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-03-06 16:14+0100\n"
+"PO-Revision-Date: 2011-02-13 20:36+0100\n"
+"Last-Translator: Robert Svoboda <ravath@gmail.com>\n"
+"Language-Team: Polish <ravath@gmail.com>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../src/ld-window-main.c:769
+msgid "Close _without Saving"
+msgstr "Zamknąć _bez zapisu"
+
+#: ../src/ld-window-main.c:122
+msgid "Create a new diagram"
+msgstr "Stworzenie nowego wykresu"
+
+#: ../src/ld-window-main.c:155
+msgid "Delete the contents of the selection"
+msgstr "Usuń zawartość wyboru"
+
+#: ../src/ld-window-main.c:637
+msgid "Failed to open the file"
+msgstr "Pliku nie da się otworzyć"
+
+#: ../src/ld-window-main.c:602
+msgid "Failed to save the diagram"
+msgstr "Nie udało się zapisać wykresu"
+
+#: ../src/ld-window-main.c:767
+msgid "If you don't save, changes will be permanently lost."
+msgstr "Jeżeli nie zapiszesz zmian, zostaną one trwale utracone"
+
+#: ../src/ld-window-main.c:662
+msgid "Logdiag Diagrams (*.ldd)"
+msgstr "Wykresy logdiag (*.ldd)"
+
+#: ../src/ld-window-main.c:125
+msgid "Open a diagram"
+msgstr "Otwórz wykres"
+
+#: ../src/ld-window-main.c:683
+msgid "Open..."
+msgstr "Otworzyć..."
+
+#: ../src/ld-window-main.c:139
+msgid "Quit the application"
+msgstr "Zamknie aplikację"
+
+#: ../src/ld-window-main.c:147
+msgid "Redo the last undone action"
+msgstr "Powtórzy ostatnio cofniętą akcję"
+
+#: ../src/ld-window-main.c:169
+msgid "Reset zoom level back to the default"
+msgstr "Przywróci poziom zbliżenia na poziom wyjściowy"
+
+#: ../src/ld-window-main.c:714
+msgid "Save As..."
+msgstr "Zapisz jako..."
+
+#: ../src/ld-window-main.c:130
+msgid "Save _As..."
+msgstr "Zapisz _jako..."
+
+#: ../src/ld-window-main.c:557
+#, c-format
+msgid ""
+"Save the changes to diagram \"%s\" before closing it and creating a new one?"
+msgstr ""
+"Zapisać zmiany w wykresie \"%s\" przed jego zamknięciem i stworzeniem nowego?"
+
+#: ../src/ld-window-main.c:679
+#, c-format
+msgid ""
+"Save the changes to diagram \"%s\" before closing it and opening another one?"
+msgstr ""
+"Zapisać zmiany w wykresie \"%s\" przed jego zamknięciem i stworzeniem nowego?"
+
+#: ../src/ld-window-main.c:807
+#, c-format
+msgid "Save the changes to diagram \"%s\" before closing?"
+msgstr "Zapisać zmiany w wykresie \"%s\" przed jego zamknięciem?"
+
+#: ../src/ld-window-main.c:128
+msgid "Save the current diagram"
+msgstr "Zapisz aktywny wykres"
+
+#: ../src/ld-window-main.c:131
+msgid "Save the current diagram with another name"
+msgstr "Zapisać aktywny wykres pod inną nazwą"
+
+#: ../src/ld-window-main.c:157
+msgid "Select _All"
+msgstr "Wybierz _wszystko"
+
+#: ../src/ld-window-main.c:158
+msgid "Select all objects in the diagram"
+msgstr "Wybierze wszystkie obietky w wykresie"
+
+#: ../src/ld-window-main.c:186
+msgid "Show _Grid"
+msgstr "Pokaż _Siatkę"
+
+#: ../src/ld-window-main.c:174
+msgid "Show a dialog about this application"
+msgstr "Pokaże informacje o tej aplikacji"
+
+#: ../src/ld-window-main.c:640
+msgid "The file is probably corrupted."
+msgstr "Plik jest prawdopodobnie uszkodzony."
+
+#: ../src/ld-window-main.c:187
+msgid "Toggle displaying of the grid"
+msgstr "Przełączy pokazywanie siatki"
+
+#: ../src/ld-window-main.c:184
+msgid "Toggle displaying of the library toolbar"
+msgstr "Przełączy pokazywanie panelu biblioteki"
+
+#: ../src/ld-window-main.c:181
+msgid "Toggle displaying of the main toolbar"
+msgstr "Przełączy pokazywanie głównego panelu narzędzi"
+
+#: ../src/ld-window-main.c:605
+msgid "Try again or save it under another name."
+msgstr "Spróbuj ponownie, bądź zapisz pod inną nazwą."
+
+#: ../src/ld-window-main.c:144
+msgid "Undo the last action"
+msgstr "Cofnie ostatnią akcję"
+
+#: ../src/ld-window-main.c:525
+msgid "Unsaved Diagram"
+msgstr "Niezapisany Wykres"
+
+#: ../src/ld-window-main.c:165
+msgid "Zoom _Out"
+msgstr "_Oddalić widok"
+
+#: ../src/ld-window-main.c:163
+msgid "Zoom into the diagram"
+msgstr "Przybliżyć widok"
+
+#: ../src/ld-window-main.c:166
+msgid "Zoom out of the diagram"
+msgstr "Oddalić widok"
+
+#: ../src/logdiag.c:42
+msgid "[FILE] - Schematic editor"
+msgstr "[SOUBOR] - Edytor schematów"
+
+#: ../src/ld-window-main.c:173
+msgid "_About"
+msgstr "_O programie"
+
+#: ../src/ld-window-main.c:154
+msgid "_Delete"
+msgstr "_Usuń"
+
+#: ../src/ld-window-main.c:142
+msgid "_Edit"
+msgstr "_Edycja"
+
+#: ../src/ld-window-main.c:120
+msgid "_File"
+msgstr "_Plik"
+
+#: ../src/ld-window-main.c:172
+msgid "_Help"
+msgstr "_Pomoc"
+
+#: ../src/ld-window-main.c:183
+msgid "_Library Toolbar"
+msgstr "Panel _biblioteki"
+
+#: ../src/ld-window-main.c:180
+msgid "_Main Toolbar"
+msgstr "_Główny panel narzędzi"
+
+#: ../src/ld-window-main.c:121
+msgid "_New"
+msgstr "_Nowy"
+
+#: ../src/ld-window-main.c:168
+msgid "_Normal Size"
+msgstr "_Normalna Wielkość"
+
+#: ../src/ld-window-main.c:124
+msgid "_Open..."
+msgstr "_Otwórz..."
+
+#: ../src/ld-window-main.c:138
+msgid "_Quit"
+msgstr "_Zakończ"
+
+#: ../src/ld-window-main.c:146
+msgid "_Redo"
+msgstr "_Powtórz"
+
+#: ../src/ld-window-main.c:127
+msgid "_Save"
+msgstr "Z_apisz"
+
+#: ../src/ld-window-main.c:143
+msgid "_Undo"
+msgstr "_Wróć"
+
+#: ../src/ld-window-main.c:161
+msgid "_View"
+msgstr "_Widok"
+
+#: ../src/ld-window-main.c:162
+msgid "_Zoom In"
+msgstr "_Przybliżyć"
+
+#: ../src/ld-window-main.c:894
+msgid "translator-credits"
+msgstr "Robert Svoboda <ravath@gmail.com>"

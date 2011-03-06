@@ -3,14 +3,16 @@ local names_ac =
 {
 	en = "AC voltage source",
 	cs = "Střídavý zdroj napětí",
-	sk = "Striedavý zdroj napätia"
+	sk = "Striedavý zdroj napätia",
+	pl = "Źródło prądu zmiennego"
 }
 
 local names_dc =
 {
 	en = "DC voltage source",
 	cs = "Stejnosměrný zdroj napětí",
-	sk = "Stejnosmerný zdroj napätia"
+	sk = "Stejnosmerný zdroj napätia",
+	pl = "Źródło prądu stałego"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

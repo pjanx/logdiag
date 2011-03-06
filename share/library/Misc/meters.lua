@@ -3,21 +3,24 @@ local names_A =
 {
 	en = "Ammeter",
 	cs = "Ampérmetr",
-	sk = "Ampérmeter"
+	sk = "Ampérmeter",
+	pl = "Amperomierz"
 }
 
 local names_V =
 {
 	en = "Voltmeter",
 	cs = "Voltmetr",
-	sk = "Voltmeter"
+	sk = "Voltmeter",
+	pl = "Woltomierz"
 }
 
 local names_ohm =
 {
 	en = "Ohmmeter",
 	cs = "Ohmmetr",
-	sk = "Ohmmeter"
+	sk = "Ohmmeter",
+	pl = "Omomierz"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

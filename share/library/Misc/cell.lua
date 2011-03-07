@@ -4,7 +4,8 @@ local names =
 	en = "Cell",
 	cs = "Článek",
 	sk = "Článok",
-	pl = "Ogniwo"
+	pl = "Ogniwo",
+	de = "Zelle"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

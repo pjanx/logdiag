@@ -4,7 +4,8 @@ local names_A =
 	en = "Ammeter",
 	cs = "Ampérmetr",
 	sk = "Ampérmeter",
-	pl = "Amperomierz"
+	pl = "Amperomierz",
+	de = "Ampermeter"
 }
 
 local names_V =
@@ -12,7 +13,8 @@ local names_V =
 	en = "Voltmeter",
 	cs = "Voltmetr",
 	sk = "Voltmeter",
-	pl = "Woltomierz"
+	pl = "Woltomierz",
+	de = "Voltmeter"
 }
 
 local names_ohm =
@@ -20,7 +22,8 @@ local names_ohm =
 	en = "Ohmmeter",
 	cs = "Ohmmetr",
 	sk = "Ohmmeter",
-	pl = "Omomierz"
+	pl = "Omomierz",
+	de = "Ohmmeter"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

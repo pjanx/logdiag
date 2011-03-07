@@ -4,7 +4,8 @@ local names =
 	en = "Terminal",
 	cs = "Terminál",
 	sk = "Terminál",
-	pl = "Terminał"
+	pl = "Terminał",
+	de = "Terminal"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

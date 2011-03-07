@@ -4,7 +4,8 @@ local names =
 	en = "Resistor",
 	cs = "Rezistor",
 	sk = "Rezistor",
-	pl = "Rezystor"
+	pl = "Rezystor",
+	de = "Widerstand"
 }
 
 local names_adj =
@@ -12,7 +13,8 @@ local names_adj =
 	en = "Adjustable resistor",
 	cs = "Nastavitelný rezistor",
 	sk = "Nastaviteľný rezistor",
-	pl = "Rezystor zmienny"
+	pl = "Rezystor zmienny",
+	de = "Einstellwiderstand"
 }
 
 local names_pot =
@@ -20,7 +22,8 @@ local names_pot =
 	en = "Potentiometer",
 	cs = "Potenciometr",
 	sk = "Potenciometer",
-	pl = "Potencjometr"
+	pl = "Potencjometr",
+	de = "Potentiometer"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

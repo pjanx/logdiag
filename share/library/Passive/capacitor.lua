@@ -4,7 +4,8 @@ local names =
 	en = "Capacitor",
 	cs = "Kondenzátor",
 	sk = "Kondenzátor",
-	pl = "Kondensator"
+	pl = "Kondensator",
+	de = "Kondensator"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

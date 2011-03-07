@@ -4,7 +4,8 @@ local names =
 	en = "Inductor",
 	cs = "Cívka",
 	sk = "Cievka",
-	pl = "Cewka"
+	pl = "Cewka",
+	de = "Spule"
 }
 
 local names_core =
@@ -12,7 +13,8 @@ local names_core =
 	en = "Inductor with magnetic core",
 	cs = "Cívka s magnetickým jádrem",
 	sk = "Cievka s magnetickým jadrom",
-	pl = "Cewka z jądrem magnetycznym"
+	pl = "Cewka z jądrem magnetycznym",
+	de = "Magnetspule"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

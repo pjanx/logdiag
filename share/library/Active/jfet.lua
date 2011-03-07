@@ -4,7 +4,8 @@ local names_n =
 	en = "N-channel JFET transistor",
 	cs = "Tranzistor JFET s kanálem N",
 	sk = "Tranzistor JFET s kanálom N",
-	pl = "Tranzystor JFET z kanałem N"
+	pl = "Tranzystor JFET z kanałem N",
+	de = "N-Kanal JFET Transistor"
 }
 
 local names_p =
@@ -12,7 +13,8 @@ local names_p =
 	en = "P-channel JFET transistor",
 	cs = "Tranzistor JFET s kanálem P",
 	sk = "Tranzistor JFET s kanálom P",
-	pl = "Tranzystor JFET z kanałem P"
+	pl = "Tranzystor JFET z kanałem P",
+	de = "P-Kanal JFET Transistor"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

@@ -4,7 +4,8 @@ local names =
 	en = "Diode",
 	cs = "Dioda",
 	sk = "Dióda",
-	pl = "Dioda"
+	pl = "Dioda",
+	de = "Diode"
 }
 
 local names_zener =
@@ -12,7 +13,8 @@ local names_zener =
 	en = "Zener diode",
 	cs = "Zenerova dioda",
 	sk = "Zenerova dióda",
-	pl = "Dioda Zenera"
+	pl = "Dioda Zenera",
+	de = "Zenerdiode"
 }
 
 local names_led =
@@ -20,7 +22,8 @@ local names_led =
 	en = "Light-emitting diode",
 	cs = "Svítivá dioda",
 	sk = "Svietivá dióda",
-	pl = "Dioda świecąca"
+	pl = "Dioda świecąca",
+	de = "Lichtemittierende Diode"
 }
 
 local names_photo =
@@ -28,7 +31,8 @@ local names_photo =
 	en = "Photodiode",
 	cs = "Fotodioda",
 	sk = "Fotodióda",
-	pl = "Fotodioda"
+	pl = "Fotodioda",
+	de = "Fotodiode"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

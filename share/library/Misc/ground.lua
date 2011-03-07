@@ -4,7 +4,8 @@ local names =
 	en = "Ground",
 	cs = "Zem",
 	sk = "Uzemnenie",
-	pl = "Ziemia"
+	pl = "Ziemia",
+	de = "Masse"
 }
 
 -- Render area in base units (X1, Y1, X2, Y2)

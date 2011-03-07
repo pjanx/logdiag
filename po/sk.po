@@ -200,11 +200,11 @@ msgstr "_Otvoriť..."
 
 #: ../src/ld-window-main.c:138
 msgid "_Quit"
-msgstr "_Ukončiť"
+msgstr "U_končiť"
 
 #: ../src/ld-window-main.c:146
 msgid "_Redo"
-msgstr "_Znovu"
+msgstr "Z_novu"
 
 #: ../src/ld-window-main.c:127
 msgid "_Save"

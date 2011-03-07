@@ -199,11 +199,11 @@ msgstr "_Otevřít..."
 
 #: ../src/ld-window-main.c:138
 msgid "_Quit"
-msgstr "_Ukončit"
+msgstr "U_končit"
 
 #: ../src/ld-window-main.c:146
 msgid "_Redo"
-msgstr "_Znovu"
+msgstr "Z_novu"
 
 #: ../src/ld-window-main.c:127
 msgid "_Save"

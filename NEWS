@@ -1,3 +1,10 @@
+Version 0.1.2
+ - Updated symbol library.
+ - Added Slovak, Polish and German translations.
+ - Rotation of symbols is also allowed while placing them.
+ - Now gluing to terminal points when creating connections.
+ - Toolbars and the grid can be hidden.
+
 Version 0.1.1
  - Rotation of symbols made possible.
  - Connections can also be created at ends of other connections.

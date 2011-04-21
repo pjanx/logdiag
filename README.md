@@ -40,7 +40,7 @@ Now you have two basic choices of installing the application:
    system package manager. CMake offers DEB and RPM.  
 
    After _cpack_ finishes making the package, install this file.  
-       $ cpack -G DEB
+       $ fakeroot cpack -G DEB
        # dpkg -i logdiag-0.0-Linux-x86_64.deb
 
 # Building from sources on Windows

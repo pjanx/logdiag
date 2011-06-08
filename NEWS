@@ -1,3 +1,7 @@
+Version TBD
+ - Fixed checking for the shift key when selecting.
+ - Terminals are ignored when hovering the cursor above a selection.
+
 Version 0.1.2
  - Updated symbol library.
  - Added Slovak, Polish and German translations.

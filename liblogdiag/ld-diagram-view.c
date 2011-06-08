@@ -1307,6 +1307,13 @@ check_terminals (LdDiagramView *self, const LdPoint *point)
 {
 	GList *objects, *iter;
 	CheckTerminalsData data;
+	LdDiagramObject *object_at_cursor;
+
+	hide_terminals (self);
+
+	object_at_cursor = get_object_at_point (self, point);
+	if (object_at_cursor && is_object_selected (self, object_at_cursor))
+		return;
 
 	data.found = FALSE;
 	data.point = *point;
@@ -1320,8 +1327,6 @@ check_terminals (LdDiagramView *self, const LdPoint *point)
 		else if (LD_IS_DIAGRAM_SYMBOL (iter->data))
 			check_symbol_terminals (self, iter->data, &data);
 	}
-
-	hide_terminals (self);
 
 	if (data.found)
 	{
@@ -2165,7 +2170,7 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 	LdPoint point;
 	LdDiagramView *self;
 	AddObjectData *data;
-	LdDiagramObject *object;
+	LdDiagramObject *object_at_cursor;
 
 	point.x = event->x;
 	point.y = event->y;
@@ -2183,9 +2188,9 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 			rotate_symbol (self, LD_DIAGRAM_SYMBOL (data->object));
 			break;
 		case OPER_0:
-			object = get_object_at_point (self, &point);
-			if (object && LD_IS_DIAGRAM_SYMBOL (object))
-				rotate_symbol (self, LD_DIAGRAM_SYMBOL (object));
+			object_at_cursor = get_object_at_point (self, &point);
+			if (object_at_cursor && LD_IS_DIAGRAM_SYMBOL (object_at_cursor))
+				rotate_symbol (self, LD_DIAGRAM_SYMBOL (object_at_cursor));
 			return FALSE;
 		}
 	}
@@ -2211,28 +2216,33 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 		break;
 	case OPER_0:
 		self->priv->drag_start_pos = point;
+		object_at_cursor = get_object_at_point (self, &point);
 
-		if (self->priv->terminal_hovered)
+		if (self->priv->terminal_hovered
+			&& (!ld_diagram_get_selection (self->priv->diagram)
+				|| !object_at_cursor
+				|| !is_object_selected (self, object_at_cursor)))
 		{
-			self->priv->drag_operation = OPER_CONNECT;
-			break;
-		}
+			if (ld_diagram_get_selection (self->priv->diagram))
+				ld_diagram_unselect_all (self->priv->diagram);
 
-		object = get_object_at_point (self, &point);
-		if (!object)
+			self->priv->drag_operation = OPER_CONNECT;
+		}
+		else if (object_at_cursor)
+		{
+			if (!is_object_selected (self, object_at_cursor))
+			{
+				if (!(event->state & GDK_SHIFT_MASK))
+					ld_diagram_unselect_all (self->priv->diagram);
+				ld_diagram_select (self->priv->diagram, object_at_cursor);
+			}
+			self->priv->drag_operation = OPER_MOVE_SELECTION;
+		}
+		else
 		{
 			ld_diagram_unselect_all (self->priv->diagram);
 			self->priv->drag_operation = OPER_SELECT;
 		}
-		else if (!is_object_selected (self, object))
-		{
-			if (event->state != GDK_SHIFT_MASK)
-				ld_diagram_unselect_all (self->priv->diagram);
-			ld_diagram_select (self->priv->diagram, object);
-			self->priv->drag_operation = OPER_MOVE_SELECTION;
-		}
-		else
-			self->priv->drag_operation = OPER_MOVE_SELECTION;
 		break;
 	}
 	return FALSE;
@@ -2243,7 +2253,7 @@ on_button_release (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
 	LdPoint point;
 	LdDiagramView *self;
-	LdDiagramObject *object;
+	LdDiagramObject *object_at_cursor;
 
 	if (event->button != 1)
 		return FALSE;
@@ -2264,12 +2274,12 @@ on_button_release (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 			LD_DIAGRAM_VIEW_GET_CLASS (self)->cancel_operation_signal, 0);
 		break;
 	case OPER_0:
-		object = get_object_at_point (self, &point);
-		if (object && is_object_selected (self, object))
+		object_at_cursor = get_object_at_point (self, &point);
+		if (object_at_cursor && is_object_selected (self, object_at_cursor))
 		{
 			if (!(event->state & GDK_SHIFT_MASK))
 				ld_diagram_unselect_all (self->priv->diagram);
-			ld_diagram_select (self->priv->diagram, object);
+			ld_diagram_select (self->priv->diagram, object_at_cursor);
 		}
 		break;
 	}

@@ -2298,6 +2298,10 @@ on_scroll (GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
 	point.y = event->y;
 	self = LD_DIAGRAM_VIEW (widget);
 
+	if (self->priv->operation != OPER_0
+		&& self->priv->operation != OPER_ADD_OBJECT)
+		return TRUE;
+
 	ld_diagram_view_widget_to_diagram_coords (self,
 		event->x, event->y, &prev_x, &prev_y);
 

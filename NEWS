@@ -1,6 +1,7 @@
 Version TBD
  - Fixed checking for the shift key when selecting.
  - Terminals are ignored when hovering the cursor above a selection.
+ - Disallowed wheel zooming when holding mouse buttons.
 
 Version 0.1.2
  - Updated symbol library.

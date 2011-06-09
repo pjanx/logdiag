@@ -18,7 +18,7 @@ if (files)
 endif (files)
 
 # Packages
-set (pkg_list "bsdtar" "gtk" "opensuse" "mingw_lua")
+set (pkg_list "bsdtar" "gtk" "mingw_lua" "opensuse")
 
 set (pkg_bsdtar_root "http://sourceforge.net/projects/mingw/files/MinGW")
 set (pkg_bsdtar_urls
@@ -26,7 +26,7 @@ set (pkg_bsdtar_urls
 	"${pkg_bsdtar_root}/libarchive/libarchive-2.8.3-1/libarchive-2.8.3-1-mingw32-dll-2.tar.bz2"
 	"${pkg_bsdtar_root}/expat/expat-2.0.1-1/libexpat-2.0.1-1-mingw32-dll-1.tar.gz"
 	"${pkg_bsdtar_root}/xz/xz-4.999.9beta_20100401-1/liblzma-4.999.9beta_20100401-1-mingw32-dll-1.tar.bz2"
-	"${pkg_bsdtar_root}/bzip2/release%201.0.5-2/libbz2-1.0.5-2-mingw32-dll-2.tar.gz"
+	"${pkg_bsdtar_root}/bzip2/1.0.5-2/libbz2-1.0.5-2-mingw32-dll-2.tar.gz"
 	"${pkg_bsdtar_root}/zlib/zlib-1.2.3-1-mingw32/libz-1.2.3-1-mingw32-dll-1.tar.gz")
 set (pkg_bsdtar_md5
 	"160168b10075bf11a6405d43d98b1612"
@@ -56,15 +56,6 @@ set (pkg_gtk_md5
 	"b6f59b70eef0992df37f8db891d4b283"
 	"09baff956ebd1c391c7f71e9bd768edd")
 
-set (pkg_opensuse_root "http://download.opensuse.org/repositories/windows:/mingw:/win32/openSUSE_Factory/noarch")
-set (pkg_opensuse_urls
-	"${pkg_opensuse_root}/mingw32-libjson-glib-0.12.0-3.1.noarch.rpm"
-	"${pkg_opensuse_root}/mingw32-json-glib-devel-0.12.0-3.1.noarch.rpm")
-set (pkg_opensuse_strip "usr/i686-pc-mingw32/sys-root/mingw")
-set (pkg_opensuse_md5
-	"df41a913984b865a46d234ad59703c8c"
-	"13702ee3e22f79f42948ec5cbb6e23cb")
-
 set (pkg_mingw_lua_root "http://sourceforge.net/projects/mingw-cross/files/%5BLIB%5D%20Lua")
 set (pkg_mingw_lua_name "mingw32-lua-5.1.4-2")
 set (pkg_mingw_lua_urls
@@ -73,7 +64,39 @@ set (pkg_mingw_lua_strip ${pkg_mingw_lua_name})
 set (pkg_mingw_lua_md5
 	"7deb1f62a9631871e9b90c0419c2e2bb")
 
-# Stage 1: fetch missing packages
+set (pkg_opensuse_root "http://download.opensuse.org/repositories/windows:/mingw:/win32/openSUSE_11.4/noarch/")
+set (pkg_opensuse_listing "${working_dir}/opensuse-listing")
+set (pkg_opensuse_names
+	"mingw32-libjson-glib"
+	"mingw32-json-glib-devel")
+set (pkg_opensuse_strip "usr/i686-w64-mingw32/sys-root/mingw")
+
+# Stage 1: retrieve openSUSE package links
+message (STATUS "Downloading openSUSE package listing...")
+file (DOWNLOAD "${pkg_opensuse_root}"
+	"${pkg_opensuse_listing}" STATUS status)
+
+list (GET status 0 status_errno)
+list (GET status 1 status_msg)
+if (status_errno)
+	file (REMOVE ${pkg_opensuse_listing})
+	message (FATAL_ERROR "Download failed: ${status_msg}")
+endif (status_errno)
+
+file (READ "${pkg_opensuse_listing}" listing)
+file (REMOVE "${pkg_opensuse_listing}")
+
+foreach (name ${pkg_opensuse_names})
+	string (REGEX MATCH "href=\"(${name}[^\"]*\\.rpm)\"" filename "${listing}")
+	set (filename ${CMAKE_MATCH_1})
+	if (NOT filename)
+		message (FATAL_ERROR "Cannot find ${name} in the openSUSE repository")
+	endif (NOT filename)
+
+	list (APPEND pkg_opensuse_urls "${pkg_opensuse_root}${filename}")
+endforeach (name)
+
+# Stage 2: fetch missing packages
 foreach (pkg_set ${pkg_list})
 	set (pkg_md5 ${pkg_${pkg_set}_md5})
 
@@ -82,12 +105,13 @@ foreach (pkg_set ${pkg_list})
 		set (filename ${pkg_dir}/${basename})
 
 		if (NOT pkg_md5)
-			message (WARNING "Checksum missing for ${basename}")
+			message (WARNING "MD5 checksum missing for ${basename}")
+			set (pkg_md5_sum)
 			set (pkg_md5_param)
 		else (NOT pkg_md5)
-			list (GET pkg_md5 0 pkg_md5_param)
+			list (GET pkg_md5 0 pkg_md5_sum)
 			list (REMOVE_AT pkg_md5 0)
-			set (pkg_md5_param EXPECTED_MD5 ${pkg_md5_param})
+			set (pkg_md5_param EXPECTED_MD5 ${pkg_md5_sum})
 		endif (NOT pkg_md5)
 
 		if (NOT EXISTS ${filename})
@@ -100,6 +124,12 @@ foreach (pkg_set ${pkg_list})
 				file (REMOVE ${filename})
 				message (FATAL_ERROR "Download failed: ${status_msg}")
 			endif (status_errno)
+		elseif (pkg_md5_sum)
+			execute_process (COMMAND ${CMAKE_COMMAND} -E md5sum ${filename}
+				OUTPUT_VARIABLE output)
+			if (NOT output MATCHES "^${pkg_md5_sum}")
+				message (FATAL_ERROR "MD5 mismatch for ${basename}")
+			endif (NOT output MATCHES "^${pkg_md5_sum}")
 		endif (NOT EXISTS ${filename})
 	endforeach (url)
 endforeach (pkg_set)
@@ -108,7 +138,7 @@ if (NOT WIN32)
 	message (FATAL_ERROR "Must run on Windows to extract packages; aborting")
 endif (NOT WIN32)
 
-# Stage 2: setup bsdtar first (RPM support)
+# Stage 3: setup bsdtar first (RPM support)
 file (MAKE_DIRECTORY ${tmp_dir})
 foreach (url ${pkg_bsdtar_urls})
 	get_filename_component (filename ${url} NAME)
@@ -127,7 +157,7 @@ file (COPY ${tmp_dir}/bin/ DESTINATION ${bsdtar_dir})
 file (REMOVE_RECURSE ${tmp_dir})
 list (REMOVE_ITEM pkg_list "bsdtar")
 
-# Stage 3: extract the rest of packages
+# Stage 4: extract the rest of packages
 foreach (pkg_set ${pkg_list})
 	foreach (url ${pkg_${pkg_set}_urls})
 		get_filename_component (filename ${url} NAME)
@@ -154,7 +184,7 @@ foreach (pkg_set ${pkg_list})
 	endforeach (url)
 endforeach (pkg_set)
 
-# Stage 4: final touches
+# Stage 5: final touches
 file (WRITE ${working_dir}/etc/gtk-2.0/gtkrc
 	"gtk-theme-name = \"MS-Windows\"")
 

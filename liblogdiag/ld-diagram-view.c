@@ -61,11 +61,18 @@ typedef void (*OperationEnd) (LdDiagramView *self);
 enum
 {
 	OPER_0,
+	OPER_MOVE_VIEW,
 	OPER_ADD_OBJECT,
 	OPER_CONNECT,
 	OPER_SELECT,
 	OPER_MOVE_SELECTION
 };
+
+typedef struct
+{
+	LdPoint last_pos;
+}
+MoveViewData;
 
 typedef struct
 {
@@ -154,6 +161,7 @@ struct _LdDiagramViewPrivate
 	gint operation;
 	union
 	{
+		MoveViewData move_view;
 		AddObjectData add_object;
 		ConnectData connect;
 		SelectData select;
@@ -291,6 +299,10 @@ static gboolean get_connection_area (LdDiagramView *self,
 
 /* Operations. */
 static void ld_diagram_view_real_cancel_operation (LdDiagramView *self);
+
+static void oper_move_view_begin (LdDiagramView *self, const LdPoint *point);
+static void oper_move_view_motion (LdDiagramView *self, const LdPoint *point);
+
 static void oper_add_object_end (LdDiagramView *self);
 
 static void oper_connect_begin (LdDiagramView *self, const LdPoint *point);
@@ -319,6 +331,12 @@ static gboolean on_leave_notify (GtkWidget *widget, GdkEventCrossing *event,
 	gpointer user_data);
 static gboolean on_button_press (GtkWidget *widget, GdkEventButton *event,
 	gpointer user_data);
+static void on_left_button_press (LdDiagramView *self, GdkEventButton *event,
+	const LdPoint *point);
+static void on_middle_button_press (LdDiagramView *self, GdkEventButton *event,
+	const LdPoint *point);
+static void on_right_button_press (LdDiagramView *self, GdkEventButton *event,
+	const LdPoint *point);
 static gboolean on_button_release (GtkWidget *widget, GdkEventButton *event,
 	gpointer user_data);
 static gboolean on_scroll (GtkWidget *widget, GdkEventScroll *event,
@@ -1735,6 +1753,38 @@ ld_diagram_view_real_cancel_operation (LdDiagramView *self)
 	}
 }
 
+static void
+oper_move_view_begin (LdDiagramView *self, const LdPoint *point)
+{
+	MoveViewData *data;
+
+	g_signal_emit (self,
+		LD_DIAGRAM_VIEW_GET_CLASS (self)->cancel_operation_signal, 0);
+
+	self->priv->operation = OPER_MOVE_VIEW;
+	self->priv->operation_end = NULL;
+
+	data = &OPER_DATA (self, move_view);
+	data->last_pos = *point;
+}
+
+static void
+oper_move_view_motion (LdDiagramView *self, const LdPoint *point)
+{
+	MoveViewData *data;
+	gdouble factor;
+
+	data = &OPER_DATA (self, move_view);
+	factor = ld_diagram_view_get_scale_in_px (self);
+
+	ld_diagram_view_set_x (self, self->priv->x
+		+ (data->last_pos.x - point->x) / factor);
+	ld_diagram_view_set_y (self, self->priv->y
+		+ (data->last_pos.y - point->y) / factor);
+
+	data->last_pos = *point;
+}
+
 /**
  * ld_diagram_view_add_object_begin:
  * @self: an #LdDiagramView object.
@@ -2103,6 +2153,9 @@ on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 	self = LD_DIAGRAM_VIEW (widget);
 	switch (self->priv->operation)
 	{
+	case OPER_MOVE_VIEW:
+		oper_move_view_motion (self, &point);
+		break;
 	case OPER_ADD_OBJECT:
 		add_data = &OPER_DATA (self, add_object);
 		add_data->visible = TRUE;
@@ -2123,7 +2176,7 @@ on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 	case OPER_0:
 		if (event->state & GDK_BUTTON1_MASK
 			&& (event->x != self->priv->drag_start_pos.x
-			|| event->y != self->priv->drag_start_pos.y))
+				|| event->y != self->priv->drag_start_pos.y))
 		{
 			switch (self->priv->drag_operation)
 			{
@@ -2169,36 +2222,38 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
 	LdPoint point;
 	LdDiagramView *self;
-	AddObjectData *data;
-	LdDiagramObject *object_at_cursor;
-
-	point.x = event->x;
-	point.y = event->y;
 
 	self = LD_DIAGRAM_VIEW (widget);
 	if (!self->priv->diagram)
 		return FALSE;
 
-	if (event->button == 3)
-	{
-		switch (self->priv->operation)
-		{
-		case OPER_ADD_OBJECT:
-			data = &OPER_DATA (self, add_object);
-			rotate_symbol (self, LD_DIAGRAM_SYMBOL (data->object));
-			break;
-		case OPER_0:
-			object_at_cursor = get_object_at_point (self, &point);
-			if (object_at_cursor && LD_IS_DIAGRAM_SYMBOL (object_at_cursor))
-				rotate_symbol (self, LD_DIAGRAM_SYMBOL (object_at_cursor));
-			return FALSE;
-		}
-	}
+	point.x = event->x;
+	point.y = event->y;
 
-	if (event->button != 1)
-		return FALSE;
-	if (!gtk_widget_has_focus (widget))
-		gtk_widget_grab_focus (widget);
+	switch (event->button)
+	{
+	case 1:
+		on_left_button_press (self, event, &point);
+		break;
+	case 2:
+		on_middle_button_press (self, event, &point);
+		break;
+	case 3:
+		on_right_button_press (self, event, &point);
+		break;
+	}
+	return FALSE;
+}
+
+static void
+on_left_button_press (LdDiagramView *self, GdkEventButton *event,
+	const LdPoint *point)
+{
+	AddObjectData *data;
+	LdDiagramObject *object_at_cursor;
+
+	if (!gtk_widget_has_focus (GTK_WIDGET (self)))
+		gtk_widget_grab_focus (GTK_WIDGET (self));
 
 	self->priv->drag_operation = OPER_0;
 	switch (self->priv->operation)
@@ -2207,7 +2262,7 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 		data = &OPER_DATA (self, add_object);
 
 		queue_object_draw (self, data->object);
-		move_object_to_point (self, data->object, &point);
+		move_object_to_point (self, data->object, point);
 		ld_diagram_insert_object (self->priv->diagram, data->object, -1);
 
 		/* XXX: "cancel" causes confusion. */
@@ -2215,8 +2270,8 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 			LD_DIAGRAM_VIEW_GET_CLASS (self)->cancel_operation_signal, 0);
 		break;
 	case OPER_0:
-		self->priv->drag_start_pos = point;
-		object_at_cursor = get_object_at_point (self, &point);
+		self->priv->drag_start_pos = *point;
+		object_at_cursor = get_object_at_point (self, point);
 
 		if (self->priv->terminal_hovered
 			&& (!ld_diagram_get_selection (self->priv->diagram)
@@ -2245,7 +2300,35 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 		}
 		break;
 	}
-	return FALSE;
+}
+
+static void
+on_middle_button_press (LdDiagramView *self, GdkEventButton *event,
+	const LdPoint *point)
+{
+	if (self->priv->operation == OPER_0)
+		oper_move_view_begin (self, point);
+}
+
+static void
+on_right_button_press (LdDiagramView *self, GdkEventButton *event,
+	const LdPoint *point)
+{
+	AddObjectData *data;
+	LdDiagramObject *object_at_cursor;
+
+	switch (self->priv->operation)
+	{
+	case OPER_ADD_OBJECT:
+		data = &OPER_DATA (self, add_object);
+		rotate_symbol (self, LD_DIAGRAM_SYMBOL (data->object));
+		break;
+	case OPER_0:
+		object_at_cursor = get_object_at_point (self, point);
+		if (object_at_cursor && LD_IS_DIAGRAM_SYMBOL (object_at_cursor))
+			rotate_symbol (self, LD_DIAGRAM_SYMBOL (object_at_cursor));
+		break;
+	}
 }
 
 static gboolean
@@ -2255,14 +2338,22 @@ on_button_release (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 	LdDiagramView *self;
 	LdDiagramObject *object_at_cursor;
 
-	if (event->button != 1)
+	self = LD_DIAGRAM_VIEW (widget);
+	if (!self->priv->diagram)
 		return FALSE;
 
 	point.x = event->x;
 	point.y = event->y;
 
-	self = LD_DIAGRAM_VIEW (widget);
-	if (!self->priv->diagram)
+	if (event->button == 2
+		&& self->priv->operation == OPER_MOVE_VIEW)
+	{
+		g_signal_emit (self,
+			LD_DIAGRAM_VIEW_GET_CLASS (self)->cancel_operation_signal, 0);
+		return FALSE;
+	}
+
+	if (event->button != 1)
 		return FALSE;
 
 	switch (self->priv->operation)

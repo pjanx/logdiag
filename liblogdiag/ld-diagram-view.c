@@ -302,6 +302,7 @@ static void ld_diagram_view_real_cancel_operation (LdDiagramView *self);
 
 static void oper_move_view_begin (LdDiagramView *self, const LdPoint *point);
 static void oper_move_view_motion (LdDiagramView *self, const LdPoint *point);
+static void oper_move_view_end (LdDiagramView *self);
 
 static void oper_add_object_end (LdDiagramView *self);
 
@@ -1757,15 +1758,20 @@ static void
 oper_move_view_begin (LdDiagramView *self, const LdPoint *point)
 {
 	MoveViewData *data;
+	GdkCursor *move_cursor;
 
 	g_signal_emit (self,
 		LD_DIAGRAM_VIEW_GET_CLASS (self)->cancel_operation_signal, 0);
 
 	self->priv->operation = OPER_MOVE_VIEW;
-	self->priv->operation_end = NULL;
+	self->priv->operation_end = oper_move_view_end;
 
 	data = &OPER_DATA (self, move_view);
 	data->last_pos = *point;
+
+	move_cursor = gdk_cursor_new (GDK_FLEUR);
+	gdk_window_set_cursor (GTK_WIDGET (self)->window, move_cursor);
+	gdk_cursor_unref (move_cursor);
 }
 
 static void
@@ -1783,6 +1789,12 @@ oper_move_view_motion (LdDiagramView *self, const LdPoint *point)
 		+ (data->last_pos.y - point->y) / factor);
 
 	data->last_pos = *point;
+}
+
+static void
+oper_move_view_end (LdDiagramView *self)
+{
+	gdk_window_set_cursor (GTK_WIDGET (self)->window, NULL);
 }
 
 /**

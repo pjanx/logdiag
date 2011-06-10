@@ -1,5 +1,7 @@
 Version TBD
  - Added scrolling using the middle mouse button.
+ - Fixed command line parsing on Windows,
+   it's not limited to the system ANSI codepage anymore.
  - Fixed checking for the shift key when selecting.
  - Terminals are ignored when hovering the cursor above a selection.
  - Disallowed wheel zooming when holding mouse buttons.

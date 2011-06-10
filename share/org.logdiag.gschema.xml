@@ -1,0 +1,17 @@
+<schemalist>
+	<schema id="org.logdiag" path="/apps/logdiag/" gettext-domain="logdiag">
+		<key name="show-main-toolbar" type="b">
+			<default>true</default>
+			<summary>Whether to show the main toolbar</summary>
+		</key>
+		<key name="show-library-toolbar" type="b">
+			<default>true</default>
+			<summary>Whether to show the library toolbar</summary>
+		</key>
+		<key name="show-grid" type="b">
+			<default>true</default>
+			<summary>Whether to show the grid</summary>
+		</key>
+	</schema>
+</schemalist>
+

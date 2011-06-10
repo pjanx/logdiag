@@ -256,7 +256,40 @@ if (GTK_DOC_FOUND)
 		HTML ${project_DOC_DIR}/html)
 endif (GTK_DOC_FOUND)
 
+# GSettings
+find_program (GLIB_COMPILE_SCHEMAS_EXECUTABLE glib-compile-schemas)
+if (NOT GLIB_COMPILE_SCHEMAS_EXECUTABLE)
+	message (FATAL_ERROR "glib-compile-schemas not found")
+endif (NOT GLIB_COMPILE_SCHEMAS_EXECUTABLE)
+
+set (GSETTINGS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/share")
+set (GSETTINGS_SCHEMAS "${GSETTINGS_DIR}/org.logdiag.gschema.xml")
+
+add_custom_target (logdiag_gschema_check
+	COMMAND ${GLIB_COMPILE_SCHEMAS_EXECUTABLE} --dry-run "${GSETTINGS_DIR}"
+	DEPENDS "${GSETTINGS_SCHEMAS}"
+	COMMENT "Checking GSettings schema files" VERBATIM)
+
+if (OPTION_NOINSTALL)
+	set (GSETTINGS_COMPILED_SCHEMA "${CMAKE_CURRENT_BINARY_DIR}/gschemas.compiled")
+
+	add_custom_command (OUTPUT "${GSETTINGS_COMPILED_SCHEMA}"
+		COMMAND ${GLIB_COMPILE_SCHEMAS_EXECUTABLE}
+			"--targetdir=${CMAKE_CURRENT_BINARY_DIR}" "${GSETTINGS_DIR}"
+		DEPENDS "${GSETTINGS_SCHEMAS}"
+		COMMENT "Compiling GSettings schema files" VERBATIM)
+	add_custom_target (logdiag_gschema ALL DEPENDS "${GSETTINGS_COMPILED_SCHEMA}")
+endif (OPTION_NOINSTALL)
+
 # Installation
+install (FILES ${GSETTINGS_SCHEMAS}
+	DESTINATION share/glib-2.0/schemas)
+install (CODE " # DESTDIR is not in use on Windows
+	if (WIN32 OR \"\$ENV{DESTDIR}\" STREQUAL \"\")
+		execute_process (COMMAND ${GLIB_COMPILE_SCHEMAS_EXECUTABLE}
+			\"\${CMAKE_INSTALL_PREFIX}/share/glib-2.0/schemas\")
+	endif (WIN32 OR \"\$ENV{DESTDIR}\" STREQUAL \"\")")
+
 install (DIRECTORY share/gui share/library
 	DESTINATION share/${CMAKE_PROJECT_NAME})
 
@@ -266,7 +299,8 @@ if (WIN32)
 		${WIN32_DEPENDS_PATH}/bin/
 		DESTINATION .
 		FILES_MATCHING PATTERN "*.dll"
-		PATTERN "libgettext*" EXCLUDE)
+		PATTERN "libgettext*" EXCLUDE
+		PATTERN "libintl*" EXCLUDE)
 	install (DIRECTORY
 		${WIN32_DEPENDS_PATH}/etc/
 		DESTINATION etc)

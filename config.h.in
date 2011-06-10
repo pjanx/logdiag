@@ -15,6 +15,7 @@
 #if ${OPTION_NOINSTALL}
 	/* For developers. */
 	#define PROJECT_SHARE_DIR "${CMAKE_SOURCE_DIR}/share/"
+	#define PROJECT_GSETTINGS_DIR "${CMAKE_BINARY_DIR}"
 #elif defined (_WIN32)
 	#define PROJECT_SHARE_DIR "share/${PROJECT_NAME}/"
 #else

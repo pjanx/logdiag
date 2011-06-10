@@ -18,6 +18,7 @@
 
 struct _LdWindowMainPrivate
 {
+	GSettings *settings;
 	GtkUIManager *ui_manager;
 	GtkActionGroup *action_group;
 
@@ -353,6 +354,19 @@ ld_window_main_init (LdWindowMain *self)
 
 	/* Realize the window. */
 	gtk_widget_show_all (GTK_WIDGET (self));
+
+	/* Set up GSettings. */
+	priv->settings = g_settings_new ("org." PROJECT_NAME);
+
+	g_settings_bind (priv->settings, "show-main-toolbar",
+		gtk_action_group_get_action (priv->action_group,
+			"MainToolbar"), "active", G_SETTINGS_BIND_DEFAULT);
+	g_settings_bind (priv->settings, "show-library-toolbar",
+		gtk_action_group_get_action (priv->action_group,
+			"LibraryToolbar"), "active", G_SETTINGS_BIND_DEFAULT);
+	g_settings_bind (priv->settings, "show-grid",
+		gtk_action_group_get_action (priv->action_group,
+			"ShowGrid"), "active", G_SETTINGS_BIND_DEFAULT);
 }
 
 static void
@@ -369,6 +383,7 @@ ld_window_main_finalize (GObject *gobject)
 	g_object_unref (self->priv->diagram);
 	g_object_unref (self->priv->ui_manager);
 	g_object_unref (self->priv->action_group);
+	g_object_unref (self->priv->settings);
 
 	if (self->priv->filename)
 		g_free (self->priv->filename);

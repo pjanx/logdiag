@@ -67,8 +67,8 @@ set (pkg_mingw_lua_md5
 set (pkg_opensuse_root "http://download.opensuse.org/repositories/windows:/mingw:/win32/openSUSE_11.4/noarch/")
 set (pkg_opensuse_listing "${working_dir}/opensuse-listing")
 set (pkg_opensuse_names
-	"mingw32-libjson-glib"
-	"mingw32-json-glib-devel")
+	"mingw32-libjson-glib" "mingw32-json-glib-devel"
+	"mingw32-glib2-tools" "mingw32-libintl")
 set (pkg_opensuse_strip "usr/i686-w64-mingw32/sys-root/mingw")
 
 # Stage 1: retrieve openSUSE package links

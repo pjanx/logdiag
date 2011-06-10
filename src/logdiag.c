@@ -131,6 +131,15 @@ main (int argc, char *argv[])
 	}
 #endif
 
+#ifdef PROJECT_GSETTINGS_DIR
+	/* This is enabled when the build is set up for developing, so the
+	 * application can find it's schema. It might also find use when
+	 * installing the application into a location that's missing from
+	 * g_get_system_data_dirs(), for example /usr/local or ~/.local.
+	 */
+	g_setenv ("GSETTINGS_SCHEMA_DIR", PROJECT_GSETTINGS_DIR, 0);
+#endif /* PROJECT_GSETTINGS_DIR */
+
 	gtk_window_set_default_icon_name (PROJECT_NAME);
 
 	/* TODO: Be able to open multiple files. */

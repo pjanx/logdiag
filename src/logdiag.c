@@ -107,7 +107,7 @@ main (int argc, char *argv[])
 	textdomain (GETTEXT_DOMAIN);
 
 #ifdef _WIN32
-	/* Don't be limited by the ANSI codepage. */
+	/* Don't be unneccessarily limited by the system ANSI codepage. */
 	argv_overriden = get_utf8_args (&argc, &argv);
 	if (argv_overriden)
 		_putenv ("CHARSET=UTF-8");

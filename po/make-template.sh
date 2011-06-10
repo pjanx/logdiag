@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # This script makes a translation template
 # The reason for this not being inside CMakeLists.txt
 # is that the translator should not need to run

@@ -7,14 +7,18 @@ msgid ""
 msgstr ""
 "Project-Id-Version: logdiag\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-03-06 16:14+0100\n"
-"PO-Revision-Date: 2011-03-06 16:24+0100\n"
+"POT-Creation-Date: 2011-06-10 14:24+0200\n"
+"PO-Revision-Date: 2011-06-10 14:25+0100\n"
 "Last-Translator: Přemysl Janouch <p.janouch@gmail.com>\n"
 "Language-Team: Czech <cs@li.org>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+#: ../src/logdiag.c:117
+msgid "- Schematic editor"
+msgstr "- Editor schémat"
 
 #: ../src/ld-window-main.c:769
 msgid "Close _without Saving"
@@ -153,9 +157,9 @@ msgstr "Přiblíží diagram"
 msgid "Zoom out of the diagram"
 msgstr "Oddálí diagram"
 
-#: ../src/logdiag.c:42
-msgid "[FILE] - Schematic editor"
-msgstr "[SOUBOR] - Editor schémat"
+#: ../src/logdiag.c:86
+msgid "[FILE]"
+msgstr "[SOUBOR]"
 
 #: ../src/ld-window-main.c:173
 msgid "_About"

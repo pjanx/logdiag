@@ -19,6 +19,14 @@
 int
 main (int argc, char *argv[])
 {
+	gchar **files = NULL;
+	GOptionEntry option_entries[] =
+	{
+		{G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &files,
+			NULL, N_("[FILE]")},
+		{NULL}
+	};
+
 	GError *error;
 #ifdef _WIN32
 	gchar *install_dir;
@@ -38,8 +46,8 @@ main (int argc, char *argv[])
 	textdomain (GETTEXT_DOMAIN);
 
 	error = NULL;
-	gtk_init_with_args (&argc, &argv,
-		N_("[FILE] - Schematic editor"), NULL, GETTEXT_DOMAIN, &error);
+	gtk_init_with_args (&argc, &argv, N_("- Schematic editor"),
+		option_entries, GETTEXT_DOMAIN, &error);
 	if (error)
 	{
 		g_warning ("%s", error->message);
@@ -49,31 +57,14 @@ main (int argc, char *argv[])
 
 	gtk_window_set_default_icon_name (PROJECT_NAME);
 
-	/* TODO: Accept multiple files. */
-	if (argc < 2)
-		ld_window_main_new (NULL);
-	else
+	/* TODO: Be able to open multiple files. */
+	if (files)
 	{
-		gchar *arg_utf8, *arg_filename;
-
-		arg_utf8 = g_locale_to_utf8 (argv[1], -1, NULL, NULL, &error);
-		if (error)
-		{
-			g_warning ("%s", error->message);
-			g_error_free (error);
-			return 1;
-		}
-		arg_filename = g_filename_from_utf8 (arg_utf8, -1, NULL, NULL, &error);
-		if (error)
-		{
-			g_warning ("%s", error->message);
-			g_error_free (error);
-			return 1;
-		}
-		ld_window_main_new (arg_filename);
-		g_free (arg_filename);
-		g_free (arg_utf8);
+		ld_window_main_new (files[0]);
+		g_strfreev (files);
 	}
+	else
+		ld_window_main_new (NULL);
 
 	gtk_main ();
 	return 0;

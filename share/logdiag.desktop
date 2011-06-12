@@ -8,5 +8,6 @@ GenericName[pl]=Edytor schematów
 GenericName[de]=Schema Editor
 Icon=logdiag
 Exec=logdiag %f
+StartupNotify=true
 MimeType=application/x-logdiag-diagram;
 Categories=Graphics;VectorGraphics;Electricity;Engineering;GTK;

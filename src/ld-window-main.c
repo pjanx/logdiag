@@ -27,6 +27,7 @@ struct _LdWindowMainPrivate
 	GtkWidget *menu;
 	GtkWidget *toolbar;
 	GtkWidget *library_toolbar;
+	GtkWidget *library_pane;
 
 	LdLibrary *library;
 
@@ -271,6 +272,8 @@ ld_window_main_init (LdWindowMain *self)
 	gtk_toolbar_set_orientation (GTK_TOOLBAR (priv->library_toolbar),
 		GTK_ORIENTATION_VERTICAL);
 
+	priv->library_pane = ld_library_pane_new ();
+
 	priv->view = LD_DIAGRAM_VIEW (ld_diagram_view_new ());
 	priv->scrolled_window = gtk_scrolled_window_new (NULL, NULL);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (priv->scrolled_window),
@@ -289,6 +292,8 @@ ld_window_main_init (LdWindowMain *self)
 	gtk_box_pack_start (GTK_BOX (priv->hbox), priv->library_toolbar,
 		FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (priv->hbox), priv->scrolled_window,
+		TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (priv->hbox), priv->library_pane,
 		TRUE, TRUE, 0);
 
 	priv->vbox = gtk_vbox_new (FALSE, 0);
@@ -333,6 +338,9 @@ ld_window_main_init (LdWindowMain *self)
 		priv->library);
 	ld_library_toolbar_set_view (LD_LIBRARY_TOOLBAR (priv->library_toolbar),
 		priv->view);
+
+	ld_library_pane_set_library (LD_LIBRARY_PANE (priv->library_pane),
+		priv->library);
 
 	g_signal_connect_after (priv->library_toolbar, "symbol-selected",
 		G_CALLBACK (on_symbol_selected), self);

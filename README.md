@@ -43,7 +43,7 @@ Now you have two basic choices of installing the application:
        $ fakeroot cpack -G DEB
        # dpkg -i logdiag-0.0-Linux-x86_64.deb
 
-# Building from sources on Windows
+## Building from sources on Windows
 
 First install CMake 2.8 and MinGW. Add both to the system path.  
 If you want to build an installation package, also install NSIS.  

@@ -389,7 +389,7 @@ set (CPACK_RPM_PACKAGE_LICENSE "BSD")
 set (CPACK_RPM_PACKAGE_URL "${project_URL}")
 
 set (CPACK_SOURCE_GENERATOR "TGZ;ZIP")
-set (CPACK_SOURCE_IGNORE_FILES "/.git;/build;/win32-depends;/liblogdiag/ld-marshal.[ch]")
+set (CPACK_SOURCE_IGNORE_FILES "/\\\\.git;/build;/CMakeLists.txt.user;/win32-depends;/liblogdiag/ld-marshal.[ch]")
 set (CPACK_SOURCE_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${project_VERSION}")
 
 include (CPack)

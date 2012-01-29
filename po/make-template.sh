@@ -12,7 +12,7 @@ PACKAGE=$(sed -n '/^[ \t]*[pP][rR][oO][jJ][eE][cC][tT][ \t]*([ \t]*\([^ \t)]\{1,
 	../CMakeLists.txt)
 
 # Get the package version from CMakeLists.txt
-EXP_BEG='/^[ \t]*[sS][eE][tT][ \t]*([ \t]*'$PACKAGE'_VERSION_'
+EXP_BEG='/^[ \t]*[sS][eE][tT][ \t]*([ \t]*project_VERSION_'
 EXP_END='[ \t]\{1,\}"\{0,1\}\([^)"]\{1,\}\)"\{0,1\}).*/{s//\1/p;q}'
 
 MAJOR=$(sed -n "${EXP_BEG}MAJOR${EXP_END}" ../CMakeLists.txt)

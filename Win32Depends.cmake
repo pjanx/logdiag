@@ -20,13 +20,14 @@ endif (files)
 # Packages
 set (pkg_list "bsdtar" "gtk" "mingw_lua" "opensuse")
 
-set (pkg_bsdtar_root "http://sourceforge.net/projects/mingw/files/MinGW")
+# Can't use LZMA!
+set (pkg_bsdtar_root "http://sourceforge.net/projects/mingw/files/MinGW/Extension")
 set (pkg_bsdtar_urls
 	"${pkg_bsdtar_root}/libarchive/libarchive-2.8.3-1/bsdtar-2.8.3-1-mingw32-bin.tar.bz2"
 	"${pkg_bsdtar_root}/libarchive/libarchive-2.8.3-1/libarchive-2.8.3-1-mingw32-dll-2.tar.bz2"
 	"${pkg_bsdtar_root}/expat/expat-2.0.1-1/libexpat-2.0.1-1-mingw32-dll-1.tar.gz"
 	"${pkg_bsdtar_root}/xz/xz-4.999.9beta_20100401-1/liblzma-4.999.9beta_20100401-1-mingw32-dll-1.tar.bz2"
-	"${pkg_bsdtar_root}/bzip2/1.0.5-2/libbz2-1.0.5-2-mingw32-dll-2.tar.gz"
+	"${pkg_bsdtar_root}/bzip2/bzip2-1.0.5-2/libbz2-1.0.5-2-mingw32-dll-2.tar.gz"
 	"${pkg_bsdtar_root}/zlib/zlib-1.2.3-1-mingw32/libz-1.2.3-1-mingw32-dll-1.tar.gz")
 set (pkg_bsdtar_md5
 	"160168b10075bf11a6405d43d98b1612"
@@ -38,7 +39,7 @@ set (pkg_bsdtar_md5
 
 set (pkg_gtk_root "http://ftp.gnome.org/pub/gnome/binaries/win32")
 set (pkg_gtk_urls
-	"${pkg_gtk_root}/gtk+/2.22/gtk+-bundle_2.22.1-20101227_win32.zip"
+	"${pkg_gtk_root}/gtk+/2.24/gtk+-bundle_2.24.8-20111122_win32.zip"
 	"${pkg_gtk_root}/librsvg/2.32/librsvg_2.32.1-1_win32.zip"
 	"${pkg_gtk_root}/librsvg/2.32/librsvg-dev_2.32.1-1_win32.zip"
 	"${pkg_gtk_root}/librsvg/2.32/svg-gdk-pixbuf-loader_2.32.1-1_win32.zip"
@@ -47,7 +48,7 @@ set (pkg_gtk_urls
 	"${pkg_gtk_root}/dependencies/libxml2-dev_2.7.7-1_win32.zip"
 	"${pkg_gtk_root}/dependencies/gettext-tools-0.17.zip")
 set (pkg_gtk_md5
-	"a545c0ca1e6a312701d42a18e49572af"
+	"43fd6c159ca892c2f0739cc23a671e95"
 	"2c712a8d7a652363241c0967098515db"
 	"b09662bc99c5c1b8edb8af32a1722477"
 	"bf4e34f1f175b88430159d33e01d0c49"
@@ -67,8 +68,7 @@ set (pkg_mingw_lua_md5
 set (pkg_opensuse_root "http://download.opensuse.org/repositories/windows:/mingw:/win32/openSUSE_11.4/noarch/")
 set (pkg_opensuse_listing "${working_dir}/opensuse-listing")
 set (pkg_opensuse_names
-	"mingw32-libjson-glib" "mingw32-json-glib-devel"
-	"mingw32-glib2-tools" "mingw32-libintl")
+	"mingw32-libjson-glib" "mingw32-json-glib-devel" "mingw32-libintl")
 set (pkg_opensuse_strip "usr/i686-w64-mingw32/sys-root/mingw")
 
 # Stage 1: retrieve openSUSE package links

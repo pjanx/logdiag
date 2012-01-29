@@ -70,7 +70,7 @@ if (CONVERT_EXECUTABLE AND NOT WIN32)
 		set (icon_png_path ${icon_base}/${icon_size}/apps)
 		set (icon_png ${icon_png_path}/logdiag.png)
 		list (APPEND icon_png_list ${icon_png})
-		set (icon_symbolic logdiag_icons_${icon_size})
+		set (icon_symbolic ${CMAKE_PROJECT_NAME}_icons_${icon_size})
 		list (APPEND icon_symbolic_list ${icon_symbolic})
 
 		add_custom_command (OUTPUT ${icon_symbolic}
@@ -83,7 +83,8 @@ if (CONVERT_EXECUTABLE AND NOT WIN32)
 	endforeach (icon_size)
 
 	set (icon_ico ${CMAKE_CURRENT_SOURCE_DIR}/share/logdiag.ico)
-	add_custom_target (logdiag_icons DEPENDS ${icon_symbolic_list}
+	add_custom_target (${CMAKE_PROJECT_NAME}_icons
+		DEPENDS ${icon_symbolic_list}
 		COMMAND ${CONVERT_EXECUTABLE} ${icon_png_list} ${icon_ico}
 		COMMENT "Generating logdiag.ico" VERBATIM)
 endif (CONVERT_EXECUTABLE AND NOT WIN32)
@@ -265,7 +266,7 @@ endif (NOT GLIB_COMPILE_SCHEMAS_EXECUTABLE)
 set (GSETTINGS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/share")
 set (GSETTINGS_SCHEMAS "${GSETTINGS_DIR}/org.logdiag.gschema.xml")
 
-add_custom_target (logdiag_gschema_check
+add_custom_target (${CMAKE_PROJECT_NAME}_gschema_check
 	COMMAND ${GLIB_COMPILE_SCHEMAS_EXECUTABLE} --dry-run "${GSETTINGS_DIR}"
 	DEPENDS "${GSETTINGS_SCHEMAS}"
 	COMMENT "Checking GSettings schema files" VERBATIM)
@@ -278,7 +279,8 @@ if (OPTION_NOINSTALL)
 			"--targetdir=${CMAKE_CURRENT_BINARY_DIR}" "${GSETTINGS_DIR}"
 		DEPENDS "${GSETTINGS_SCHEMAS}"
 		COMMENT "Compiling GSettings schema files" VERBATIM)
-	add_custom_target (logdiag_gschema ALL DEPENDS "${GSETTINGS_COMPILED_SCHEMA}")
+	add_custom_target (${CMAKE_PROJECT_NAME}_gschema ALL
+		DEPENDS "${GSETTINGS_COMPILED_SCHEMA}")
 endif (OPTION_NOINSTALL)
 
 # Installation

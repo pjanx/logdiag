@@ -125,10 +125,7 @@ static void
 ld_library_toolbar_class_init (LdLibraryToolbarClass *klass)
 {
 	GObjectClass *object_class;
-	GtkWidgetClass *widget_class;
 	GParamSpec *pspec;
-
-	widget_class = GTK_WIDGET_CLASS (klass);
 
 	object_class = G_OBJECT_CLASS (klass);
 	object_class->get_property = ld_library_toolbar_get_property;

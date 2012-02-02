@@ -1997,9 +1997,7 @@ static void
 oper_select_queue_draw (LdDiagramView *self)
 {
 	LdRectangle rect;
-	SelectData *data;
 
-	data = &OPER_DATA (self, select);
 	oper_select_get_rectangle (self, &rect);
 	queue_draw (self, &rect);
 }

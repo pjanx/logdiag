@@ -216,12 +216,9 @@ static void
 ld_window_main_class_init (LdWindowMainClass *klass)
 {
 	GObjectClass *object_class;
-	GtkWidgetClass *widget_class;
 
 	object_class = G_OBJECT_CLASS (klass);
 	object_class->finalize = ld_window_main_finalize;
-
-	widget_class = GTK_WIDGET_CLASS (klass);
 
 	g_type_class_add_private (klass, sizeof (LdWindowMainPrivate));
 }

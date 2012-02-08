@@ -257,6 +257,10 @@ if (GTK_DOC_FOUND)
 		HTML ${project_DOC_DIR}/html)
 endif (GTK_DOC_FOUND)
 
+find_package (CppCheck)
+GENERATE_CPPCHECK (SOURCES liblogdiag src tests ENABLE_IDS all
+	TARGET_NAME ${CMAKE_PROJECT_NAME}_cppcheck INCLUDES ${CMAKE_CURRENT_BINARY_DIR})
+
 # GSettings
 find_program (GLIB_COMPILE_SCHEMAS_EXECUTABLE glib-compile-schemas)
 if (NOT GLIB_COMPILE_SCHEMAS_EXECUTABLE)

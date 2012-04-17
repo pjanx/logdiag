@@ -167,7 +167,7 @@ LoadCategoryData;
 static LdSymbolCategory *
 load_category (LdLibrary *self, const gchar *path, const gchar *name)
 {
-	LdSymbolCategory *cat;
+	LdSymbolCategory *cat = NULL;
 	gchar *icon_file, *category_file;
 	gchar *human_name;
 	LoadCategoryData data;
@@ -200,13 +200,10 @@ load_category (LdLibrary *self, const gchar *path, const gchar *name)
 
 	g_free (human_name);
 	g_free (category_file);
-	g_free (icon_file);
-	return cat;
-
 load_category_fail_2:
 	g_free (icon_file);
 load_category_fail_1:
-	return NULL;
+	return cat;
 }
 
 /*

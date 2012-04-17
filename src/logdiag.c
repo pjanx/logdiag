@@ -106,6 +106,15 @@ main (int argc, char *argv[])
 	bind_textdomain_codeset (GETTEXT_DOMAIN, "UTF-8");
 	textdomain (GETTEXT_DOMAIN);
 
+#ifdef PROJECT_GSETTINGS_DIR
+	/* This is enabled when the build is set up for developing, so that the
+	 * application can find its schema. It might also find use when
+	 * installing the application into a location that's missing from
+	 * g_get_system_data_dirs(), for example /usr/local or ~/.local.
+	 */
+	g_setenv ("GSETTINGS_SCHEMA_DIR", PROJECT_GSETTINGS_DIR, 0);
+#endif /* PROJECT_GSETTINGS_DIR */
+
 #ifdef _WIN32
 	/* Don't be unneccessarily limited by the system ANSI codepage. */
 	argv_overriden = get_utf8_args (&argc, &argv);
@@ -130,15 +139,6 @@ main (int argc, char *argv[])
 		g_strfreev (argv);
 	}
 #endif
-
-#ifdef PROJECT_GSETTINGS_DIR
-	/* This is enabled when the build is set up for developing, so the
-	 * application can find it's schema. It might also find use when
-	 * installing the application into a location that's missing from
-	 * g_get_system_data_dirs(), for example /usr/local or ~/.local.
-	 */
-	g_setenv ("GSETTINGS_SCHEMA_DIR", PROJECT_GSETTINGS_DIR, 0);
-#endif /* PROJECT_GSETTINGS_DIR */
 
 	gtk_window_set_default_icon_name (PROJECT_NAME);
 

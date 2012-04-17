@@ -98,7 +98,7 @@ ld_diagram_connection_get_property (GObject *object, guint property_id,
 
 	case PROP_POINTS:
 		points = ld_diagram_connection_get_points (self);
-		g_value_set_boxed_take_ownership (value, points);
+		g_value_take_boxed (value, points);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);

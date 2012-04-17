@@ -2392,11 +2392,8 @@ on_scroll (GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
 {
 	gdouble prev_x, prev_y;
 	gdouble new_x, new_y;
-	LdPoint point;
 	LdDiagramView *self;
 
-	point.x = event->x;
-	point.y = event->y;
 	self = LD_DIAGRAM_VIEW (widget);
 
 	if (self->priv->operation != OPER_0

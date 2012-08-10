@@ -23,11 +23,13 @@ struct _LdWindowMainPrivate
 	GtkActionGroup *action_group;
 
 	GtkWidget *vbox;
-	GtkWidget *hbox;
+	GtkWidget *paned;
 	GtkWidget *menu;
 	GtkWidget *toolbar;
-	GtkWidget *library_toolbar;
+
 	GtkWidget *library_pane;
+	GtkWidget *pane_window;
+	GtkWidget *pane_viewport;
 
 	LdLibrary *library;
 
@@ -85,13 +87,6 @@ static gboolean may_close_diagram (LdWindowMain *self,
 	const gchar *dialog_message);
 static gboolean may_quit (LdWindowMain *self);
 
-static void on_symbol_selected (LdLibraryToolbar *toolbar, LdSymbol *symbol,
-	const gchar *klass, LdWindowMain *self);
-static void on_symbol_deselected (LdLibraryToolbar *toolbar, LdSymbol *symbol,
-	const gchar *klass, LdWindowMain *self);
-static void on_symbol_chosen (LdLibraryToolbar *toolbar, LdSymbol *symbol,
-	const gchar *klass, LdWindowMain *self);
-
 static void on_action_new (GtkAction *action, LdWindowMain *self);
 static void on_action_open (GtkAction *action, LdWindowMain *self);
 static void on_action_save (GtkAction *action, LdWindowMain *self);
@@ -106,7 +101,7 @@ static void on_action_select_all (GtkAction *action, LdWindowMain *self);
 
 static void on_action_main_toolbar (GtkToggleAction *action,
 	LdWindowMain *self);
-static void on_action_library_toolbar (GtkToggleAction *action,
+static void on_action_library_pane (GtkToggleAction *action,
 	LdWindowMain *self);
 static void on_action_grid (GtkToggleAction *action, LdWindowMain *self);
 
@@ -183,9 +178,9 @@ static GtkToggleActionEntry wm_toggle_action_entries[] =
 	{"MainToolbar", NULL, N_("_Main Toolbar"), NULL,
 		N_("Toggle displaying of the main toolbar"),
 		G_CALLBACK (on_action_main_toolbar), TRUE},
-	{"LibraryToolbar", NULL, N_("_Library Toolbar"), NULL,
-		N_("Toggle displaying of the library toolbar"),
-		G_CALLBACK (on_action_library_toolbar), TRUE},
+	{"LibraryPane", NULL, N_("_Library Pane"), NULL,
+		N_("Toggle displaying of the library pane"),
+		G_CALLBACK (on_action_library_pane), TRUE},
 	{"ShowGrid", NULL, N_("Show _Grid"), NULL,
 		N_("Toggle displaying of the grid"),
 		G_CALLBACK (on_action_grid), TRUE}
@@ -267,11 +262,6 @@ ld_window_main_init (LdWindowMain *self)
 	priv->toolbar = gtk_ui_manager_get_widget (priv->ui_manager, "/Toolbar");
 
 	/* Create the remaining widgets. */
-	priv->library_toolbar = ld_library_toolbar_new ();
-	/* XXX: For GTK 2.16+, s/toolbar/orientable/ */
-	gtk_toolbar_set_orientation (GTK_TOOLBAR (priv->library_toolbar),
-		GTK_ORIENTATION_VERTICAL);
-
 	priv->library_pane = ld_library_pane_new ();
 
 	priv->view = LD_DIAGRAM_VIEW (ld_diagram_view_new ());
@@ -287,19 +277,27 @@ ld_window_main_init (LdWindowMain *self)
 	priv->statusbar_symbol_context_id = gtk_statusbar_get_context_id
 		(GTK_STATUSBAR (priv->statusbar), "symbol");
 
-	/* Pack all widgets into the window. */
-	priv->hbox = gtk_hbox_new (FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (priv->hbox), priv->library_toolbar,
-		FALSE, FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (priv->hbox), priv->scrolled_window,
-		TRUE, TRUE, 0);
-	gtk_box_pack_start (GTK_BOX (priv->hbox), priv->library_pane,
-		TRUE, TRUE, 0);
+	priv->pane_viewport = gtk_viewport_new (NULL, NULL);
+	gtk_viewport_set_shadow_type
+		(GTK_VIEWPORT (priv->pane_viewport), GTK_SHADOW_NONE);
+	gtk_container_add (GTK_CONTAINER (priv->pane_viewport), priv->library_pane);
 
+	priv->pane_window = gtk_scrolled_window_new (NULL, NULL);
+	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (priv->pane_window),
+		GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+	gtk_container_add (GTK_CONTAINER (priv->pane_window), priv->pane_viewport);
+
+	priv->paned = gtk_hpaned_new ();
+	gtk_paned_pack1 (GTK_PANED (priv->paned),
+		priv->pane_window, FALSE, FALSE);
+	gtk_paned_pack2 (GTK_PANED (priv->paned),
+		priv->scrolled_window, TRUE, TRUE);
+
+	/* Pack all widgets into the window. */
 	priv->vbox = gtk_vbox_new (FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (priv->vbox), priv->menu, FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (priv->vbox), priv->toolbar, FALSE, FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (priv->vbox), priv->hbox, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (priv->vbox), priv->paned, TRUE, TRUE, 0);
 	gtk_box_pack_end (GTK_BOX (priv->vbox), priv->statusbar, FALSE, FALSE, 0);
 
 	gtk_container_add (GTK_CONTAINER (self), priv->vbox);
@@ -334,20 +332,8 @@ ld_window_main_init (LdWindowMain *self)
 	g_signal_connect (priv->view, "notify::zoom",
 		G_CALLBACK (on_view_zoom_changed), self);
 
-	ld_library_toolbar_set_library (LD_LIBRARY_TOOLBAR (priv->library_toolbar),
-		priv->library);
-	ld_library_toolbar_set_view (LD_LIBRARY_TOOLBAR (priv->library_toolbar),
-		priv->view);
-
 	ld_library_pane_set_library (LD_LIBRARY_PANE (priv->library_pane),
 		priv->library);
-
-	g_signal_connect_after (priv->library_toolbar, "symbol-selected",
-		G_CALLBACK (on_symbol_selected), self);
-	g_signal_connect_after (priv->library_toolbar, "symbol-deselected",
-		G_CALLBACK (on_symbol_deselected), self);
-	g_signal_connect_after (priv->library_toolbar, "symbol-chosen",
-		G_CALLBACK (on_symbol_chosen), self);
 
 	diagram_set_filename (self, NULL);
 
@@ -367,9 +353,9 @@ ld_window_main_init (LdWindowMain *self)
 	g_settings_bind (priv->settings, "show-main-toolbar",
 		gtk_action_group_get_action (priv->action_group,
 			"MainToolbar"), "active", G_SETTINGS_BIND_DEFAULT);
-	g_settings_bind (priv->settings, "show-library-toolbar",
+	g_settings_bind (priv->settings, "show-library-pane",
 		gtk_action_group_get_action (priv->action_group,
-			"LibraryToolbar"), "active", G_SETTINGS_BIND_DEFAULT);
+			"LibraryPane"), "active", G_SETTINGS_BIND_DEFAULT);
 	g_settings_bind (priv->settings, "show-grid",
 		gtk_action_group_get_action (priv->action_group,
 			"ShowGrid"), "active", G_SETTINGS_BIND_DEFAULT);
@@ -838,38 +824,6 @@ may_quit (LdWindowMain *self)
 /* ===== User interface actions ============================================ */
 
 static void
-on_symbol_selected (LdLibraryToolbar *toolbar, LdSymbol *symbol,
-	const gchar *klass, LdWindowMain *self)
-{
-	const gchar *symbol_name;
-
-	symbol_name = ld_symbol_get_human_name (symbol);
-	gtk_statusbar_push (GTK_STATUSBAR (self->priv->statusbar),
-		self->priv->statusbar_menu_context_id, symbol_name);
-}
-
-static void
-on_symbol_deselected (LdLibraryToolbar *toolbar, LdSymbol *symbol,
-	const gchar *klass, LdWindowMain *self)
-{
-	gtk_statusbar_pop (GTK_STATUSBAR (self->priv->statusbar),
-		self->priv->statusbar_menu_context_id);
-}
-
-static void
-on_symbol_chosen (LdLibraryToolbar *toolbar, LdSymbol *symbol,
-	const gchar *klass, LdWindowMain *self)
-{
-	LdDiagramSymbol *diagram_symbol;
-
-	diagram_symbol = ld_diagram_symbol_new (NULL);
-	ld_diagram_symbol_set_class (diagram_symbol, klass);
-
-	ld_diagram_view_add_object_begin (self->priv->view,
-		LD_DIAGRAM_OBJECT (diagram_symbol));
-}
-
-static void
 on_view_zoom_changed (LdDiagramView *view, GParamSpec *pspec,
 	LdWindowMain *self)
 {
@@ -958,9 +912,9 @@ on_action_main_toolbar (GtkToggleAction *action, LdWindowMain *self)
 }
 
 static void
-on_action_library_toolbar (GtkToggleAction *action, LdWindowMain *self)
+on_action_library_pane (GtkToggleAction *action, LdWindowMain *self)
 {
-	gtk_widget_set_visible (self->priv->library_toolbar,
+	gtk_widget_set_visible (self->priv->pane_window,
 		gtk_toggle_action_get_active (action));
 }
 

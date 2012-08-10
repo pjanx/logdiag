@@ -27,7 +27,7 @@
 		</menu>
 		<menu name="ViewMenu" action="ViewMenu">
 			<menuitem action="MainToolbar" />
-			<menuitem action="LibraryToolbar" />
+			<menuitem action="LibraryPane" />
 			<separator />
 			<menuitem action="ShowGrid" />
 			<separator />

@@ -4,9 +4,9 @@
 			<default>true</default>
 			<summary>Whether to show the main toolbar</summary>
 		</key>
-		<key name="show-library-toolbar" type="b">
+		<key name="show-library-pane" type="b">
 			<default>true</default>
-			<summary>Whether to show the library toolbar</summary>
+			<summary>Whether to show the library pane</summary>
 		</key>
 		<key name="show-grid" type="b">
 			<default>true</default>

@@ -221,8 +221,12 @@ JsonObject *
 ld_diagram_object_get_storage (LdDiagramObject *self)
 {
 	g_return_val_if_fail (LD_IS_DIAGRAM_OBJECT (self), NULL);
+
 	if (!self->priv->storage)
+	{
 		self->priv->storage = json_object_new ();
+		g_object_notify (G_OBJECT (self), "storage");
+	}
 	return self->priv->storage;
 }
 
@@ -245,6 +249,8 @@ ld_diagram_object_set_storage (LdDiagramObject *self, JsonObject *storage)
 		self->priv->storage = json_object_ref (storage);
 	else
 		self->priv->storage = NULL;
+
+	g_object_notify (G_OBJECT (self), "storage");
 }
 
 /**

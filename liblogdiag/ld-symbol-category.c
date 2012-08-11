@@ -325,8 +325,11 @@ ld_symbol_category_remove_symbol (LdSymbolCategory *self,
 	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (self));
 	g_return_if_fail (LD_IS_SYMBOL (symbol));
 
-	g_object_unref (symbol);
-	self->priv->symbols = g_slist_remove (self->priv->symbols, symbol);
+	if (g_slist_find (self->priv->symbols, symbol))
+	{
+		self->priv->symbols = g_slist_remove (self->priv->symbols, symbol);
+		g_object_unref (symbol);
+	}
 }
 
 /**
@@ -378,9 +381,12 @@ ld_symbol_category_remove_subcategory (LdSymbolCategory *self,
 	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (self));
 	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (category));
 
-	g_object_unref (category);
-	self->priv->subcategories
-		= g_slist_remove (self->priv->subcategories, category);
+	if (g_slist_find (self->priv->subcategories, category))
+	{
+		self->priv->subcategories
+			= g_slist_remove (self->priv->subcategories, category);
+		g_object_unref (category);
+	}
 }
 
 /**

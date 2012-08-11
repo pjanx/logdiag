@@ -804,11 +804,18 @@ ld_diagram_end_user_action (LdDiagram *self)
 }
 
 static void
+action_finalize_notify_cb (ObjectActionData *data, LdDiagram *self)
+{
+	data->self = NULL;
+}
+
+static void
 on_object_action_remove (gpointer user_data)
 {
 	ObjectActionData *data;
 
 	data = user_data;
+	g_return_if_fail (data->self != NULL);
 	ld_diagram_remove_object (data->self, data->object);
 }
 
@@ -818,6 +825,7 @@ on_object_action_insert (gpointer user_data)
 	ObjectActionData *data;
 
 	data = user_data;
+	g_return_if_fail (data->self != NULL);
 	ld_diagram_insert_object (data->self, data->object, data->pos);
 }
 
@@ -827,7 +835,8 @@ on_object_action_destroy (gpointer user_data)
 	ObjectActionData *data;
 
 	data = user_data;
-	g_object_unref (data->self);
+	g_object_weak_unref (G_OBJECT (data->self),
+		(GWeakNotify) action_finalize_notify_cb, data);
 	g_object_unref (data->object);
 	g_slice_free (ObjectActionData, data);
 }
@@ -891,7 +900,9 @@ ld_diagram_insert_object (LdDiagram *self, LdDiagramObject *object, gint pos)
 	install_object (object, self);
 
 	action_data = g_slice_new (ObjectActionData);
-	action_data->self = g_object_ref (self);
+	action_data->self = self;
+	g_object_weak_ref (G_OBJECT (self),
+		(GWeakNotify) action_finalize_notify_cb, action_data);
 	action_data->object = g_object_ref (object);
 	action_data->pos = pos;
 
@@ -938,7 +949,9 @@ ld_diagram_remove_object (LdDiagram *self, LdDiagramObject *object)
 	uninstall_object (object, self);
 
 	action_data = g_slice_new (ObjectActionData);
-	action_data->self = g_object_ref (self);
+	action_data->self = self;
+	g_object_weak_ref (G_OBJECT (self),
+		(GWeakNotify) action_finalize_notify_cb, action_data);
 	action_data->object = g_object_ref (object);
 	action_data->pos = pos;
 

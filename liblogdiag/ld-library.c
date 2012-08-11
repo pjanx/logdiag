@@ -378,7 +378,10 @@ ld_library_load_cb (const gchar *base, const gchar *filename, gpointer userdata)
 
 	cat = load_category (data->self, filename, base);
 	if (cat)
+	{
 		ld_library_insert_category (data->self, cat, -1);
+		g_object_unref (cat);
+	}
 
 	data->changed = TRUE;
 	return TRUE;

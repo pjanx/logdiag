@@ -50,6 +50,8 @@ static gboolean foreach_dir (const gchar *path,
 	gpointer userdata, GError **error);
 static gboolean ld_library_load_cb
 	(const gchar *base, const gchar *filename, gpointer userdata);
+static void on_category_notify_name (LdSymbolCategory *category,
+	GParamSpec *pspec, gpointer user_data);
 
 
 G_DEFINE_TYPE (LdLibrary, ld_library, G_TYPE_OBJECT);
@@ -87,6 +89,14 @@ ld_library_init (LdLibrary *self)
 }
 
 static void
+uninstall_category_cb (LdSymbolCategory *category, LdLibrary *self)
+{
+	g_signal_handlers_disconnect_by_func (category,
+		on_category_notify_name, self);
+	g_object_unref (category);
+}
+
+static void
 ld_library_finalize (GObject *gobject)
 {
 	LdLibrary *self;
@@ -95,7 +105,7 @@ ld_library_finalize (GObject *gobject)
 
 	g_object_unref (self->priv->lua);
 
-	g_slist_foreach (self->priv->children, (GFunc) g_object_unref, NULL);
+	g_slist_foreach (self->priv->children, (GFunc) uninstall_category_cb, self);
 	g_slist_free (self->priv->children);
 
 	/* Chain up to the parent class. */
@@ -238,29 +248,12 @@ load_category_cb (const gchar *base, const gchar *filename, gpointer userdata)
 static void
 load_category_symbol_cb (LdSymbol *symbol, gpointer user_data)
 {
-	const gchar *name;
 	LdSymbolCategory *cat;
-	const GSList *symbols, *iter;
 
 	g_return_if_fail (LD_IS_SYMBOL (symbol));
 	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (user_data));
 
 	cat = LD_SYMBOL_CATEGORY (user_data);
-	name = ld_symbol_get_name (symbol);
-
-	/* Check for name collisions with other symbols. */
-	/* XXX: This check should probably be in _insert_symbol() and _category().
-	 *      And the warning should show the full path. */
-	symbols = ld_symbol_category_get_symbols (cat);
-	for (iter = symbols; iter; iter = iter->next)
-	{
-		if (!strcmp (name, ld_symbol_get_name (LD_SYMBOL (iter->data))))
-		{
-			g_warning ("attempted to insert multiple `%s' symbols into"
-				" category `%s'", name, ld_symbol_category_get_name (cat));
-			return;
-		}
-	}
 	ld_symbol_category_insert_symbol (cat, symbol, -1);
 }
 
@@ -473,12 +466,20 @@ ld_library_clear (LdLibrary *self)
 {
 	g_return_if_fail (LD_IS_LIBRARY (self));
 
-	g_slist_foreach (self->priv->children, (GFunc) g_object_unref, NULL);
+	g_slist_foreach (self->priv->children, (GFunc) uninstall_category_cb, self);
 	g_slist_free (self->priv->children);
 	self->priv->children = NULL;
 
 	g_signal_emit (self,
 		LD_LIBRARY_GET_CLASS (self)->changed_signal, 0);
+}
+
+static void
+on_category_notify_name (LdSymbolCategory *category,
+	GParamSpec *pspec, gpointer user_data)
+{
+	/* XXX: We could disown the category if a name collision has occured. */
+	g_warning ("name of a library category has changed");
 }
 
 /**
@@ -489,16 +490,36 @@ ld_library_clear (LdLibrary *self)
  *       Negative values will append to the end of list.
  *
  * Insert a child category into the library.
+ *
+ * Return value: %TRUE if successful (no name collisions).
  */
-void
+gboolean
 ld_library_insert_category (LdLibrary *self,
 	LdSymbolCategory *category, gint pos)
 {
-	g_return_if_fail (LD_IS_LIBRARY (self));
-	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (category));
+	const gchar *name;
+	const GSList *iter;
 
-	g_object_ref (category);
+	g_return_val_if_fail (LD_IS_LIBRARY (self), FALSE);
+	g_return_val_if_fail (LD_IS_SYMBOL_CATEGORY (category), FALSE);
+
+	/* Check for name collisions. */
+	name = ld_symbol_category_get_name (category);
+	for (iter = self->priv->children; iter; iter = iter->next)
+	{
+		if (!strcmp (name, ld_symbol_category_get_name (iter->data)))
+		{
+			g_warning ("attempted to insert multiple `%s' categories into"
+				" library", name);
+			return FALSE;
+		}
+	}
+
+	g_signal_connect (category, "notify::name",
+		G_CALLBACK (on_category_notify_name), self);
 	self->priv->children = g_slist_insert (self->priv->children, category, pos);
+	g_object_ref (category);
+	return TRUE;
 }
 
 /**
@@ -516,8 +537,10 @@ ld_library_remove_category (LdLibrary *self, LdSymbolCategory *category)
 
 	if (g_slist_find (self->priv->children, category))
 	{
-		g_object_unref (category);
+		g_signal_handlers_disconnect_by_func (category,
+			on_category_notify_name, self);
 		self->priv->children = g_slist_remove (self->priv->children, category);
+		g_object_unref (category);
 	}
 }
 

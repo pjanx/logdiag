@@ -50,6 +50,9 @@ static void ld_symbol_category_set_property (GObject *object, guint property_id,
 	const GValue *value, GParamSpec *pspec);
 static void ld_symbol_category_finalize (GObject *gobject);
 
+static void on_category_notify_name (LdSymbolCategory *category,
+	GParamSpec *pspec, gpointer user_data);
+
 
 G_DEFINE_TYPE (LdSymbolCategory, ld_symbol_category, G_TYPE_OBJECT);
 
@@ -151,6 +154,14 @@ ld_symbol_category_set_property (GObject *object, guint property_id,
 }
 
 static void
+uninstall_category_cb (LdSymbolCategory *category, LdSymbolCategory *self)
+{
+	g_signal_handlers_disconnect_by_func (category,
+		on_category_notify_name, self);
+	g_object_unref (category);
+}
+
+static void
 ld_symbol_category_finalize (GObject *gobject)
 {
 	LdSymbolCategory *self;
@@ -167,7 +178,8 @@ ld_symbol_category_finalize (GObject *gobject)
 	g_slist_foreach (self->priv->symbols, (GFunc) g_object_unref, NULL);
 	g_slist_free (self->priv->symbols);
 
-	g_slist_foreach (self->priv->subcategories, (GFunc) g_object_unref, NULL);
+	g_slist_foreach (self->priv->subcategories,
+		(GFunc) uninstall_category_cb, self);
 	g_slist_free (self->priv->subcategories);
 
 	/* Chain up to the parent class. */
@@ -298,17 +310,35 @@ ld_symbol_category_get_image_path (LdSymbolCategory *self)
  * @pos: the position at which the symbol will be inserted.
  *       Negative values will append to the end of list.
  *
- * Insert a symbol into the category.  Doesn't check for duplicates.
+ * Insert a symbol into the category.
+ *
+ * Return value: %TRUE if successful (no name collisions).
  */
-void
+gboolean
 ld_symbol_category_insert_symbol (LdSymbolCategory *self,
 	LdSymbol *symbol, gint pos)
 {
-	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (self));
-	g_return_if_fail (LD_IS_SYMBOL (symbol));
+	const gchar *name;
+	const GSList *iter;
 
-	g_object_ref (symbol);
+	g_return_val_if_fail (LD_IS_SYMBOL_CATEGORY (self), FALSE);
+	g_return_val_if_fail (LD_IS_SYMBOL (symbol), FALSE);
+
+	/* Check for name collisions. */
+	name = ld_symbol_get_name (symbol);
+	for (iter = self->priv->symbols; iter; iter = iter->next)
+	{
+		if (!strcmp (name, ld_symbol_get_name (iter->data)))
+		{
+			g_warning ("attempted to insert multiple `%s' symbols into"
+				" category `%s'", name, ld_symbol_category_get_name (self));
+			return FALSE;
+		}
+	}
+
 	self->priv->symbols = g_slist_insert (self->priv->symbols, symbol, pos);
+	g_object_ref (symbol);
+	return TRUE;
 }
 
 /**
@@ -346,6 +376,14 @@ ld_symbol_category_get_symbols (LdSymbolCategory *self)
 }
 
 
+static void
+on_category_notify_name (LdSymbolCategory *category,
+	GParamSpec *pspec, gpointer user_data)
+{
+	/* XXX: We could disown the category if a name collision has occured. */
+	g_warning ("name of a library subcategory has changed");
+}
+
 /**
  * ld_symbol_category_insert_subcategory:
  * @self: an #LdSymbolCategory object.
@@ -353,18 +391,38 @@ ld_symbol_category_get_symbols (LdSymbolCategory *self)
  * @pos: the position at which the category will be inserted.
  *       Negative values will append to the end of list.
  *
- * Insert a subcategory into the category.  Doesn't check for duplicates.
+ * Insert a subcategory into the category.
+ *
+ * Return value: %TRUE if successful (no name collisions).
  */
-void
+gboolean
 ld_symbol_category_insert_subcategory (LdSymbolCategory *self,
 	LdSymbolCategory *category, gint pos)
 {
-	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (self));
-	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (category));
+	const gchar *name;
+	const GSList *iter;
 
-	g_object_ref (category);
+	g_return_val_if_fail (LD_IS_SYMBOL_CATEGORY (self), FALSE);
+	g_return_val_if_fail (LD_IS_SYMBOL_CATEGORY (category), FALSE);
+
+	/* Check for name collisions. */
+	name = ld_symbol_category_get_name (category);
+	for (iter = self->priv->subcategories; iter; iter = iter->next)
+	{
+		if (!strcmp (name, ld_symbol_category_get_name (iter->data)))
+		{
+			g_warning ("attempted to insert multiple `%s' subcategories into"
+				" category `%s'", name, ld_symbol_category_get_name (self));
+			return FALSE;
+		}
+	}
+
+	g_signal_connect (category, "notify::name",
+		G_CALLBACK (on_category_notify_name), self);
 	self->priv->subcategories
 		= g_slist_insert (self->priv->subcategories, category, pos);
+	g_object_ref (category);
+	return TRUE;
 }
 
 /**
@@ -383,6 +441,8 @@ ld_symbol_category_remove_subcategory (LdSymbolCategory *self,
 
 	if (g_slist_find (self->priv->subcategories, category))
 	{
+		g_signal_handlers_disconnect_by_func (category,
+			on_category_notify_name, self);
 		self->priv->subcategories
 			= g_slist_remove (self->priv->subcategories, category);
 		g_object_unref (category);

@@ -66,13 +66,13 @@ void ld_symbol_category_set_image_path (LdSymbolCategory *self,
 	const gchar *image_path);
 const gchar *ld_symbol_category_get_image_path (LdSymbolCategory *self);
 
-void ld_symbol_category_insert_symbol (LdSymbolCategory *self,
+gboolean ld_symbol_category_insert_symbol (LdSymbolCategory *self,
 	LdSymbol *symbol, gint pos);
 void ld_symbol_category_remove_symbol (LdSymbolCategory *self,
 	LdSymbol *symbol);
 const GSList *ld_symbol_category_get_symbols (LdSymbolCategory *self);
 
-void ld_symbol_category_insert_subcategory (LdSymbolCategory *self,
+gboolean ld_symbol_category_insert_subcategory (LdSymbolCategory *self,
 	LdSymbolCategory *category, gint pos);
 void ld_symbol_category_remove_subcategory (LdSymbolCategory *self,
 	LdSymbolCategory *category);

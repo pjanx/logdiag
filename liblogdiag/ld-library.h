@@ -62,7 +62,8 @@ gboolean ld_library_load (LdLibrary *self, const gchar *directory);
 LdSymbol *ld_library_find_symbol (LdLibrary *self, const gchar *identifier);
 void ld_library_clear (LdLibrary *self);
 
-void ld_library_insert_category (LdLibrary *self,
+/* FIXME: This duplicates a part of LdSymbolCategory. */
+gboolean ld_library_insert_category (LdLibrary *self,
 	LdSymbolCategory *category, gint pos);
 void ld_library_remove_category (LdLibrary *self,
 	LdSymbolCategory *category);

@@ -2,7 +2,7 @@
  * ld-library.c
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010 - 2011. All rights reserved.
+ * Copyright Přemysl Janouch 2010, 2011, 2012. All rights reserved.
  *
  * See the file LICENSE for licensing information.
  *
@@ -19,13 +19,15 @@
  * @short_description: A symbol library
  * @see_also: #LdSymbol, #LdSymbolCategory
  *
- * #LdLibrary is used for loading symbols from their files.
+ * #LdLibrary is used for loading symbols from their files.  The library object
+ * itself is a container for categories, which in turn contain other
+ * subcategories and the actual symbols.
  */
 
 /*
  * LdLibraryPrivate:
  * @lua: state of the scripting language.
- * @children: child objects of the library.
+ * @children: categories in the library.
  */
 struct _LdLibraryPrivate
 {
@@ -238,7 +240,7 @@ load_category_symbol_cb (LdSymbol *symbol, gpointer user_data)
 {
 	const gchar *name;
 	LdSymbolCategory *cat;
-	const GSList *children, *iter;
+	const GSList *symbols, *iter;
 
 	g_return_if_fail (LD_IS_SYMBOL (symbol));
 	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (user_data));
@@ -247,11 +249,11 @@ load_category_symbol_cb (LdSymbol *symbol, gpointer user_data)
 	name = ld_symbol_get_name (symbol);
 
 	/* Check for name collisions with other symbols. */
-	children = ld_symbol_category_get_children (cat);
-	for (iter = children; iter; iter = iter->next)
+	/* XXX: This check should probably be in _insert_symbol() and _category().
+	 *      And the warning should show the full path. */
+	symbols = ld_symbol_category_get_symbols (cat);
+	for (iter = symbols; iter; iter = iter->next)
 	{
-		if (!LD_IS_SYMBOL (iter->data))
-			continue;
 		if (!strcmp (name, ld_symbol_get_name (LD_SYMBOL (iter->data))))
 		{
 			g_warning ("attempted to insert multiple `%s' symbols into"
@@ -259,7 +261,7 @@ load_category_symbol_cb (LdSymbol *symbol, gpointer user_data)
 			return;
 		}
 	}
-	ld_symbol_category_insert_child (cat, G_OBJECT (symbol), -1);
+	ld_symbol_category_insert_symbol (cat, symbol, -1);
 }
 
 /*
@@ -376,7 +378,7 @@ ld_library_load_cb (const gchar *base, const gchar *filename, gpointer userdata)
 
 	cat = load_category (data->self, filename, base);
 	if (cat)
-		ld_library_insert_child (data->self, G_OBJECT (cat), -1);
+		ld_library_insert_category (data->self, cat, -1);
 
 	data->changed = TRUE;
 	return TRUE;
@@ -391,7 +393,6 @@ ld_library_load_cb (const gchar *base, const gchar *filename, gpointer userdata)
  *
  * Return value: a symbol object if found, %NULL otherwise.
  */
-/* XXX: With this level of indentation, this function is really ugly. */
 LdSymbol *
 ld_library_find_symbol (LdLibrary *self, const gchar *identifier)
 {
@@ -405,45 +406,55 @@ ld_library_find_symbol (LdLibrary *self, const gchar *identifier)
 	if (!id_el_start)
 		return NULL;
 
-	list = ld_library_get_children (self);
-	for (id_el = id_el_start; id_el[0]; id_el++)
+	id_el = id_el_start;
+	list = self->priv->children;
+
+	/* We need at least one category name plus the symbol name. */
+	if (!id_el[0] || !id_el[1])
+		goto ld_library_find_symbol_error;
+
+	/* Find the category where the symbol is in. */
+	while (1)
 	{
-		LdSymbolCategory *cat;
-		LdSymbol *symbol;
 		gboolean found = FALSE;
+		LdSymbolCategory *cat;
 
 		for (list_el = list; list_el; list_el = g_slist_next (list_el))
 		{
-			/* If the current identifier element is a category (not last)
-			 * and this list element is a category.
-			 */
-			if (id_el[1] && LD_IS_SYMBOL_CATEGORY (list_el->data))
+			cat = LD_SYMBOL_CATEGORY (list_el->data);
+			if (!strcmp (*id_el, ld_symbol_category_get_name (cat)))
 			{
-				cat = LD_SYMBOL_CATEGORY (list_el->data);
-				if (strcmp (id_el[0], ld_symbol_category_get_name (cat)))
-					continue;
-
-				list = ld_symbol_category_get_children (cat);
 				found = TRUE;
 				break;
-			}
-			/* If the current identifier element is a symbol (last)
-			 * and this list element is a symbol.
-			 */
-			else if (!id_el[1] && LD_IS_SYMBOL (list_el->data))
-			{
-				symbol = LD_SYMBOL (list_el->data);
-				if (strcmp (id_el[0], ld_symbol_get_name (symbol)))
-					continue;
-
-				g_strfreev (id_el_start);
-				return symbol;
 			}
 		}
 
 		if (!found)
+			goto ld_library_find_symbol_error;
+
+		if (!(id_el++)[2])
+		{
+			list = ld_symbol_category_get_symbols (cat);
 			break;
+		}
+
+		list = ld_symbol_category_get_subcategories (cat);
 	}
+
+	/* And then the actual symbol. */
+	for (list_el = list; list_el; list_el = g_slist_next (list_el))
+	{
+		LdSymbol *symbol;
+
+		symbol = LD_SYMBOL (list_el->data);
+		if (!strcmp (*id_el, ld_symbol_get_name (symbol)))
+		{
+			g_strfreev (id_el_start);
+			return symbol;
+		}
+	}
+
+ld_library_find_symbol_error:
 	g_strfreev (id_el_start);
 	return NULL;
 }
@@ -468,52 +479,54 @@ ld_library_clear (LdLibrary *self)
 }
 
 /**
- * ld_library_insert_child:
+ * ld_library_insert_category:
  * @self: an #LdLibrary object.
- * @child: the child to be inserted.
- * @pos: the position at which the child will be inserted.
+ * @category: the category to be inserted.
+ * @pos: the position at which the category will be inserted.
  *       Negative values will append to the end of list.
  *
- * Insert a child into the library.
+ * Insert a child category into the library.
  */
 void
-ld_library_insert_child (LdLibrary *self, GObject *child, gint pos)
+ld_library_insert_category (LdLibrary *self,
+	LdSymbolCategory *category, gint pos)
 {
 	g_return_if_fail (LD_IS_LIBRARY (self));
-	g_return_if_fail (G_IS_OBJECT (child));
+	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (category));
 
-	g_object_ref (child);
-	self->priv->children = g_slist_insert (self->priv->children, child, pos);
+	g_object_ref (category);
+	self->priv->children = g_slist_insert (self->priv->children, category, pos);
 }
 
 /**
- * ld_library_remove_child:
+ * ld_library_remove_category:
  * @self: an #LdLibrary object.
- * @child: the child to be removed.
+ * @category: the category to be removed.
  *
- * Remove a child from the library.
+ * Remove a child category from the library.
  */
 void
-ld_library_remove_child (LdLibrary *self, GObject *child)
+ld_library_remove_category (LdLibrary *self, LdSymbolCategory *category)
 {
 	g_return_if_fail (LD_IS_LIBRARY (self));
-	g_return_if_fail (G_IS_OBJECT (child));
+	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (category));
 
-	if (g_slist_find (self->priv->children, child))
+	if (g_slist_find (self->priv->children, category))
 	{
-		g_object_unref (child);
-		self->priv->children = g_slist_remove (self->priv->children, child);
+		g_object_unref (category);
+		self->priv->children = g_slist_remove (self->priv->children, category);
 	}
 }
 
 /**
- * ld_library_get_children:
+ * ld_library_get_categories:
  * @self: an #LdLibrary object.
  *
- * Return value: (element-type GObject): a list of children. Do not modify.
+ * Return value: (element-type LdSymbolCategory *):
+ *               a list of child categories. Do not modify.
  */
 const GSList *
-ld_library_get_children (LdLibrary *self)
+ld_library_get_categories (LdLibrary *self)
 {
 	g_return_val_if_fail (LD_IS_LIBRARY (self), NULL);
 	return self->priv->children;

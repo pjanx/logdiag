@@ -2,7 +2,7 @@
  * ld-library.h
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010. All rights reserved.
+ * Copyright Přemysl Janouch 2010, 2012. All rights reserved.
  *
  * See the file LICENSE for licensing information.
  *
@@ -62,9 +62,11 @@ gboolean ld_library_load (LdLibrary *self, const gchar *directory);
 LdSymbol *ld_library_find_symbol (LdLibrary *self, const gchar *identifier);
 void ld_library_clear (LdLibrary *self);
 
-void ld_library_insert_child (LdLibrary *self, GObject *child, gint pos);
-void ld_library_remove_child (LdLibrary *self, GObject *child);
-const GSList *ld_library_get_children (LdLibrary *self);
+void ld_library_insert_category (LdLibrary *self,
+	LdSymbolCategory *category, gint pos);
+void ld_library_remove_category (LdLibrary *self,
+	LdSymbolCategory *category);
+const GSList *ld_library_get_categories (LdLibrary *self);
 
 
 G_END_DECLS

@@ -24,14 +24,16 @@
  * LdSymbolCategoryPrivate:
  * @name: the name of this category.
  * @image_path: path to the image for this category.
- * @children: children of this category.
+ * @symbols: (element-type LdSymbol *): symbols in this category.
+ * @subcategories: (element-type LdSymbolCategory *) children of this category.
  */
 struct _LdSymbolCategoryPrivate
 {
 	gchar *name;
 	gchar *human_name;
 	gchar *image_path;
-	GSList *children;
+	GSList *symbols;
+	GSList *subcategories;
 };
 
 enum
@@ -162,8 +164,11 @@ ld_symbol_category_finalize (GObject *gobject)
 	if (self->priv->image_path)
 		g_free (self->priv->image_path);
 
-	g_slist_foreach (self->priv->children, (GFunc) g_object_unref, NULL);
-	g_slist_free (self->priv->children);
+	g_slist_foreach (self->priv->symbols, (GFunc) g_object_unref, NULL);
+	g_slist_free (self->priv->symbols);
+
+	g_slist_foreach (self->priv->subcategories, (GFunc) g_object_unref, NULL);
+	g_slist_free (self->priv->subcategories);
 
 	/* Chain up to the parent class. */
 	G_OBJECT_CLASS (ld_symbol_category_parent_class)->finalize (gobject);
@@ -287,53 +292,108 @@ ld_symbol_category_get_image_path (LdSymbolCategory *self)
 }
 
 /**
- * ld_symbol_category_insert_child:
+ * ld_symbol_category_insert_symbol:
  * @self: an #LdSymbolCategory object.
- * @child: the child to be inserted.
- * @pos: the position at which the child will be inserted.
+ * @symbol: the symbol to be inserted.
+ * @pos: the position at which the symbol will be inserted.
  *       Negative values will append to the end of list.
  *
- * Insert a child into the category.
+ * Insert a symbol into the category.  Doesn't check for duplicates.
  */
 void
-ld_symbol_category_insert_child (LdSymbolCategory *self,
-	GObject *child, gint pos)
+ld_symbol_category_insert_symbol (LdSymbolCategory *self,
+	LdSymbol *symbol, gint pos)
 {
 	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (self));
-	g_return_if_fail (G_IS_OBJECT (child));
+	g_return_if_fail (LD_IS_SYMBOL (symbol));
 
-	g_object_ref (child);
-	self->priv->children = g_slist_insert (self->priv->children, child, pos);
+	g_object_ref (symbol);
+	self->priv->symbols = g_slist_insert (self->priv->symbols, symbol, pos);
 }
 
 /**
- * ld_symbol_category_remove_child:
+ * ld_symbol_category_remove_symbol:
  * @self: an #LdSymbolCategory object.
- * @child: the child to be removed.
+ * @symbol: the symbol to be removed.
  *
- * Removes a child from the category.
+ * Removes a symbol from the category.
  */
 void
-ld_symbol_category_remove_child (LdSymbolCategory *self,
-	GObject *child)
+ld_symbol_category_remove_symbol (LdSymbolCategory *self,
+	LdSymbol *symbol)
 {
 	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (self));
-	g_return_if_fail (G_IS_OBJECT (child));
+	g_return_if_fail (LD_IS_SYMBOL (symbol));
 
-	g_object_unref (child);
-	self->priv->children = g_slist_remove (self->priv->children, child);
+	g_object_unref (symbol);
+	self->priv->symbols = g_slist_remove (self->priv->symbols, symbol);
 }
 
 /**
- * ld_symbol_category_get_children:
+ * ld_symbol_category_get_symbols:
  * @self: an #LdSymbolCategory object.
  *
- * Return value: (element-type GObject): a list of children. Do not modify.
+ * Return value: (element-type LdSymbol *): a list of symbols.  Do not modify.
  */
 const GSList *
-ld_symbol_category_get_children (LdSymbolCategory *self)
+ld_symbol_category_get_symbols (LdSymbolCategory *self)
 {
 	g_return_val_if_fail (LD_IS_SYMBOL_CATEGORY (self), NULL);
-	return self->priv->children;
+	return self->priv->symbols;
+}
+
+
+/**
+ * ld_symbol_category_insert_subcategory:
+ * @self: an #LdSymbolCategory object.
+ * @category: the category to be inserted.
+ * @pos: the position at which the category will be inserted.
+ *       Negative values will append to the end of list.
+ *
+ * Insert a subcategory into the category.  Doesn't check for duplicates.
+ */
+void
+ld_symbol_category_insert_subcategory (LdSymbolCategory *self,
+	LdSymbolCategory *category, gint pos)
+{
+	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (self));
+	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (category));
+
+	g_object_ref (category);
+	self->priv->subcategories
+		= g_slist_insert (self->priv->subcategories, category, pos);
+}
+
+/**
+ * ld_symbol_category_remove_subcategory:
+ * @self: an #LdSymbolCategory object.
+ * @category: the category to be removed.
+ *
+ * Removes a subcategory from the category.
+ */
+void
+ld_symbol_category_remove_subcategory (LdSymbolCategory *self,
+	LdSymbolCategory *category)
+{
+	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (self));
+	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (category));
+
+	g_object_unref (category);
+	self->priv->subcategories
+		= g_slist_remove (self->priv->subcategories, category);
+}
+
+/**
+ * ld_symbol_category_get_subcategories:
+ * @self: an #LdSymbolCategory object.
+ *
+ * Return value: (element-type LdSymbolCategory *):
+ *               a list of subcategories.  Do not modify.
+ */
+const GSList *
+ld_symbol_category_get_subcategories (LdSymbolCategory *self)
+{
+	g_return_val_if_fail (LD_IS_SYMBOL_CATEGORY (self), NULL);
+	return self->priv->subcategories;
 }
 

@@ -391,7 +391,7 @@ reload_library (LdLibraryToolbar *self)
 	{
 		GSList *categories;
 
-		categories = (GSList *) ld_library_get_children (self->priv->library);
+		categories = (GSList *) ld_library_get_categories (self->priv->library);
 		g_slist_foreach (categories, load_category_cb, self);
 	}
 }
@@ -560,7 +560,7 @@ on_category_toggle (GtkToggleButton *toggle_button, gpointer user_data)
 	}
 	else
 	{
-		const GSList *children, *symbol_iter;
+		const GSList *symbols, *symbol_iter;
 		SymbolMenuItem *item;
 		gint x, y, menu_width;
 
@@ -576,15 +576,15 @@ on_category_toggle (GtkToggleButton *toggle_button, gpointer user_data)
 		g_object_ref (data->active_button);
 
 		category_name = ld_symbol_category_get_name (cat);
-		children = ld_symbol_category_get_children (cat);
+		symbols = ld_symbol_category_get_symbols (cat);
 
-		data->n_items = g_slist_length ((GSList *) children);
+		data->n_items = g_slist_length ((GSList *) symbols);
 		data->items = g_new (SymbolMenuItem, data->n_items);
 		data->active_item = -1;
 
 		item = data->items;
 		menu_width = 0;
-		for (symbol_iter = children; symbol_iter;
+		for (symbol_iter = symbols; symbol_iter;
 			symbol_iter = symbol_iter->next)
 		{
 			LdRectangle area;

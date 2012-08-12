@@ -27,47 +27,47 @@ local terminals_p = {{-2, -1}, {2, 1}, {2, -1}}
 -- Rendering
 local render = function (cr)
 	-- The terminals
-	cr.move_to (0, 1)
-	cr.line_to (2, 1)
+	cr:move_to (0, 1)
+	cr:line_to (2, 1)
 
-	cr.move_to (0, -1)
-	cr.line_to (2, -1)
+	cr:move_to (0, -1)
+	cr:line_to (2, -1)
 
 	-- The ohmic connection
-	cr.move_to (0, -1.5)
-	cr.line_to (0, 1.5)
+	cr:move_to (0, -1.5)
+	cr:line_to (0, 1.5)
 
-	cr.stroke ()
+	cr:stroke ()
 end
 
 local render_n = function (cr)
 	render (cr)
 
 	-- The left-side terminal
-	cr.move_to (-2, 1)
-	cr.line_to (0, 1)
+	cr:move_to (-2, 1)
+	cr:line_to (0, 1)
 
 	-- The arrow
-	cr.move_to (-1, 0.6)
-	cr.line_to (-0.5, 1)
-	cr.line_to (-1, 1.4)
+	cr:move_to (-1, 0.6)
+	cr:line_to (-0.5, 1)
+	cr:line_to (-1, 1.4)
 
-	cr.stroke ()
+	cr:stroke ()
 end
 
 local render_p = function (cr)
 	render (cr)
 
 	-- The left-side terminal
-	cr.move_to (-2, -1)
-	cr.line_to (0, -1)
+	cr:move_to (-2, -1)
+	cr:line_to (0, -1)
 
 	-- The arrow
-	cr.move_to (-0.4, -0.6)
-	cr.line_to (-1, -1)
-	cr.line_to (-0.4, -1.4)
+	cr:move_to (-0.4, -0.6)
+	cr:line_to (-1, -1)
+	cr:line_to (-0.4, -1.4)
 
-	cr.stroke ()
+	cr:stroke ()
 end
 
 -- Register the symbols

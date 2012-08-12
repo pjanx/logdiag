@@ -2,7 +2,7 @@
  * ld-lua.c
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010 - 2011. All rights reserved.
+ * Copyright Přemysl Janouch 2010, 2011, 2012. All rights reserved.
  *
  * See the file LICENSE for licensing information.
  *
@@ -44,9 +44,10 @@ struct _LdLuaPrivate
  *   -> The rendering function
  */
 
-#define LD_LUA_LIBRARY_NAME "logdiag"
-#define LD_LUA_DATA_INDEX LD_LUA_LIBRARY_NAME "_data"
-#define LD_LUA_SYMBOLS_INDEX LD_LUA_LIBRARY_NAME "_symbols"
+#define LD_LUA_LIBRARY_NAME   "logdiag"
+#define LD_LUA_DATA_INDEX     LD_LUA_LIBRARY_NAME "_data"
+#define LD_LUA_SYMBOLS_INDEX  LD_LUA_LIBRARY_NAME "_symbols"
+#define LD_LUA_META_INDEX     LD_LUA_LIBRARY_NAME "_meta"
 
 /*
  * LdLuaData:
@@ -88,7 +89,6 @@ static gboolean read_symbol_area (lua_State *L, int index, LdRectangle *area);
 static gboolean read_terminals (lua_State *L, int index,
 	LdPointArray **terminals);
 
-static void push_cairo_object (lua_State *L, LdLuaDrawData *draw_data);
 static gdouble get_cairo_scale (cairo_t *cr);
 static int ld_lua_cairo_save (lua_State *L);
 static int ld_lua_cairo_restore (lua_State *L);
@@ -164,6 +164,24 @@ ld_lua_class_init (LdLuaClass *klass)
 }
 
 static void
+push_cairo_metatable (lua_State *L)
+{
+	luaL_Reg *fn;
+
+	luaL_newmetatable (L, LD_LUA_META_INDEX);
+
+	/* Create a method table. */
+	lua_newtable (L);
+	for (fn = ld_lua_cairo_table; fn->name; fn++)
+	{
+		lua_pushcfunction (L, fn->func);
+		lua_setfield (L, -2, fn->name);
+	}
+
+	lua_setfield (L, -2, "__index");
+}
+
+static void
 ld_lua_init (LdLua *self)
 {
 	lua_State *L;
@@ -175,7 +193,7 @@ ld_lua_init (LdLua *self)
 	L = self->priv->L = lua_newstate (ld_lua_alloc, NULL);
 	g_return_if_fail (L != NULL);
 
-	/* TODO: lua_atpanic () */
+	/* XXX: Might not be a bad idea to use lua_atpanic(). */
 
 	/* Load some safe libraries. */
 	lua_pushcfunction (L, luaopen_string);
@@ -191,7 +209,7 @@ ld_lua_init (LdLua *self)
 	luaL_register (L, LD_LUA_LIBRARY_NAME, ld_lua_logdiag_lib);
 
 	/* Store user data to the registry. */
-	ud = lua_newuserdata (L, sizeof (LdLuaData));
+	ud = lua_newuserdata (L, sizeof *ud);
 	ud->self = self;
 	ud->load_callback = NULL;
 	ud->load_user_data = NULL;
@@ -201,6 +219,8 @@ ld_lua_init (LdLua *self)
 	/* Create an empty symbol table. */
 	lua_newtable (L);
 	lua_setfield (L, LUA_REGISTRYINDEX, LD_LUA_SYMBOLS_INDEX);
+
+	push_cairo_metatable (L);
 }
 
 static void
@@ -278,7 +298,7 @@ ld_lua_load_file (LdLua *self, const gchar *filename,
 	g_return_val_if_fail (filename != NULL, FALSE);
 	g_return_val_if_fail (callback != NULL, FALSE);
 
-	/* XXX: If something from the following fails, Lua will call exit(). */
+	/* XXX: If something from the following fails, Lua will panic. */
 	lua_getfield (self->priv->L, LUA_REGISTRYINDEX, LD_LUA_DATA_INDEX);
 	ud = lua_touserdata (self->priv->L, -1);
 	lua_pop (self->priv->L, 1);
@@ -344,7 +364,7 @@ ld_lua_private_draw (LdLua *self, LdLuaSymbol *symbol, cairo_t *cr)
 static int
 ld_lua_private_draw_cb (lua_State *L)
 {
-	LdLuaDrawData *data;
+	LdLuaDrawData *data, *luadata;
 
 	data = lua_touserdata (L, -1);
 
@@ -357,9 +377,28 @@ ld_lua_private_draw_cb (lua_State *L)
 	lua_getfield (L, -1, "render");
 	luaL_checktype (L, -1, LUA_TFUNCTION);
 
-	/* Call the function do draw the symbol. */
-	push_cairo_object (L, data);
-	lua_pcall (L, 1, 0, 0);
+	/* Create a Cairo wrapper object. */
+	luadata = lua_newuserdata (L, sizeof *data);
+	memcpy (luadata, data, sizeof *data);
+	lua_getfield (L, LUA_REGISTRYINDEX, LD_LUA_META_INDEX);
+	lua_setmetatable (L, -2);
+
+	/* Force it to stay alive for a bit longer. */
+	lua_pushvalue (L, -1);
+	lua_insert (L, 1);
+
+	/* Draw the symbol. */
+	if (lua_pcall (L, 1, 0, 0))
+	{
+		g_warning ("Lua error: %s", lua_tostring (L, -1));
+		lua_pop (L, 1);
+	}
+
+	/* Copy the userdata back and invalidate it, so that malicious Lua
+	 * scripts won't succeed at drawing onto a long invalid Cairo context.
+	 */
+	memcpy (data, luadata, sizeof *data);
+	memset (luadata, 0, sizeof *data);
 	return 0;
 }
 
@@ -562,7 +601,7 @@ read_symbol_area (lua_State *L, int index, LdRectangle *area)
 
 	area->x = MIN (x1, x2);
 	area->y = MIN (y1, y2);
-	area->width = ABS (x2 - x1);
+	area->width  = ABS (x2 - x1);
 	area->height = ABS (y2 - y1);
 
 	lua_pop (L, 4);
@@ -622,32 +661,6 @@ read_terminals_fail:
 
 /* ===== Cairo ============================================================= */
 
-static void
-push_cairo_object (lua_State *L, LdLuaDrawData *draw_data)
-{
-	luaL_Reg *fn;
-
-	/* Create a table. */
-	lua_newtable (L);
-
-	/* Add methods. */
-	/* XXX: The light user data pointer gets invalid after the end of
-	 *      "render" function invocation. If the script stores the "cr" object
-	 *      in some global variable and then tries to reuse it the next time,
-	 *      the application may go SIGSEGV.
-	 *
-	 *      The solution is creating a full user data instead, referencing
-	 *      the cairo object and dereferencing it upon garbage collection
-	 *      of the user data object.
-	 */
-	for (fn = ld_lua_cairo_table; fn->name; fn++)
-	{
-		lua_pushlightuserdata (L, draw_data);
-		lua_pushcclosure (L, fn->func, 1);
-		lua_setfield (L, -2, fn->name);
-	}
-}
-
 static gdouble
 get_cairo_scale (cairo_t *cr)
 {
@@ -656,6 +669,11 @@ get_cairo_scale (cairo_t *cr)
 	cairo_user_to_device_distance (cr, &dx, &dy);
 	return dx;
 }
+
+#define LD_LUA_CAIRO_GET_DATA \
+	data = luaL_checkudata (L, 1, LD_LUA_META_INDEX); \
+	if (!data->cr) \
+		return luaL_error (L, "Tried to use an invalid Cairo object");
 
 #define LD_LUA_CAIRO_BEGIN(name) \
 static int \
@@ -669,7 +687,7 @@ ld_lua_cairo_ ## name (lua_State *L) \
 
 #define LD_LUA_CAIRO_TRIVIAL(name) \
 LD_LUA_CAIRO_BEGIN (name) \
-	data = lua_touserdata (L, lua_upvalueindex (1)); \
+	LD_LUA_CAIRO_GET_DATA \
 	cairo_ ## name (data->cr); \
 LD_LUA_CAIRO_END (0)
 
@@ -685,7 +703,7 @@ LD_LUA_CAIRO_TRIVIAL (clip)
 LD_LUA_CAIRO_TRIVIAL (clip_preserve)
 
 LD_LUA_CAIRO_BEGIN (save)
-	data = lua_touserdata (L, lua_upvalueindex (1));
+	LD_LUA_CAIRO_GET_DATA
 	if (data->save_count + 1)
 	{
 		data->save_count++;
@@ -694,7 +712,7 @@ LD_LUA_CAIRO_BEGIN (save)
 LD_LUA_CAIRO_END (0)
 
 LD_LUA_CAIRO_BEGIN (restore)
-	data = lua_touserdata (L, lua_upvalueindex (1));
+	LD_LUA_CAIRO_GET_DATA
 	if (data->save_count)
 	{
 		data->save_count--;
@@ -703,24 +721,23 @@ LD_LUA_CAIRO_BEGIN (restore)
 LD_LUA_CAIRO_END (0)
 
 LD_LUA_CAIRO_BEGIN (get_line_width)
-	data = lua_touserdata (L, lua_upvalueindex (1));
+	LD_LUA_CAIRO_GET_DATA
 	lua_pushnumber (L, cairo_get_line_width (data->cr)
 		* get_cairo_scale (data->cr));
 LD_LUA_CAIRO_END (1)
 
 LD_LUA_CAIRO_BEGIN (set_line_width)
-	data = lua_touserdata (L, lua_upvalueindex (1));
-	cairo_set_line_width (data->cr, luaL_checknumber (L, 1)
+	LD_LUA_CAIRO_GET_DATA
+	cairo_set_line_width (data->cr, luaL_checknumber (L, 2)
 		/ get_cairo_scale (data->cr));
 LD_LUA_CAIRO_END (0)
 
 LD_LUA_CAIRO_BEGIN (translate)
 	lua_Number x, y;
 
-	data = lua_touserdata (L, lua_upvalueindex (1));
-
-	x = luaL_checknumber (L, 1);
-	y = luaL_checknumber (L, 2);
+	LD_LUA_CAIRO_GET_DATA
+	x = luaL_checknumber (L, 2);
+	y = luaL_checknumber (L, 3);
 
 	cairo_translate (data->cr, x, y);
 LD_LUA_CAIRO_END (0)
@@ -728,10 +745,9 @@ LD_LUA_CAIRO_END (0)
 LD_LUA_CAIRO_BEGIN (scale)
 	lua_Number sx, sy;
 
-	data = lua_touserdata (L, lua_upvalueindex (1));
-
-	sx = luaL_checknumber (L, 1);
-	sy = luaL_checknumber (L, 2);
+	LD_LUA_CAIRO_GET_DATA
+	sx = luaL_checknumber (L, 2);
+	sy = luaL_checknumber (L, 3);
 
 	cairo_scale (data->cr, sx, sy);
 LD_LUA_CAIRO_END (0)
@@ -739,18 +755,17 @@ LD_LUA_CAIRO_END (0)
 LD_LUA_CAIRO_BEGIN (rotate)
 	lua_Number angle;
 
-	data = lua_touserdata (L, lua_upvalueindex (1));
-	angle = luaL_checknumber (L, 1);
+	LD_LUA_CAIRO_GET_DATA
+	angle = luaL_checknumber (L, 2);
 	cairo_rotate (data->cr, angle);
 LD_LUA_CAIRO_END (0)
 
 LD_LUA_CAIRO_BEGIN (move_to)
 	lua_Number x, y;
 
-	data = lua_touserdata (L, lua_upvalueindex (1));
-
-	x = luaL_checknumber (L, 1);
-	y = luaL_checknumber (L, 2);
+	LD_LUA_CAIRO_GET_DATA
+	x = luaL_checknumber (L, 2);
+	y = luaL_checknumber (L, 3);
 
 	cairo_move_to (data->cr, x, y);
 LD_LUA_CAIRO_END (0)
@@ -758,10 +773,9 @@ LD_LUA_CAIRO_END (0)
 LD_LUA_CAIRO_BEGIN (line_to)
 	lua_Number x, y;
 
-	data = lua_touserdata (L, lua_upvalueindex (1));
-
-	x = luaL_checknumber (L, 1);
-	y = luaL_checknumber (L, 2);
+	LD_LUA_CAIRO_GET_DATA
+	x = luaL_checknumber (L, 2);
+	y = luaL_checknumber (L, 3);
 
 	cairo_line_to (data->cr, x, y);
 LD_LUA_CAIRO_END (0)
@@ -769,14 +783,13 @@ LD_LUA_CAIRO_END (0)
 LD_LUA_CAIRO_BEGIN (curve_to)
 	lua_Number x1, y1, x2, y2, x3, y3;
 
-	data = lua_touserdata (L, lua_upvalueindex (1));
-
-	x1 = luaL_checknumber (L, 1);
-	y1 = luaL_checknumber (L, 2);
-	x2 = luaL_checknumber (L, 3);
-	y2 = luaL_checknumber (L, 4);
-	x3 = luaL_checknumber (L, 5);
-	y3 = luaL_checknumber (L, 6);
+	LD_LUA_CAIRO_GET_DATA
+	x1 = luaL_checknumber (L, 2);
+	y1 = luaL_checknumber (L, 3);
+	x2 = luaL_checknumber (L, 4);
+	y2 = luaL_checknumber (L, 5);
+	x3 = luaL_checknumber (L, 6);
+	y3 = luaL_checknumber (L, 7);
 
 	cairo_curve_to (data->cr, x1, y1, x2, y2, x3, y3);
 LD_LUA_CAIRO_END (0)
@@ -784,13 +797,12 @@ LD_LUA_CAIRO_END (0)
 LD_LUA_CAIRO_BEGIN (arc)
 	lua_Number xc, yc, radius, angle1, angle2;
 
-	data = lua_touserdata (L, lua_upvalueindex (1));
-
-	xc = luaL_checknumber (L, 1);
-	yc = luaL_checknumber (L, 2);
-	radius = luaL_checknumber (L, 3);
-	angle1 = luaL_checknumber (L, 4);
-	angle2 = luaL_checknumber (L, 5);
+	LD_LUA_CAIRO_GET_DATA
+	xc = luaL_checknumber (L, 2);
+	yc = luaL_checknumber (L, 3);
+	radius = luaL_checknumber (L, 4);
+	angle1 = luaL_checknumber (L, 5);
+	angle2 = luaL_checknumber (L, 6);
 
 	cairo_arc (data->cr, xc, yc, radius, angle1, angle2);
 LD_LUA_CAIRO_END (0)
@@ -798,13 +810,12 @@ LD_LUA_CAIRO_END (0)
 LD_LUA_CAIRO_BEGIN (arc_negative)
 	lua_Number xc, yc, radius, angle1, angle2;
 
-	data = lua_touserdata (L, lua_upvalueindex (1));
-
-	xc = luaL_checknumber (L, 1);
-	yc = luaL_checknumber (L, 2);
-	radius = luaL_checknumber (L, 3);
-	angle1 = luaL_checknumber (L, 4);
-	angle2 = luaL_checknumber (L, 5);
+	LD_LUA_CAIRO_GET_DATA
+	xc = luaL_checknumber (L, 2);
+	yc = luaL_checknumber (L, 3);
+	radius = luaL_checknumber (L, 4);
+	angle1 = luaL_checknumber (L, 5);
+	angle2 = luaL_checknumber (L, 6);
 
 	cairo_arc_negative (data->cr, xc, yc, radius, angle1, angle2);
 LD_LUA_CAIRO_END (0)
@@ -816,8 +827,8 @@ LD_LUA_CAIRO_BEGIN (show_text)
 	int width, height;
 	double x, y;
 
-	data = lua_touserdata (L, lua_upvalueindex (1));
-	text = luaL_checkstring (L, 1);
+	LD_LUA_CAIRO_GET_DATA
+	text = luaL_checkstring (L, 2);
 
 	layout = pango_cairo_create_layout (data->cr);
 	pango_layout_set_text (layout, text, -1);

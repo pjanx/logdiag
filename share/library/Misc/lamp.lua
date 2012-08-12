@@ -17,29 +17,29 @@ local terminals = {{-2, 0}, {2, 0}}
 -- Rendering
 local render = function (cr)
 	-- The circle
-	cr.save ()
+	cr:save ()
 
-	cr.arc (0, 0, 1, 0, 2 * math.pi)
-	cr.stroke_preserve ()
-	cr.clip ()
+	cr:arc (0, 0, 1, 0, 2 * math.pi)
+	cr:stroke_preserve ()
+	cr:clip ()
 
-	cr.move_to (-1, -1)
-	cr.line_to (1, 1)
+	cr:move_to (-1, -1)
+	cr:line_to (1, 1)
 
-	cr.move_to (1, -1)
-	cr.line_to (-1, 1)
+	cr:move_to (1, -1)
+	cr:line_to (-1, 1)
 
-	cr.stroke ()
-	cr.restore ()
+	cr:stroke ()
+	cr:restore ()
 
 	-- The terminals
-	cr.move_to (-2, 0)
-	cr.line_to (-1, 0)
+	cr:move_to (-2, 0)
+	cr:line_to (-1, 0)
 
-	cr.move_to (1, 0)
-	cr.line_to (2, 0)
+	cr:move_to (1, 0)
+	cr:line_to (2, 0)
 
-	cr.stroke ()
+	cr:stroke ()
 end
 
 -- Register the symbol

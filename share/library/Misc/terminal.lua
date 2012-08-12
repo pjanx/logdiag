@@ -17,13 +17,13 @@ local terminals = {{-1, 0}}
 -- Rendering
 local render = function (cr)
 	-- The circle
-	cr.arc (0, 0, 0.3, 0, math.pi * 2)
+	cr:arc (0, 0, 0.3, 0, math.pi * 2)
 
 	-- The contact
-	cr.move_to (-1, 0)
-	cr.line_to (-0.3, 0)
+	cr:move_to (-1, 0)
+	cr:line_to (-0.3, 0)
 
-	cr.stroke ()
+	cr:stroke ()
 end
 
 -- Register the symbol

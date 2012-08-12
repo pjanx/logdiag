@@ -26,35 +26,35 @@ local terminals = {{-2, 0}, {2, 0}, {0, -2}, {0, 2}}
 -- Rendering
 local render = function (cr)
 	-- The circle
-	cr.arc (0, 0, 2, 0, math.pi * 2)
+	cr:arc (0, 0, 2, 0, math.pi * 2)
 
-	cr.stroke ()
+	cr:stroke ()
 end
 
 local render_ac = function (cr)
 	render (cr)
 
 	-- The AC symbol
-	cr.move_to (-1, 0.25)
-	cr.curve_to (-0.4, -1.5, 0.4, 1.5, 1, -0.25)
+	cr:move_to (-1, 0.25)
+	cr:curve_to (-0.4, -1.5, 0.4, 1.5, 1, -0.25)
 
-	cr.stroke ()
+	cr:stroke ()
 end
 
 local render_dc = function (cr)
 	render (cr)
 
 	-- The DC symbol
-	cr.move_to (-1, -0.25)
-	cr.line_to (1, -0.25)
+	cr:move_to (-1, -0.25)
+	cr:line_to (1, -0.25)
 
-	cr.move_to (-1, 0.25)
-	cr.line_to (-0.2, 0.25)
+	cr:move_to (-1, 0.25)
+	cr:line_to (-0.2, 0.25)
 
-	cr.move_to (0.2, 0.25)
-	cr.line_to (1, 0.25)
+	cr:move_to (0.2, 0.25)
+	cr:line_to (1, 0.25)
 
-	cr.stroke ()
+	cr:stroke ()
 end
 
 -- Register the symbols

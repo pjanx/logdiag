@@ -27,59 +27,59 @@ local terminals_p = {{-2, -1}, {2, 1}, {2, 0}, {2, -1}}
 -- Rendering
 local render = function (cr)
 	-- The terminals
-	cr.move_to (-0.3, 1)
-	cr.line_to (-0.3, -1)
+	cr:move_to (-0.3, 1)
+	cr:line_to (-0.3, -1)
 
-	cr.move_to (0, 1)
-	cr.line_to (2, 1)
+	cr:move_to (0, 1)
+	cr:line_to (2, 1)
 
-	cr.move_to (0, 0)
-	cr.line_to (2, 0)
+	cr:move_to (0, 0)
+	cr:line_to (2, 0)
 
-	cr.move_to (0, -1)
-	cr.line_to (2, -1)
+	cr:move_to (0, -1)
+	cr:line_to (2, -1)
 
 	-- Source, gate, drain
-	cr.move_to (0, -1.5)
-	cr.line_to (0, -0.5)
+	cr:move_to (0, -1.5)
+	cr:line_to (0, -0.5)
 
-	cr.move_to (0, -0.3)
-	cr.line_to (0, 0.3)
+	cr:move_to (0, -0.3)
+	cr:line_to (0, 0.3)
 
-	cr.move_to (0, 0.5)
-	cr.line_to (0, 1.5)
+	cr:move_to (0, 0.5)
+	cr:line_to (0, 1.5)
 
-	cr.stroke ()
+	cr:stroke ()
 end
 
 local render_n = function (cr)
 	render (cr)
 
 	-- The left-side terminal
-	cr.move_to (-2, 1)
-	cr.line_to (-0.3, 1)
+	cr:move_to (-2, 1)
+	cr:line_to (-0.3, 1)
 
 	-- The arrow
-	cr.move_to (0.9, -0.4)
-	cr.line_to (0.4, 0)
-	cr.line_to (0.9, 0.4)
+	cr:move_to (0.9, -0.4)
+	cr:line_to (0.4, 0)
+	cr:line_to (0.9, 0.4)
 
-	cr.stroke ()
+	cr:stroke ()
 end
 
 local render_p = function (cr)
 	render (cr)
 
 	-- The left-side terminal
-	cr.move_to (-2, -1)
-	cr.line_to (-0.3, -1)
+	cr:move_to (-2, -1)
+	cr:line_to (-0.3, -1)
 
 	-- The arrow
-	cr.move_to (0.4, -0.4)
-	cr.line_to (0.9, 0)
-	cr.line_to (0.4, 0.4)
+	cr:move_to (0.4, -0.4)
+	cr:line_to (0.9, 0)
+	cr:line_to (0.4, 0.4)
 
-	cr.stroke ()
+	cr:stroke ()
 end
 
 -- Register the symbols

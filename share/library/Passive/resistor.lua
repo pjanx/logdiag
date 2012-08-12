@@ -38,63 +38,63 @@ local terminals_pot = {{-2, 0}, {2, 0}, {2, -2}}
 -- Rendering
 local render = function (cr)
 	-- The rectangle
-	cr.move_to (-1.5, -0.5)
-	cr.line_to (1.5, -0.5)
-	cr.line_to (1.5, 0.5)
-	cr.line_to (-1.5, 0.5)
-	cr.line_to (-1.5, -0.5)
+	cr:move_to (-1.5, -0.5)
+	cr:line_to (1.5, -0.5)
+	cr:line_to (1.5, 0.5)
+	cr:line_to (-1.5, 0.5)
+	cr:line_to (-1.5, -0.5)
 
 	-- The terminals
-	cr.move_to (-2, 0)
-	cr.line_to (-1.5, 0)
+	cr:move_to (-2, 0)
+	cr:line_to (-1.5, 0)
 
-	cr.move_to (1.5, 0)
-	cr.line_to (2, 0)
+	cr:move_to (1.5, 0)
+	cr:line_to (2, 0)
 
-	cr.stroke ()
+	cr:stroke ()
 end
 
 local render_adj = function (cr)
 	render (cr)
 
 	-- The arrow
-	cr.move_to (-1, 1)
-	cr.line_to (1, -1)
+	cr:move_to (-1, 1)
+	cr:line_to (1, -1)
 
-	cr.stroke ()
+	cr:stroke ()
 
-	cr.save ()
-	cr.translate (1.5, -1.5)
-	cr.rotate (math.atan2 (1, 1))
+	cr:save ()
+	cr:translate (1.5, -1.5)
+	cr:rotate (math.atan2 (1, 1))
 
-	cr.move_to (0, 0)
-	cr.line_to (0.3, 0.8)
-	cr.line_to (-0.3, 0.8)
-	cr.close_path ()
+	cr:move_to (0, 0)
+	cr:line_to (0.3, 0.8)
+	cr:line_to (-0.3, 0.8)
+	cr:close_path ()
 
-	cr.fill ()
-	cr.restore ()
+	cr:fill ()
+	cr:restore ()
 end
 
 local render_pot = function (cr)
 	render (cr)
 
 	-- The contact
-	cr.move_to (0, -2)
-	cr.line_to (2, -2)
+	cr:move_to (0, -2)
+	cr:line_to (2, -2)
 
 	-- The arrow
-	cr.move_to (0, -2)
-	cr.line_to (0, -1)
+	cr:move_to (0, -2)
+	cr:line_to (0, -1)
 
-	cr.stroke ()
+	cr:stroke ()
 
-	cr.move_to (0, -0.5)
-	cr.line_to (0.3, -1.3)
-	cr.line_to (-0.3, -1.3)
-	cr.close_path ()
+	cr:move_to (0, -0.5)
+	cr:line_to (0.3, -1.3)
+	cr:line_to (-0.3, -1.3)
+	cr:close_path ()
 
-	cr.fill ()
+	cr:fill ()
 end
 
 -- Register the symbol

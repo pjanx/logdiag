@@ -17,17 +17,17 @@ local terminals = {{-2, 0}, {2, 0}}
 -- Rendering
 local render = function (cr)
 	-- The switch contact
-	cr.move_to (1.3, -1.3)
-	cr.line_to (-1, 0)
+	cr:move_to (1.3, -1.3)
+	cr:line_to (-1, 0)
 
 	-- The terminals
-	cr.move_to (-2, 0)
-	cr.line_to (-1, 0)
+	cr:move_to (-2, 0)
+	cr:line_to (-1, 0)
 
-	cr.move_to (1, 0)
-	cr.line_to (2, 0)
+	cr:move_to (1, 0)
+	cr:line_to (2, 0)
 
-	cr.stroke ()
+	cr:stroke ()
 end
 
 -- Register the symbol

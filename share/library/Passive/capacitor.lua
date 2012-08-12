@@ -17,20 +17,20 @@ local terminals = {{-2, 0}, {2, 0}}
 -- Rendering
 local render = function (cr)
 	-- The vertical lines
-	cr.move_to (-0.2, -1)
-	cr.line_to (-0.2, 1)
+	cr:move_to (-0.2, -1)
+	cr:line_to (-0.2, 1)
 
-	cr.move_to (0.2, -1)
-	cr.line_to (0.2, 1)
+	cr:move_to (0.2, -1)
+	cr:line_to (0.2, 1)
 
 	-- The terminals
-	cr.move_to (-2, 0)
-	cr.line_to (-0.2, 0)
+	cr:move_to (-2, 0)
+	cr:line_to (-0.2, 0)
 
-	cr.move_to (0.2, 0)
-	cr.line_to (2, 0)
+	cr:move_to (0.2, 0)
+	cr:line_to (2, 0)
 
-	cr.stroke ()
+	cr:stroke ()
 end
 
 -- Register the symbol

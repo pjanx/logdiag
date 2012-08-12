@@ -26,21 +26,21 @@ local terminals = {}
 -- Rendering
 local render_plus = function (cr)
 	-- The plus sign
-	cr.move_to (0, -0.4)
-	cr.line_to (0, 0.4)
+	cr:move_to (0, -0.4)
+	cr:line_to (0, 0.4)
 
-	cr.move_to (-0.4, 0)
-	cr.line_to (0.4, 0)
+	cr:move_to (-0.4, 0)
+	cr:line_to (0.4, 0)
 
-	cr.stroke ()
+	cr:stroke ()
 end
 
 local render_minus = function (cr)
 	-- The minus sign
-	cr.move_to (-0.4, 0)
-	cr.line_to (0.4, 0)
+	cr:move_to (-0.4, 0)
+	cr:line_to (0.4, 0)
 
-	cr.stroke ()
+	cr:stroke ()
 end
 
 -- Register the symbols

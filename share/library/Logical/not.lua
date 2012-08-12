@@ -17,23 +17,23 @@ local terminals = {{-4, 0}, {4, 0}}
 -- Rendering
 local render = function (cr)
 	-- The triangle
-	cr.move_to (-2, -2)
-	cr.line_to (2, 0)
-	cr.line_to (-2, 2)
-	cr.close_path ()
+	cr:move_to (-2, -2)
+	cr:line_to (2, 0)
+	cr:line_to (-2, 2)
+	cr:close_path ()
 
 	-- The circle
-	cr.new_sub_path ()
-	cr.arc (2.25, 0, 0.25, 0, 2 * math.pi)
+	cr:new_sub_path ()
+	cr:arc (2.25, 0, 0.25, 0, 2 * math.pi)
 
 	-- The terminals
-	cr.move_to (-4, 0)
-	cr.line_to (-2, 0)
+	cr:move_to (-4, 0)
+	cr:line_to (-2, 0)
 
-	cr.move_to (2.5, 0)
-	cr.line_to (4, 0)
+	cr:move_to (2.5, 0)
+	cr:line_to (4, 0)
 
-	cr.stroke ()
+	cr:stroke ()
 end
 
 -- Register the symbol

@@ -45,79 +45,79 @@ local terminals = {{-2, 0}, {2, 0}}
 -- Rendering
 local render = function (cr)
 	-- The triangle
-	cr.move_to (-1, -1)
-	cr.line_to (1, 0)
-	cr.line_to (-1, 1)
-	cr.line_to (-1, -1)
+	cr:move_to (-1, -1)
+	cr:line_to (1, 0)
+	cr:line_to (-1, 1)
+	cr:line_to (-1, -1)
 
 	-- The vertical line
-	cr.move_to (1, 1)
-	cr.line_to (1, -1)
+	cr:move_to (1, 1)
+	cr:line_to (1, -1)
 
 	-- The terminals
-	cr.move_to (-2, 0)
-	cr.line_to (2, 0)
+	cr:move_to (-2, 0)
+	cr:line_to (2, 0)
 
-	cr.stroke ()
+	cr:stroke ()
 end
 
 local render_zener = function (cr)
 	render (cr)
 
-	cr.move_to (1, 1)
-	cr.line_to (0.5, 1)
+	cr:move_to (1, 1)
+	cr:line_to (0.5, 1)
 
-	cr.stroke ()
+	cr:stroke ()
 end
 
 local render_arrow = function (cr)
-	cr.move_to (0, 0)
-	cr.line_to (0, -1.5)
+	cr:move_to (0, 0)
+	cr:line_to (0, -1.5)
 
-	cr.stroke ()
+	cr:stroke ()
 
-	cr.move_to (-0.3, -0.7)
-	cr.line_to (0, -1.5)
-	cr.line_to (0.3, -0.7)
-	cr.close_path ()
+	cr:move_to (-0.3, -0.7)
+	cr:line_to (0, -1.5)
+	cr:line_to (0.3, -0.7)
+	cr:close_path ()
 
-	cr.fill ()
+	cr:fill ()
 end
 
 local render_radiation = function (cr)
-	cr.save ()
-	cr.translate (-0.4, 0)
+	cr:save ()
+	cr:translate (-0.4, 0)
 	render_arrow (cr)
-	cr.restore ()
+	cr:restore ()
 
-	cr.save ()
-	cr.translate (0.4, 0)
+	cr:save ()
+	cr:translate (0.4, 0)
 	render_arrow (cr)
-	cr.restore ()
+	cr:restore ()
 end
 
 local render_led = function (cr)
 	render (cr)
 
-	cr.save ()
-	cr.translate (-0.3, -1.0)
-	cr.rotate (math.atan2 (1, 1))
+	cr:save ()
+	cr:translate (-0.3, -1.0)
+	cr:rotate (math.atan2 (1, 1))
 
 	render_radiation (cr)
 
-	cr.restore ()
+	cr:restore ()
 end
 
 local render_photo = function (cr)
 	render (cr)
 
-	cr.save ()
-	cr.translate (0.75, -2.05)
-	cr.rotate (math.atan2 (-1, -1))
+	cr:save ()
+	cr:translate (0.75, -2.05)
+	cr:rotate (math.atan2 (-1, -1))
 
 	render_radiation (cr)
 
-	cr.restore ()
+	cr:restore ()
 end
 
 -- Register the symbol

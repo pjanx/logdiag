@@ -17,8 +17,8 @@ local terminals = {}
 -- Rendering
 local render = function (cr)
 	-- The disk
-	cr.arc (0, 0, 0.3, 0, math.pi * 2)
-	cr.fill ()
+	cr:arc (0, 0, 0.3, 0, math.pi * 2)
+	cr:fill ()
 end
 
 -- Register the symbol

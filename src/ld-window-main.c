@@ -73,7 +73,8 @@ static gchar *diagram_get_name (LdWindowMain *self);
 static void diagram_set_filename (LdWindowMain *self, gchar *filename);
 static void diagram_new (LdWindowMain *self);
 static gboolean diagram_open (LdWindowMain *self, const gchar *filename);
-static void diagram_save (LdWindowMain *self);
+static gboolean diagram_save (LdWindowMain *self, GtkWindow *dialog_parent,
+	const gchar *filename);
 
 static GtkFileFilter *diagram_get_file_filter (void);
 static void diagram_show_open_dialog (LdWindowMain *self);
@@ -585,23 +586,17 @@ diagram_new (LdWindowMain *self)
  *
  * Save the current diagram.
  */
-static void
-diagram_save (LdWindowMain *self)
+static gboolean
+diagram_save (LdWindowMain *self, GtkWindow *dialog_parent,
+	const gchar *filename)
 {
 	GError *error;
 
-	g_return_if_fail (LD_IS_WINDOW_MAIN (self));
+	g_return_val_if_fail (LD_IS_WINDOW_MAIN (self), FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
 
-	if (!self->priv->filename)
-	{
-		diagram_show_save_as_dialog (self);
-		return;
-	}
-
-	/* FIXME: If this fails, we still retain the filename. */
 	error = NULL;
-	ld_diagram_save_to_file (self->priv->diagram,
-		self->priv->filename, &error);
+	ld_diagram_save_to_file (self->priv->diagram, filename, &error);
 	if (error)
 	{
 		GtkWidget *message_dialog;
@@ -609,7 +604,7 @@ diagram_save (LdWindowMain *self)
 		g_warning ("saving failed: %s", error->message);
 		g_error_free (error);
 
-		message_dialog = gtk_message_dialog_new (GTK_WINDOW (self),
+		message_dialog = gtk_message_dialog_new (dialog_parent,
 			GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
 			_("Failed to save the diagram"));
 		gtk_message_dialog_format_secondary_text
@@ -617,11 +612,13 @@ diagram_save (LdWindowMain *self)
 			_("Try again or save it under another name."));
 		gtk_dialog_run (GTK_DIALOG (message_dialog));
 		gtk_widget_destroy (message_dialog);
+		return FALSE;
 	}
 	else
 	{
 		ld_diagram_set_modified (self->priv->diagram, FALSE);
 		update_title (self);
+		return TRUE;
 	}
 }
 
@@ -732,11 +729,21 @@ diagram_show_save_as_dialog (LdWindowMain *self)
 	gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog),
 		diagram_get_file_filter ());
 
-	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
+	if (self->priv->filename)
+		gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (dialog),
+			self->priv->filename);
+
+	while (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
 	{
-		diagram_set_filename (self,
-			gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog)));
-		diagram_save (self);
+		gchar *filename;
+
+		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+		if (diagram_save (self, GTK_WINDOW (dialog), filename))
+		{
+			diagram_set_filename (self, filename);
+			break;
+		}
+		g_free (filename);
 	}
 	gtk_widget_destroy (dialog);
 }
@@ -792,7 +799,7 @@ may_close_diagram (LdWindowMain *self, const gchar *dialog_message)
 	case GTK_RESPONSE_NO:
 		return TRUE;
 	case GTK_RESPONSE_YES:
-		diagram_save (self);
+		on_action_save (NULL, self);
 		return TRUE;
 	case GTK_RESPONSE_CANCEL:
 	case GTK_RESPONSE_DELETE_EVENT:
@@ -881,7 +888,9 @@ on_action_open (GtkAction *action, LdWindowMain *self)
 static void
 on_action_save (GtkAction *action, LdWindowMain *self)
 {
-	diagram_save (self);
+	if (!self->priv->filename
+	 || !diagram_save (self, GTK_WINDOW (self), self->priv->filename))
+		diagram_show_save_as_dialog (self);
 }
 
 static void

@@ -216,7 +216,7 @@ load_category_cb (const gchar *base, const gchar *path, gpointer userdata)
 		cat = load_category (data->self, path, base);
 		if (cat)
 		{
-			ld_symbol_category_insert_subcategory (data->cat, cat, -1);
+			ld_symbol_category_add_child (data->cat, cat);
 			g_object_unref (cat);
 		}
 	}
@@ -368,7 +368,7 @@ ld_library_find_symbol (LdLibrary *self, const gchar *identifier)
 	{
 		gboolean found = FALSE;
 
-		list = ld_symbol_category_get_subcategories (cat);
+		list = ld_symbol_category_get_children (cat);
 		for (list_el = list; list_el; list_el = g_slist_next (list_el))
 		{
 			cat = LD_SYMBOL_CATEGORY (list_el->data);

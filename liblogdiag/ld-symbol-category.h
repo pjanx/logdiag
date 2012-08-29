@@ -69,11 +69,11 @@ void ld_symbol_category_remove_symbol (LdSymbolCategory *self,
 	LdSymbol *symbol);
 const GSList *ld_symbol_category_get_symbols (LdSymbolCategory *self);
 
-gboolean ld_symbol_category_insert_subcategory (LdSymbolCategory *self,
-	LdSymbolCategory *category, gint pos);
-void ld_symbol_category_remove_subcategory (LdSymbolCategory *self,
+gboolean ld_symbol_category_add_child (LdSymbolCategory *self,
 	LdSymbolCategory *category);
-const GSList *ld_symbol_category_get_subcategories (LdSymbolCategory *self);
+void ld_symbol_category_remove_child (LdSymbolCategory *self,
+	LdSymbolCategory *category);
+const GSList *ld_symbol_category_get_children (LdSymbolCategory *self);
 
 
 G_END_DECLS

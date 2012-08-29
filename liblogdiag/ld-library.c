@@ -167,9 +167,7 @@ LoadCategoryData;
 static LdSymbolCategory *
 load_category (LdLibrary *self, const gchar *path, const gchar *name)
 {
-	LdSymbolCategory *cat = NULL;
-	gchar *icon_file, *category_file;
-	gchar *human_name;
+	gchar *category_file, *human_name;
 	LoadCategoryData data;
 
 	g_return_val_if_fail (LD_IS_LIBRARY (self), NULL);
@@ -177,33 +175,20 @@ load_category (LdLibrary *self, const gchar *path, const gchar *name)
 	g_return_val_if_fail (name != NULL, NULL);
 
 	if (!g_file_test (path, G_FILE_TEST_IS_DIR))
-		goto load_category_fail_1;
-
-	icon_file = g_build_filename (path, "icon.svg", NULL);
-	if (!g_file_test (icon_file, G_FILE_TEST_IS_REGULAR))
-	{
-		g_warning ("the category in `%s' has no icon", path);
-		goto load_category_fail_2;
-	}
+		return NULL;
 
 	category_file = g_build_filename (path, "category.json", NULL);
 	human_name = read_human_name_from_file (category_file);
 	if (!human_name)
 		human_name = g_strdup (name);
 
-	cat = ld_symbol_category_new (name, human_name);
-	ld_symbol_category_set_image_path (cat, icon_file);
-
 	data.self = self;
-	data.cat = cat;
+	data.cat = ld_symbol_category_new (name, human_name);
 	foreach_dir (path, load_category_cb, &data, NULL);
 
 	g_free (human_name);
 	g_free (category_file);
-load_category_fail_2:
-	g_free (icon_file);
-load_category_fail_1:
-	return cat;
+	return data.cat;
 }
 
 /*

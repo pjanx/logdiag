@@ -62,9 +62,6 @@ const gchar *ld_symbol_category_get_name (LdSymbolCategory *self);
 void ld_symbol_category_set_human_name (LdSymbolCategory *self,
 	const gchar *human_name);
 const gchar *ld_symbol_category_get_human_name (LdSymbolCategory *self);
-void ld_symbol_category_set_image_path (LdSymbolCategory *self,
-	const gchar *image_path);
-const gchar *ld_symbol_category_get_image_path (LdSymbolCategory *self);
 
 gboolean ld_symbol_category_insert_symbol (LdSymbolCategory *self,
 	LdSymbol *symbol, gint pos);

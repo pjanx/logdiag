@@ -23,7 +23,7 @@
 /*
  * LdSymbolCategoryPrivate:
  * @name: the name of this category.
- * @image_path: path to the image for this category.
+ * @human_name: the localized human-readable name of this category.
  * @symbols: (element-type LdSymbol *): symbols in this category.
  * @subcategories: (element-type LdSymbolCategory *) children of this category.
  */
@@ -31,7 +31,6 @@ struct _LdSymbolCategoryPrivate
 {
 	gchar *name;
 	gchar *human_name;
-	gchar *image_path;
 	GSList *symbols;
 	GSList *subcategories;
 };
@@ -40,8 +39,7 @@ enum
 {
 	PROP_0,
 	PROP_NAME,
-	PROP_HUMAN_NAME,
-	PROP_IMAGE_PATH
+	PROP_HUMAN_NAME
 };
 
 static void ld_symbol_category_get_property (GObject *object, guint property_id,
@@ -87,16 +85,6 @@ ld_symbol_category_class_init (LdSymbolCategoryClass *klass)
 		"", G_PARAM_READWRITE);
 	g_object_class_install_property (object_class, PROP_HUMAN_NAME, pspec);
 
-/**
- * LdSymbolCategory:image-path:
- *
- * Path to an image file representing this category.
- */
-	pspec = g_param_spec_string ("image-path", "Image path",
-		"Path to an image file representing this category.",
-		"", G_PARAM_READWRITE);
-	g_object_class_install_property (object_class, PROP_IMAGE_PATH, pspec);
-
 	g_type_class_add_private (klass, sizeof (LdSymbolCategoryPrivate));
 }
 
@@ -122,9 +110,6 @@ ld_symbol_category_get_property (GObject *object, guint property_id,
 	case PROP_HUMAN_NAME:
 		g_value_set_string (value, ld_symbol_category_get_human_name (self));
 		break;
-	case PROP_IMAGE_PATH:
-		g_value_set_string (value, ld_symbol_category_get_image_path (self));
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
 	}
@@ -144,9 +129,6 @@ ld_symbol_category_set_property (GObject *object, guint property_id,
 		break;
 	case PROP_HUMAN_NAME:
 		ld_symbol_category_set_human_name (self, g_value_get_string (value));
-		break;
-	case PROP_IMAGE_PATH:
-		ld_symbol_category_set_image_path (self, g_value_get_string (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -172,8 +154,6 @@ ld_symbol_category_finalize (GObject *gobject)
 		g_free (self->priv->name);
 	if (self->priv->human_name)
 		g_free (self->priv->human_name);
-	if (self->priv->image_path)
-		g_free (self->priv->image_path);
 
 	g_slist_foreach (self->priv->symbols, (GFunc) g_object_unref, NULL);
 	g_slist_free (self->priv->symbols);
@@ -270,37 +250,6 @@ ld_symbol_category_get_human_name (LdSymbolCategory *self)
 {
 	g_return_val_if_fail (LD_IS_SYMBOL_CATEGORY (self), NULL);
 	return self->priv->human_name;
-}
-
-/**
- * ld_symbol_category_set_image_path:
- * @self: an #LdSymbolCategory object.
- * @image_path: (allow-none): The new path to the image for this category.
- */
-void
-ld_symbol_category_set_image_path (LdSymbolCategory *self,
-	const gchar *image_path)
-{
-	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (self));
-
-	if (self->priv->image_path)
-		g_free (self->priv->image_path);
-	self->priv->image_path = g_strdup (image_path);
-
-	g_object_notify (G_OBJECT (self), "image-path");
-}
-
-/**
- * ld_symbol_category_get_image_path:
- * @self: an #LdSymbolCategory object.
- *
- * Return value: (allow-none): filesystem path to the image for this category.
- */
-const gchar *
-ld_symbol_category_get_image_path (LdSymbolCategory *self)
-{
-	g_return_val_if_fail (LD_IS_SYMBOL_CATEGORY (self), NULL);
-	return self->priv->image_path;
 }
 
 /**

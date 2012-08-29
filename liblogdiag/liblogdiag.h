@@ -18,7 +18,7 @@
 #include "ld-types.h"
 
 #include "ld-symbol.h"
-#include "ld-symbol-category.h"
+#include "ld-category.h"
 #include "ld-library.h"
 
 #include "ld-undo-action.h"

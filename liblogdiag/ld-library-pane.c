@@ -199,7 +199,7 @@ reload_library (LdLibraryPane *self)
 	{
 		GSList *categories;
 
-		categories = (GSList *) ld_symbol_category_get_children
+		categories = (GSList *) ld_category_get_children
 			(ld_library_get_root (self->priv->library));
 		g_slist_foreach (categories, load_category_cb, self);
 	}
@@ -209,18 +209,18 @@ static void
 load_category_cb (gpointer data, gpointer user_data)
 {
 	LdLibraryPane *self;
-	LdSymbolCategory *cat;
+	LdCategory *cat;
 	GtkExpander *expander;
 	const gchar *human_name;
 
 	g_return_if_fail (LD_IS_LIBRARY_PANE (user_data));
-	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (data));
+	g_return_if_fail (LD_IS_CATEGORY (data));
 
 	self = user_data;
 	cat = data;
 
 	/* TODO: Set a child for the expander, recurse into category children. */
-	human_name = ld_symbol_category_get_human_name (cat);
+	human_name = ld_category_get_human_name (cat);
 	expander = GTK_EXPANDER (gtk_expander_new (human_name));
 
 	gtk_box_pack_start (GTK_BOX (self), GTK_WIDGET (expander), FALSE, FALSE, 0);

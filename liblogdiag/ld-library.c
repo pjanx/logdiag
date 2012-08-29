@@ -17,7 +17,7 @@
 /**
  * SECTION:ld-library
  * @short_description: A symbol library
- * @see_also: #LdSymbol, #LdSymbolCategory
+ * @see_also: #LdSymbol, #LdCategory
  *
  * #LdLibrary is used for loading symbols from their files.  The library object
  * itself is a container for categories, which in turn contain other
@@ -32,12 +32,12 @@
 struct _LdLibraryPrivate
 {
 	LdLua *lua;
-	LdSymbolCategory *root;
+	LdCategory *root;
 };
 
 static void ld_library_finalize (GObject *gobject);
 
-static LdSymbolCategory *load_category (LdLibrary *self,
+static LdCategory *load_category (LdLibrary *self,
 	const gchar *path, const gchar *name);
 static gboolean load_category_cb (const gchar *base,
 	const gchar *path, gpointer userdata);
@@ -81,7 +81,7 @@ ld_library_init (LdLibrary *self)
 		(self, LD_TYPE_LIBRARY, LdLibraryPrivate);
 
 	self->priv->lua = ld_lua_new ();
-	self->priv->root = ld_symbol_category_new ("/", "/");
+	self->priv->root = ld_category_new ("/", "/");
 }
 
 static void
@@ -150,7 +150,7 @@ foreach_dir (const gchar *path,
 typedef struct
 {
 	LdLibrary *self;
-	LdSymbolCategory *cat;
+	LdCategory *cat;
 	guint changed : 1;
 	guint load_symbols : 1;
 }
@@ -164,7 +164,7 @@ LoadCategoryData;
  *
  * Loads a category into the library.
  */
-static LdSymbolCategory *
+static LdCategory *
 load_category (LdLibrary *self, const gchar *path, const gchar *name)
 {
 	gchar *category_file, *human_name;
@@ -183,7 +183,7 @@ load_category (LdLibrary *self, const gchar *path, const gchar *name)
 		human_name = g_strdup (name);
 
 	data.self = self;
-	data.cat = ld_symbol_category_new (name, human_name);
+	data.cat = ld_category_new (name, human_name);
 	data.load_symbols = TRUE;
 	data.changed = FALSE;
 	foreach_dir (path, load_category_cb, &data, NULL);
@@ -211,12 +211,12 @@ load_category_cb (const gchar *base, const gchar *path, gpointer userdata)
 
 	if (g_file_test (path, G_FILE_TEST_IS_DIR))
 	{
-		LdSymbolCategory *cat;
+		LdCategory *cat;
 
 		cat = load_category (data->self, path, base);
 		if (cat)
 		{
-			ld_symbol_category_add_child (data->cat, cat);
+			ld_category_add_child (data->cat, cat);
 			g_object_unref (cat);
 		}
 	}
@@ -239,13 +239,13 @@ load_category_cb (const gchar *base, const gchar *path, gpointer userdata)
 static void
 load_category_symbol_cb (LdSymbol *symbol, gpointer user_data)
 {
-	LdSymbolCategory *cat;
+	LdCategory *cat;
 
 	g_return_if_fail (LD_IS_SYMBOL (symbol));
-	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (user_data));
+	g_return_if_fail (LD_IS_CATEGORY (user_data));
 
-	cat = LD_SYMBOL_CATEGORY (user_data);
-	ld_symbol_category_insert_symbol (cat, symbol, -1);
+	cat = LD_CATEGORY (user_data);
+	ld_category_insert_symbol (cat, symbol, -1);
 }
 
 /*
@@ -348,7 +348,7 @@ ld_library_find_symbol (LdLibrary *self, const gchar *identifier)
 {
 	gchar **id_el_start, **id_el;
 	const GSList *list, *list_el;
-	LdSymbolCategory *cat;
+	LdCategory *cat;
 
 	g_return_val_if_fail (LD_IS_LIBRARY (self), NULL);
 	g_return_val_if_fail (identifier != NULL, NULL);
@@ -368,11 +368,11 @@ ld_library_find_symbol (LdLibrary *self, const gchar *identifier)
 	{
 		gboolean found = FALSE;
 
-		list = ld_symbol_category_get_children (cat);
+		list = ld_category_get_children (cat);
 		for (list_el = list; list_el; list_el = g_slist_next (list_el))
 		{
-			cat = LD_SYMBOL_CATEGORY (list_el->data);
-			if (!strcmp (*id_el, ld_symbol_category_get_name (cat)))
+			cat = LD_CATEGORY (list_el->data);
+			if (!strcmp (*id_el, ld_category_get_name (cat)))
 			{
 				found = TRUE;
 				break;
@@ -387,7 +387,7 @@ ld_library_find_symbol (LdLibrary *self, const gchar *identifier)
 	}
 
 	/* And then the actual symbol. */
-	list = ld_symbol_category_get_symbols (cat);
+	list = ld_category_get_symbols (cat);
 	for (list_el = list; list_el; list_el = g_slist_next (list_el))
 	{
 		LdSymbol *symbol;
@@ -411,7 +411,7 @@ ld_library_find_symbol_error:
  *
  * Return value: (transfer none): the root category. Do not modify.
  */
-LdSymbolCategory *
+LdCategory *
 ld_library_get_root (LdLibrary *self)
 {
 	g_return_val_if_fail (LD_IS_LIBRARY (self), NULL);

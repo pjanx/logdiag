@@ -60,7 +60,7 @@ GType ld_library_get_type (void) G_GNUC_CONST;
 LdLibrary *ld_library_new (void);
 gboolean ld_library_load (LdLibrary *self, const gchar *directory);
 LdSymbol *ld_library_find_symbol (LdLibrary *self, const gchar *identifier);
-LdSymbolCategory *ld_library_get_root (LdLibrary *self);
+LdCategory *ld_library_get_root (LdLibrary *self);
 
 
 G_END_DECLS

@@ -28,7 +28,7 @@
 #include "ld-diagram.h"
 
 #include "ld-diagram-view.h"
-#include "ld-library-pane.h"
+#include "ld-category-view.h"
 
 #include "ld-lua.h"
 #include "ld-lua-symbol.h"

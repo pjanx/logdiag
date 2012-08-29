@@ -27,9 +27,9 @@ struct _LdWindowMainPrivate
 	GtkWidget *menu;
 	GtkWidget *toolbar;
 
-	GtkWidget *library_pane;
-	GtkWidget *pane_window;
-	GtkWidget *pane_viewport;
+	GtkWidget *library_view;
+	GtkWidget *lv_window;
+	GtkWidget *lv_viewport;
 
 	LdLibrary *library;
 
@@ -262,7 +262,7 @@ ld_window_main_init (LdWindowMain *self)
 	priv->toolbar = gtk_ui_manager_get_widget (priv->ui_manager, "/Toolbar");
 
 	/* Create the remaining widgets. */
-	priv->library_pane = ld_library_pane_new ();
+	priv->library_view = ld_category_view_new ();
 
 	priv->view = LD_DIAGRAM_VIEW (ld_diagram_view_new ());
 	priv->scrolled_window = gtk_scrolled_window_new (NULL, NULL);
@@ -277,19 +277,19 @@ ld_window_main_init (LdWindowMain *self)
 	priv->statusbar_symbol_context_id = gtk_statusbar_get_context_id
 		(GTK_STATUSBAR (priv->statusbar), "symbol");
 
-	priv->pane_viewport = gtk_viewport_new (NULL, NULL);
+	priv->lv_viewport = gtk_viewport_new (NULL, NULL);
 	gtk_viewport_set_shadow_type
-		(GTK_VIEWPORT (priv->pane_viewport), GTK_SHADOW_NONE);
-	gtk_container_add (GTK_CONTAINER (priv->pane_viewport), priv->library_pane);
+		(GTK_VIEWPORT (priv->lv_viewport), GTK_SHADOW_NONE);
+	gtk_container_add (GTK_CONTAINER (priv->lv_viewport), priv->library_view);
 
-	priv->pane_window = gtk_scrolled_window_new (NULL, NULL);
-	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (priv->pane_window),
+	priv->lv_window = gtk_scrolled_window_new (NULL, NULL);
+	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (priv->lv_window),
 		GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-	gtk_container_add (GTK_CONTAINER (priv->pane_window), priv->pane_viewport);
+	gtk_container_add (GTK_CONTAINER (priv->lv_window), priv->lv_viewport);
 
 	priv->paned = gtk_hpaned_new ();
 	gtk_paned_pack1 (GTK_PANED (priv->paned),
-		priv->pane_window, FALSE, FALSE);
+		priv->lv_window, FALSE, FALSE);
 	gtk_paned_pack2 (GTK_PANED (priv->paned),
 		priv->scrolled_window, TRUE, TRUE);
 
@@ -332,8 +332,8 @@ ld_window_main_init (LdWindowMain *self)
 	g_signal_connect (priv->view, "notify::zoom",
 		G_CALLBACK (on_view_zoom_changed), self);
 
-	ld_library_pane_set_library (LD_LIBRARY_PANE (priv->library_pane),
-		priv->library);
+	ld_category_view_set_category (LD_CATEGORY_VIEW (priv->library_view),
+		ld_library_get_root (priv->library));
 
 	diagram_set_filename (self, NULL);
 
@@ -914,7 +914,7 @@ on_action_main_toolbar (GtkToggleAction *action, LdWindowMain *self)
 static void
 on_action_library_pane (GtkToggleAction *action, LdWindowMain *self)
 {
-	gtk_widget_set_visible (self->priv->pane_window,
+	gtk_widget_set_visible (self->priv->lv_window,
 		gtk_toggle_action_get_active (action));
 }
 

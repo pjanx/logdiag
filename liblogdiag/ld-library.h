@@ -60,14 +60,7 @@ GType ld_library_get_type (void) G_GNUC_CONST;
 LdLibrary *ld_library_new (void);
 gboolean ld_library_load (LdLibrary *self, const gchar *directory);
 LdSymbol *ld_library_find_symbol (LdLibrary *self, const gchar *identifier);
-void ld_library_clear (LdLibrary *self);
-
-/* FIXME: This duplicates a part of LdSymbolCategory. */
-gboolean ld_library_insert_category (LdLibrary *self,
-	LdSymbolCategory *category, gint pos);
-void ld_library_remove_category (LdLibrary *self,
-	LdSymbolCategory *category);
-const GSList *ld_library_get_categories (LdLibrary *self);
+LdSymbolCategory *ld_library_get_root (LdLibrary *self);
 
 
 G_END_DECLS

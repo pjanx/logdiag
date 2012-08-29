@@ -199,7 +199,8 @@ reload_library (LdLibraryPane *self)
 	{
 		GSList *categories;
 
-		categories = (GSList *) ld_library_get_categories (self->priv->library);
+		categories = (GSList *) ld_symbol_category_get_subcategories
+			(ld_library_get_root (self->priv->library));
 		g_slist_foreach (categories, load_category_cb, self);
 	}
 }

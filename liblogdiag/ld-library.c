@@ -32,7 +32,7 @@
 struct _LdLibraryPrivate
 {
 	LdLua *lua;
-	GSList *children;
+	LdSymbolCategory *root;
 };
 
 static void ld_library_finalize (GObject *gobject);
@@ -50,8 +50,6 @@ static gboolean foreach_dir (const gchar *path,
 	gpointer userdata, GError **error);
 static gboolean ld_library_load_cb
 	(const gchar *base, const gchar *filename, gpointer userdata);
-static void on_category_notify_name (LdSymbolCategory *category,
-	GParamSpec *pspec, gpointer user_data);
 
 
 G_DEFINE_TYPE (LdLibrary, ld_library, G_TYPE_OBJECT);
@@ -85,15 +83,7 @@ ld_library_init (LdLibrary *self)
 		(self, LD_TYPE_LIBRARY, LdLibraryPrivate);
 
 	self->priv->lua = ld_lua_new ();
-	self->priv->children = NULL;
-}
-
-static void
-uninstall_category_cb (LdSymbolCategory *category, LdLibrary *self)
-{
-	g_signal_handlers_disconnect_by_func (category,
-		on_category_notify_name, self);
-	g_object_unref (category);
+	self->priv->root = ld_symbol_category_new ("/", "/");
 }
 
 static void
@@ -104,9 +94,7 @@ ld_library_finalize (GObject *gobject)
 	self = LD_LIBRARY (gobject);
 
 	g_object_unref (self->priv->lua);
-
-	g_slist_foreach (self->priv->children, (GFunc) uninstall_category_cb, self);
-	g_slist_free (self->priv->children);
+	g_object_unref (self->priv->root);
 
 	/* Chain up to the parent class. */
 	G_OBJECT_CLASS (ld_library_parent_class)->finalize (gobject);
@@ -372,7 +360,7 @@ ld_library_load_cb (const gchar *base, const gchar *filename, gpointer userdata)
 	cat = load_category (data->self, filename, base);
 	if (cat)
 	{
-		ld_library_insert_category (data->self, cat, -1);
+		ld_symbol_category_insert_subcategory (data->self->priv->root, cat, -1);
 		g_object_unref (cat);
 	}
 
@@ -394,6 +382,7 @@ ld_library_find_symbol (LdLibrary *self, const gchar *identifier)
 {
 	gchar **id_el_start, **id_el;
 	const GSList *list, *list_el;
+	LdSymbolCategory *cat;
 
 	g_return_val_if_fail (LD_IS_LIBRARY (self), NULL);
 	g_return_val_if_fail (identifier != NULL, NULL);
@@ -402,19 +391,18 @@ ld_library_find_symbol (LdLibrary *self, const gchar *identifier)
 	if (!id_el_start)
 		return NULL;
 
-	id_el = id_el_start;
-	list = self->priv->children;
-
 	/* We need at least one category name plus the symbol name. */
+	id_el = id_el_start;
 	if (!id_el[0] || !id_el[1])
 		goto ld_library_find_symbol_error;
 
 	/* Find the category where the symbol is in. */
+	cat = self->priv->root;
 	while (1)
 	{
 		gboolean found = FALSE;
-		LdSymbolCategory *cat;
 
+		list = ld_symbol_category_get_subcategories (cat);
 		for (list_el = list; list_el; list_el = g_slist_next (list_el))
 		{
 			cat = LD_SYMBOL_CATEGORY (list_el->data);
@@ -429,15 +417,11 @@ ld_library_find_symbol (LdLibrary *self, const gchar *identifier)
 			goto ld_library_find_symbol_error;
 
 		if (!(id_el++)[2])
-		{
-			list = ld_symbol_category_get_symbols (cat);
 			break;
-		}
-
-		list = ld_symbol_category_get_subcategories (cat);
 	}
 
 	/* And then the actual symbol. */
+	list = ld_symbol_category_get_symbols (cat);
 	for (list_el = list; list_el; list_el = g_slist_next (list_el))
 	{
 		LdSymbol *symbol;
@@ -456,105 +440,15 @@ ld_library_find_symbol_error:
 }
 
 /**
- * ld_library_clear:
+ * ld_library_get_root:
  * @self: an #LdLibrary object.
  *
- * Clear all the contents.
+ * Return value: (transfer none): the root category. Do not modify.
  */
-void
-ld_library_clear (LdLibrary *self)
-{
-	g_return_if_fail (LD_IS_LIBRARY (self));
-
-	g_slist_foreach (self->priv->children, (GFunc) uninstall_category_cb, self);
-	g_slist_free (self->priv->children);
-	self->priv->children = NULL;
-
-	g_signal_emit (self,
-		LD_LIBRARY_GET_CLASS (self)->changed_signal, 0);
-}
-
-static void
-on_category_notify_name (LdSymbolCategory *category,
-	GParamSpec *pspec, gpointer user_data)
-{
-	/* XXX: We could disown the category if a name collision has occured. */
-	g_warning ("name of a library category has changed");
-}
-
-/**
- * ld_library_insert_category:
- * @self: an #LdLibrary object.
- * @category: the category to be inserted.
- * @pos: the position at which the category will be inserted.
- *       Negative values will append to the end of list.
- *
- * Insert a child category into the library.
- *
- * Return value: %TRUE if successful (no name collisions).
- */
-gboolean
-ld_library_insert_category (LdLibrary *self,
-	LdSymbolCategory *category, gint pos)
-{
-	const gchar *name;
-	const GSList *iter;
-
-	g_return_val_if_fail (LD_IS_LIBRARY (self), FALSE);
-	g_return_val_if_fail (LD_IS_SYMBOL_CATEGORY (category), FALSE);
-
-	/* Check for name collisions. */
-	name = ld_symbol_category_get_name (category);
-	for (iter = self->priv->children; iter; iter = iter->next)
-	{
-		if (!strcmp (name, ld_symbol_category_get_name (iter->data)))
-		{
-			g_warning ("attempted to insert multiple `%s' categories into"
-				" library", name);
-			return FALSE;
-		}
-	}
-
-	g_signal_connect (category, "notify::name",
-		G_CALLBACK (on_category_notify_name), self);
-	self->priv->children = g_slist_insert (self->priv->children, category, pos);
-	g_object_ref (category);
-	return TRUE;
-}
-
-/**
- * ld_library_remove_category:
- * @self: an #LdLibrary object.
- * @category: the category to be removed.
- *
- * Remove a child category from the library.
- */
-void
-ld_library_remove_category (LdLibrary *self, LdSymbolCategory *category)
-{
-	g_return_if_fail (LD_IS_LIBRARY (self));
-	g_return_if_fail (LD_IS_SYMBOL_CATEGORY (category));
-
-	if (g_slist_find (self->priv->children, category))
-	{
-		g_signal_handlers_disconnect_by_func (category,
-			on_category_notify_name, self);
-		self->priv->children = g_slist_remove (self->priv->children, category);
-		g_object_unref (category);
-	}
-}
-
-/**
- * ld_library_get_categories:
- * @self: an #LdLibrary object.
- *
- * Return value: (element-type LdSymbolCategory *):
- *               a list of child categories. Do not modify.
- */
-const GSList *
-ld_library_get_categories (LdLibrary *self)
+LdSymbolCategory *
+ld_library_get_root (LdLibrary *self)
 {
 	g_return_val_if_fail (LD_IS_LIBRARY (self), NULL);
-	return self->priv->children;
+	return self->priv->root;
 }
 

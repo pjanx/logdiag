@@ -40,7 +40,7 @@ static void ld_library_finalize (GObject *gobject);
 static LdSymbolCategory *load_category (LdLibrary *self,
 	const gchar *path, const gchar *name);
 static gboolean load_category_cb (const gchar *base,
-	const gchar *filename, gpointer userdata);
+	const gchar *path, gpointer userdata);
 static void load_category_symbol_cb (LdSymbol *symbol, gpointer user_data);
 
 static gchar *read_human_name_from_file (const gchar *filename);
@@ -48,8 +48,6 @@ static gchar *read_human_name_from_file (const gchar *filename);
 static gboolean foreach_dir (const gchar *path,
 	gboolean (*callback) (const gchar *, const gchar *, gpointer),
 	gpointer userdata, GError **error);
-static gboolean ld_library_load_cb
-	(const gchar *base, const gchar *filename, gpointer userdata);
 
 
 G_DEFINE_TYPE (LdLibrary, ld_library, G_TYPE_OBJECT);
@@ -153,6 +151,8 @@ typedef struct
 {
 	LdLibrary *self;
 	LdSymbolCategory *cat;
+	guint changed : 1;
+	guint load_symbols : 1;
 }
 LoadCategoryData;
 
@@ -184,6 +184,8 @@ load_category (LdLibrary *self, const gchar *path, const gchar *name)
 
 	data.self = self;
 	data.cat = ld_symbol_category_new (name, human_name);
+	data.load_symbols = TRUE;
+	data.changed = FALSE;
 	foreach_dir (path, load_category_cb, &data, NULL);
 
 	g_free (human_name);
@@ -194,22 +196,38 @@ load_category (LdLibrary *self, const gchar *path, const gchar *name)
 /*
  * load_category_cb:
  *
- * Load script files from a directory into a symbol category.
+ * Load contents of a directory into a symbol category.
  */
 static gboolean
-load_category_cb (const gchar *base, const gchar *filename, gpointer userdata)
+load_category_cb (const gchar *base, const gchar *path, gpointer userdata)
 {
 	LoadCategoryData *data;
 
 	g_return_val_if_fail (base != NULL, FALSE);
-	g_return_val_if_fail (filename != NULL, FALSE);
+	g_return_val_if_fail (path != NULL, FALSE);
 	g_return_val_if_fail (userdata != NULL, FALSE);
 
 	data = (LoadCategoryData *) userdata;
 
-	if (ld_lua_check_file (data->self->priv->lua, filename))
-		ld_lua_load_file (data->self->priv->lua, filename,
+	if (g_file_test (path, G_FILE_TEST_IS_DIR))
+	{
+		LdSymbolCategory *cat;
+
+		cat = load_category (data->self, path, base);
+		if (cat)
+		{
+			ld_symbol_category_insert_subcategory (data->cat, cat, -1);
+			g_object_unref (cat);
+		}
+	}
+	else if (data->load_symbols
+		&& ld_lua_check_file (data->self->priv->lua, path))
+	{
+		ld_lua_load_file (data->self->priv->lua, path,
 			load_category_symbol_cb, data->cat);
+	}
+
+	data->changed = TRUE;
 	return TRUE;
 }
 
@@ -288,18 +306,6 @@ read_human_name_from_file_end:
 	return NULL;
 }
 
-/*
- * LibraryLoadData:
- *
- * Data shared between ld_library_load() and ld_library_load_cb().
- */
-typedef struct
-{
-	LdLibrary *self;
-	gboolean changed;
-}
-LibraryLoadData;
-
 /**
  * ld_library_load:
  * @self: an #LdLibrary object.
@@ -310,46 +316,21 @@ LibraryLoadData;
 gboolean
 ld_library_load (LdLibrary *self, const gchar *directory)
 {
-	LibraryLoadData data;
+	LoadCategoryData data;
 
 	g_return_val_if_fail (LD_IS_LIBRARY (self), FALSE);
 	g_return_val_if_fail (directory != NULL, FALSE);
 
+	/* Almost like load_category(). */
 	data.self = self;
+	data.cat = self->priv->root;
+	data.load_symbols = FALSE;
 	data.changed = FALSE;
-	foreach_dir (directory, ld_library_load_cb, &data, NULL);
+	foreach_dir (directory, load_category_cb, &data, NULL);
 
 	if (data.changed)
 		g_signal_emit (self, LD_LIBRARY_GET_CLASS (self)->changed_signal, 0);
 
-	return TRUE;
-}
-
-/*
- * ld_library_load_cb:
- *
- * A callback that's called for each file in the root directory.
- */
-static gboolean
-ld_library_load_cb (const gchar *base, const gchar *filename, gpointer userdata)
-{
-	LdSymbolCategory *cat;
-	LibraryLoadData *data;
-
-	g_return_val_if_fail (base != NULL, FALSE);
-	g_return_val_if_fail (filename != NULL, FALSE);
-	g_return_val_if_fail (userdata != NULL, FALSE);
-
-	data = (LibraryLoadData *) userdata;
-
-	cat = load_category (data->self, filename, base);
-	if (cat)
-	{
-		ld_symbol_category_insert_subcategory (data->self->priv->root, cat, -1);
-		g_object_unref (cat);
-	}
-
-	data->changed = TRUE;
 	return TRUE;
 }
 

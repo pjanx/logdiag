@@ -298,12 +298,14 @@ ld_category_insert_symbol (LdCategory *self, LdSymbol *symbol, gint pos)
 void
 ld_category_remove_symbol (LdCategory *self, LdSymbol *symbol)
 {
+	GSList *link;
+
 	g_return_if_fail (LD_IS_CATEGORY (self));
 	g_return_if_fail (LD_IS_SYMBOL (symbol));
 
-	if (g_slist_find (self->priv->symbols, symbol))
+	if ((link = g_slist_find (self->priv->symbols, symbol)))
 	{
-		self->priv->symbols = g_slist_remove (self->priv->symbols, symbol);
+		self->priv->symbols = g_slist_delete_link (self->priv->symbols, link);
 		g_object_unref (symbol);
 	}
 }
@@ -390,15 +392,17 @@ ld_category_add_child (LdCategory *self, LdCategory *category)
 void
 ld_category_remove_child (LdCategory *self, LdCategory *category)
 {
+	GSList *link;
+
 	g_return_if_fail (LD_IS_CATEGORY (self));
 	g_return_if_fail (LD_IS_CATEGORY (category));
 
-	if (g_slist_find (self->priv->subcategories, category))
+	if ((link = g_slist_find (self->priv->subcategories, category)))
 	{
 		g_signal_handlers_disconnect_by_func (category,
 			on_category_notify_name, self);
 		self->priv->subcategories
-			= g_slist_remove (self->priv->subcategories, category);
+			= g_slist_delete_link (self->priv->subcategories, link);
 		g_object_unref (category);
 	}
 }

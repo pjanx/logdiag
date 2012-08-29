@@ -41,14 +41,13 @@ struct _LdCategory
 	LdCategoryPrivate *priv;
 };
 
-/* TODO: If required sometime, categories (and maybe symbols) should implement
- *       a "changed" signal. This can be somewhat tricky. The library might be
- *       a good candidate for what they call a proxy. See GtkUIManager.
- */
 struct _LdCategoryClass
 {
 /*< private >*/
 	GObjectClass parent_class;
+
+	guint symbols_changed_signal;
+	guint children_changed_signal;
 };
 
 

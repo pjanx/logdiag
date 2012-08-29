@@ -328,6 +328,16 @@ ld_library_load (LdLibrary *self, const gchar *directory)
 	data.changed = FALSE;
 	foreach_dir (directory, load_category_cb, &data, NULL);
 
+	/* XXX: It might also make sense to just forward the "children-changed"
+	 *      signal of the root category but we'd have to block it here anyway,
+	 *      so that we don't unnecessarily fire events for every single change.
+	 *
+	 *      The user code isn't supposed to make changes to / and it's its own
+	 *      problem if it keeps reloading something a hundred times in a row.
+	 *
+	 *      That said, it'd be possible to add change grouping methods to
+	 *      LdCategory and so delay the signal emission until an `unblock'.
+	 */
 	if (data.changed)
 		g_signal_emit (self, LD_LIBRARY_GET_CLASS (self)->changed_signal, 0);
 

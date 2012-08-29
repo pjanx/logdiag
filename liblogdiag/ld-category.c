@@ -85,6 +85,26 @@ ld_category_class_init (LdCategoryClass *klass)
 		"", G_PARAM_READWRITE);
 	g_object_class_install_property (object_class, PROP_HUMAN_NAME, pspec);
 
+/**
+ * LdCategory::symbols-changed:
+ *
+ * The list of symbols has changed.
+ */
+	klass->symbols_changed_signal = g_signal_new
+		("symbols-changed", G_TYPE_FROM_CLASS (klass),
+		G_SIGNAL_RUN_LAST, 0, NULL, NULL,
+		g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+
+/**
+ * LdCategory::children-changed:
+ *
+ * The list of subcategory children has changed.
+ */
+	klass->children_changed_signal = g_signal_new
+		("children-changed", G_TYPE_FROM_CLASS (klass),
+		G_SIGNAL_RUN_LAST, 0, NULL, NULL,
+		g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+
 	g_type_class_add_private (klass, sizeof (LdCategoryPrivate));
 }
 
@@ -285,6 +305,9 @@ ld_category_insert_symbol (LdCategory *self, LdSymbol *symbol, gint pos)
 
 	self->priv->symbols = g_slist_insert (self->priv->symbols, symbol, pos);
 	g_object_ref (symbol);
+
+	g_signal_emit (self,
+		LD_CATEGORY_GET_CLASS (self)->symbols_changed_signal, 0);
 	return TRUE;
 }
 
@@ -307,6 +330,9 @@ ld_category_remove_symbol (LdCategory *self, LdSymbol *symbol)
 	{
 		self->priv->symbols = g_slist_delete_link (self->priv->symbols, link);
 		g_object_unref (symbol);
+
+		g_signal_emit (self,
+			LD_CATEGORY_GET_CLASS (self)->symbols_changed_signal, 0);
 	}
 }
 
@@ -379,6 +405,9 @@ ld_category_add_child (LdCategory *self, LdCategory *category)
 	self->priv->subcategories = g_slist_insert_before
 		(self->priv->subcategories, iter, category);
 	g_object_ref (category);
+
+	g_signal_emit (self,
+		LD_CATEGORY_GET_CLASS (self)->children_changed_signal, 0);
 	return TRUE;
 }
 
@@ -404,6 +433,9 @@ ld_category_remove_child (LdCategory *self, LdCategory *category)
 		self->priv->subcategories
 			= g_slist_delete_link (self->priv->subcategories, link);
 		g_object_unref (category);
+
+		g_signal_emit (self,
+			LD_CATEGORY_GET_CLASS (self)->children_changed_signal, 0);
 	}
 }
 

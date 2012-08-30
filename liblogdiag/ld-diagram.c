@@ -56,7 +56,7 @@ typedef struct _ObjectActionData ObjectActionData;
  */
 struct _ObjectActionData
 {
-	LdDiagram *self;
+	gpointer self;
 	LdDiagramObject *object;
 	gint pos;
 };
@@ -804,19 +804,14 @@ ld_diagram_end_user_action (LdDiagram *self)
 }
 
 static void
-action_finalize_notify_cb (ObjectActionData *data, LdDiagram *self)
-{
-	data->self = NULL;
-}
-
-static void
 on_object_action_remove (gpointer user_data)
 {
 	ObjectActionData *data;
 
 	data = user_data;
 	g_return_if_fail (data->self != NULL);
-	ld_diagram_remove_object (data->self, data->object);
+	ld_diagram_remove_object
+		((LdDiagram *) data->self, data->object);
 }
 
 static void
@@ -826,7 +821,8 @@ on_object_action_insert (gpointer user_data)
 
 	data = user_data;
 	g_return_if_fail (data->self != NULL);
-	ld_diagram_insert_object (data->self, data->object, data->pos);
+	ld_diagram_insert_object
+		((LdDiagram *) data->self, data->object, data->pos);
 }
 
 static void
@@ -835,8 +831,8 @@ on_object_action_destroy (gpointer user_data)
 	ObjectActionData *data;
 
 	data = user_data;
-	g_object_weak_unref (G_OBJECT (data->self),
-		(GWeakNotify) action_finalize_notify_cb, data);
+	if (data->self)
+		g_object_remove_weak_pointer (G_OBJECT (data->self), &data->self);
 	g_object_unref (data->object);
 	g_slice_free (ObjectActionData, data);
 }
@@ -901,8 +897,7 @@ ld_diagram_insert_object (LdDiagram *self, LdDiagramObject *object, gint pos)
 
 	action_data = g_slice_new (ObjectActionData);
 	action_data->self = self;
-	g_object_weak_ref (G_OBJECT (self),
-		(GWeakNotify) action_finalize_notify_cb, action_data);
+	g_object_add_weak_pointer (G_OBJECT (self), &action_data->self);
 	action_data->object = g_object_ref (object);
 	action_data->pos = pos;
 
@@ -950,8 +945,7 @@ ld_diagram_remove_object (LdDiagram *self, LdDiagramObject *object)
 
 	action_data = g_slice_new (ObjectActionData);
 	action_data->self = self;
-	g_object_weak_ref (G_OBJECT (self),
-		(GWeakNotify) action_finalize_notify_cb, action_data);
+	g_object_add_weak_pointer (G_OBJECT (self), &action_data->self);
 	action_data->object = g_object_ref (object);
 	action_data->pos = pos;
 
@@ -1037,13 +1031,15 @@ ld_diagram_select (LdDiagram *self, LdDiagramObject *object)
 void
 ld_diagram_unselect (LdDiagram *self, LdDiagramObject *object)
 {
+	GList *link;
+
 	g_return_if_fail (LD_IS_DIAGRAM (self));
 	g_return_if_fail (LD_IS_DIAGRAM_OBJECT (object));
 
-	if (!g_list_find (self->priv->selection, object))
+	if (!(link = g_list_find (self->priv->selection, object)))
 		return;
 
-	self->priv->selection = g_list_remove (self->priv->selection, object);
+	self->priv->selection = g_list_delete_link (self->priv->selection, link);
 	g_object_unref (object);
 
 	g_signal_emit (self,

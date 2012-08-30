@@ -54,9 +54,6 @@ GtkWidget *ld_category_view_new (void);
 
 void ld_category_view_set_category (LdCategoryView *self, LdCategory *category);
 LdCategory *ld_category_view_get_category (LdCategoryView *self);
-void ld_category_view_set_expander_prefix (LdCategoryView *self,
-	const gchar *prefix);
-const gchar *ld_category_view_get_expander_prefix (LdCategoryView *self);
 
 
 G_END_DECLS

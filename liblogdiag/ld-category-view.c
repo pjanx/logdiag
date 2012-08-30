@@ -193,41 +193,6 @@ ld_category_view_get_category (LdCategoryView *self)
 	return self->priv->category;
 }
 
-/**
- * ld_category_view_set_expander_prefix:
- * @self: an #LdCategoryView object.
- * @category: (allow-none): the new prefix.
- *
- * Set the prefix for inner #GtkExpander labels.
- */
-void
-ld_category_view_set_expander_prefix (LdCategoryView *self,
-	const gchar *prefix)
-{
-	g_return_if_fail (LD_IS_CATEGORY_VIEW (self));
-	g_free (self->priv->expander_prefix);
-
-	if (prefix)
-		self->priv->expander_prefix = g_strdup (prefix);
-	else
-		self->priv->expander_prefix = NULL;
-
-	reload_category (self);
-}
-
-/**
- * ld_category_view_get_expander_prefix:
- * @self: an #LdCategoryView object.
- *
- * Return value: the prefix for inner expander labels.
- */
-const gchar *
-ld_category_view_get_expander_prefix (LdCategoryView *self)
-{
-	g_return_val_if_fail (LD_IS_CATEGORY_VIEW (self), NULL);
-	return self->priv->expander_prefix;
-}
-
 static GtkWidget *
 create_empty_label (void)
 {
@@ -248,11 +213,51 @@ create_empty_label (void)
 }
 
 static void
+reconstruct_prefix (LdCategoryView *self)
+{
+	LdCategory *iter;
+	gchar *start, *end;
+
+	start = g_strdup ("");
+	end   = g_strdup ("");
+
+	for (iter = self->priv->category; iter;
+		iter = ld_category_get_parent (iter))
+	{
+		const gchar *name;
+		gchar *new_start, *new_end, *name_escaped;
+
+		/* Stop at the root category. */
+		if (!strcmp (ld_category_get_name (iter),
+			LD_LIBRARY_IDENTIFIER_SEPARATOR))
+			break;
+
+		name = ld_category_get_human_name (iter);
+		name_escaped = g_markup_escape_text (name, -1);
+
+		new_start = g_strconcat (start, "<small>", NULL);
+		new_end   = g_strconcat (name_escaped, ":</small> ", end, NULL);
+
+		g_free (name_escaped);
+		g_free (start);
+		g_free (end);
+
+		start = new_start;
+		end   = new_end;
+	}
+
+	g_free (self->priv->expander_prefix);
+	self->priv->expander_prefix = g_strconcat (start, end, NULL);
+	g_free (start);
+	g_free (end);
+}
+
+static void
 reload_category (LdCategoryView *self)
 {
 	g_return_if_fail (LD_IS_CATEGORY_VIEW (self));
 
-	/* Clear the toolbar first, if there was already something in it. */
+	/* Clear the container first, if there is already something in it. */
 	gtk_container_foreach (GTK_CONTAINER (self),
 		(GtkCallback) gtk_widget_destroy, NULL);
 
@@ -264,7 +269,10 @@ reload_category (LdCategoryView *self)
 
 		children = (GSList *) ld_category_get_children (self->priv->category);
 		if (children)
+		{
+			reconstruct_prefix (self);
 			g_slist_foreach (children, load_category_cb, self);
+		}
 		else
 			/* TODO: Don't show this if there are any symbols. */
 			gtk_box_pack_start (GTK_BOX (self),
@@ -278,8 +286,7 @@ load_category_cb (gpointer data, gpointer user_data)
 	LdCategoryView *self;
 	LdCategory *cat;
 	GtkWidget *expander, *child;
-	const gchar *name;
-	gchar *label, *label_markup;
+	gchar *name, *label_markup;
 
 	g_return_if_fail (LD_IS_CATEGORY_VIEW (user_data));
 	g_return_if_fail (LD_IS_CATEGORY (data));
@@ -287,40 +294,19 @@ load_category_cb (gpointer data, gpointer user_data)
 	self = user_data;
 	cat = data;
 
-	name = ld_category_get_human_name (cat);
-	if (self->priv->expander_prefix)
-	{
-		/* It's the least I can do to make it not look bad right now. */
-		gchar *prefix_escaped, *name_escaped;
-
-		prefix_escaped = g_markup_escape_text (self->priv->expander_prefix, -1);
-		name_escaped = g_markup_escape_text (name, -1);
-
-		label = g_strdup_printf ("%s: %s", self->priv->expander_prefix, name);
-		label_markup = g_strdup_printf ("<small>%s:</small> %s",
-			prefix_escaped, name_escaped);
-
-		g_free (name_escaped);
-		g_free (prefix_escaped);
-	}
-	else
-	{
-		label = g_strdup (name);
-		label_markup = g_markup_escape_text (name, -1);
-	}
+	name = g_markup_escape_text (ld_category_get_human_name (cat), -1);
+	label_markup = g_strconcat (self->priv->expander_prefix, name, NULL);
+	g_free (name);
 
 	expander = gtk_expander_new (label_markup);
 	gtk_expander_set_expanded (GTK_EXPANDER (expander), TRUE);
 	gtk_expander_set_use_markup (GTK_EXPANDER (expander), TRUE);
+	g_free (label_markup);
 
 	child = ld_category_view_new ();
-	ld_category_view_set_expander_prefix (LD_CATEGORY_VIEW (child), label);
 	ld_category_view_set_category (LD_CATEGORY_VIEW (child), cat);
 
 	gtk_container_add (GTK_CONTAINER (expander), child);
 	gtk_box_pack_start (GTK_BOX (self), expander, FALSE, FALSE, 0);
-
-	g_free (label);
-	g_free (label_markup);
 }
 

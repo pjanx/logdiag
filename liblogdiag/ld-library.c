@@ -81,7 +81,7 @@ ld_library_init (LdLibrary *self)
 		(self, LD_TYPE_LIBRARY, LdLibraryPrivate);
 
 	self->priv->lua = ld_lua_new ();
-	self->priv->root = ld_category_new ("/", "/");
+	self->priv->root = ld_category_new (LD_LIBRARY_IDENTIFIER_SEPARATOR, "/");
 }
 
 static void

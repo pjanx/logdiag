@@ -170,6 +170,9 @@ ld_category_view_set_category (LdCategoryView *self, LdCategory *category)
 		g_signal_connect_data (category, "children-changed",
 			G_CALLBACK (reload_category), self,
 			NULL, G_CONNECT_AFTER | G_CONNECT_SWAPPED);
+		g_signal_connect_data (category, "notify::parent",
+			G_CALLBACK (reload_category), self,
+			NULL, G_CONNECT_AFTER | G_CONNECT_SWAPPED);
 		g_object_ref (category);
 	}
 	reload_category (self);

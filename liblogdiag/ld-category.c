@@ -22,6 +22,7 @@
 
 /*
  * LdCategoryPrivate:
+ * @parent: the parent of this category.
  * @name: the name of this category.
  * @human_name: the localized human-readable name of this category.
  * @symbols: (element-type LdSymbol *): symbols in this category.
@@ -29,6 +30,7 @@
  */
 struct _LdCategoryPrivate
 {
+	LdCategory *parent;
 	gchar *name;
 	gchar *human_name;
 	GSList *symbols;
@@ -38,6 +40,7 @@ struct _LdCategoryPrivate
 enum
 {
 	PROP_0,
+	PROP_PARENT,
 	PROP_NAME,
 	PROP_HUMAN_NAME
 };
@@ -64,6 +67,16 @@ ld_category_class_init (LdCategoryClass *klass)
 	object_class->get_property = ld_category_get_property;
 	object_class->set_property = ld_category_set_property;
 	object_class->finalize = ld_category_finalize;
+
+/**
+ * LdCategory:parent:
+ *
+ * The parent of this symbol category.
+ */
+	pspec = g_param_spec_string ("parent", "Parent",
+		"The parent of this symbol category.",
+		"", G_PARAM_READWRITE);
+	g_object_class_install_property (object_class, PROP_PARENT, pspec);
 
 /**
  * LdCategory:name:
@@ -130,6 +143,9 @@ ld_category_get_property (GObject *object, guint property_id,
 	case PROP_HUMAN_NAME:
 		g_value_set_string (value, ld_category_get_human_name (self));
 		break;
+	case PROP_PARENT:
+		g_value_set_object (value, ld_category_get_parent (self));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
 	}
@@ -150,6 +166,9 @@ ld_category_set_property (GObject *object, guint property_id,
 	case PROP_HUMAN_NAME:
 		ld_category_set_human_name (self, g_value_get_string (value));
 		break;
+	case PROP_PARENT:
+		ld_category_set_parent (self, g_value_get_object (value));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
 	}
@@ -160,7 +179,25 @@ uninstall_category_cb (LdCategory *category, LdCategory *self)
 {
 	g_signal_handlers_disconnect_by_func (category,
 		on_category_notify_name, self);
+	if (ld_category_get_parent (category) == self)
+		ld_category_set_parent (category, NULL);
 	g_object_unref (category);
+}
+
+static void
+parent_weak_notify (gpointer data, GObject *object)
+{
+	LdCategory *self;
+
+	/* In practice this should never happen, for it would mean that
+	 * we have a parent that have us as its child.
+	 */
+	self = (LdCategory *) data;
+	if (self->priv->parent)
+	{
+		self->priv->parent = NULL;
+		g_object_notify (G_OBJECT (self), "parent");
+	}
 }
 
 static void
@@ -169,6 +206,10 @@ ld_category_finalize (GObject *gobject)
 	LdCategory *self;
 
 	self = LD_CATEGORY (gobject);
+
+	if (self->priv->parent)
+		g_object_weak_unref
+			(G_OBJECT (self->priv->parent), parent_weak_notify, self);
 
 	if (self->priv->name)
 		g_free (self->priv->name);
@@ -349,6 +390,43 @@ ld_category_get_symbols (LdCategory *self)
 	return self->priv->symbols;
 }
 
+/**
+ * ld_category_set_parent:
+ * @self: an #LdCategory object.
+ * @parent: the new parent category.
+ *
+ * Set the parent of this category.
+ */
+void
+ld_category_set_parent (LdCategory *self, LdCategory *parent)
+{
+	g_return_if_fail (LD_IS_CATEGORY (self));
+	g_return_if_fail (parent == NULL || LD_IS_CATEGORY (parent));
+
+	if (self->priv->parent)
+		g_object_weak_unref
+			(G_OBJECT (self->priv->parent), parent_weak_notify, self);
+
+	self->priv->parent = parent;
+
+	if (parent)
+		g_object_weak_ref (G_OBJECT (parent), parent_weak_notify, self);
+
+	g_object_notify (G_OBJECT (self), "parent");
+}
+
+/**
+ * ld_category_get_parent:
+ * @self: an #LdCategory object.
+ *
+ * Return value: the parent of this category.
+ */
+LdCategory *
+ld_category_get_parent (LdCategory *self)
+{
+	g_return_val_if_fail (LD_IS_CATEGORY (self), NULL);
+	return self->priv->parent;
+}
 
 static void
 on_category_notify_name (LdCategory *category,
@@ -404,6 +482,7 @@ ld_category_add_child (LdCategory *self, LdCategory *category)
 		G_CALLBACK (on_category_notify_name), self);
 	self->priv->subcategories = g_slist_insert_before
 		(self->priv->subcategories, iter, category);
+	ld_category_set_parent (category, self);
 	g_object_ref (category);
 
 	g_signal_emit (self,
@@ -428,11 +507,9 @@ ld_category_remove_child (LdCategory *self, LdCategory *category)
 
 	if ((link = g_slist_find (self->priv->subcategories, category)))
 	{
-		g_signal_handlers_disconnect_by_func (category,
-			on_category_notify_name, self);
 		self->priv->subcategories
 			= g_slist_delete_link (self->priv->subcategories, link);
-		g_object_unref (category);
+		uninstall_category_cb (category, self);
 
 		g_signal_emit (self,
 			LD_CATEGORY_GET_CLASS (self)->children_changed_signal, 0);

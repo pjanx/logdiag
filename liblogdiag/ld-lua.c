@@ -492,6 +492,7 @@ static int
 process_registration (lua_State *L)
 {
 	LdLuaSymbol *symbol;
+	const gchar *name;
 	gchar *human_name;
 
 	int i, type, types[] =
@@ -508,7 +509,10 @@ process_registration (lua_State *L)
 				lua_typename (L, types[i]), lua_typename (L, type));
 
 	symbol = LD_LUA_SYMBOL (lua_touserdata (L, lua_upvalueindex (1)));
-	symbol->priv->name = g_strdup (lua_tostring (L, 1));
+	name = lua_tostring (L, 1);
+	if (g_strstr_len (name, -1, LD_LIBRARY_IDENTIFIER_SEPARATOR))
+		return luaL_error (L, "Invalid symbol name.");
+	symbol->priv->name = g_strdup (name);
 
 	human_name = get_translation (L, 2);
 	if (!human_name)

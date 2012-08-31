@@ -13,6 +13,8 @@ else (OPTION_NOINSTALL)
 	set (OPTION_NOINSTALL 0)
 endif (OPTION_NOINSTALL)
 
+add_definitions (-DGSEAL_ENABLE)
+
 # Project information
 set (project_VERSION_MAJOR "0")
 set (project_VERSION_MINOR "1")

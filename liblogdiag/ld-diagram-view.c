@@ -611,10 +611,10 @@ ld_diagram_view_real_set_scroll_adjustments (LdDiagramView *self,
 	GtkAdjustment *horizontal, GtkAdjustment *vertical)
 {
 	/* TODO: Infinite area. */
-	GtkWidget *widget;
-	gdouble scale;
+	GtkAllocation allocation;
+	gdouble scale, page_size;
 
-	widget = GTK_WIDGET (self);
+	gtk_widget_get_allocation (GTK_WIDGET (self), &allocation);
 	scale = ld_diagram_view_get_scale_in_px (self);
 
 	if (horizontal != self->priv->adjustment_h)
@@ -633,12 +633,9 @@ ld_diagram_view_real_set_scroll_adjustments (LdDiagramView *self,
 			g_signal_connect (horizontal, "value-changed",
 				G_CALLBACK (on_adjustment_value_changed), self);
 
-			horizontal->upper = 100;
-			horizontal->lower = -100;
-			horizontal->step_increment = 0.5;
-			horizontal->page_increment = 5;
-			horizontal->page_size = widget->allocation.width / scale;
-			horizontal->value = -horizontal->page_size / 2;
+			page_size = allocation.width / scale;
+			gtk_adjustment_configure (horizontal,
+				-page_size / 2, -100, 100, 0.5, 5, page_size);
 
 			self->priv->adjustment_h = horizontal;
 		}
@@ -660,12 +657,9 @@ ld_diagram_view_real_set_scroll_adjustments (LdDiagramView *self,
 			g_signal_connect (vertical, "value-changed",
 				G_CALLBACK (on_adjustment_value_changed), self);
 
-			vertical->upper = 100;
-			vertical->lower = -100;
-			vertical->step_increment = 0.5;
-			vertical->page_increment = 5;
-			vertical->page_size = widget->allocation.height / scale;
-			vertical->value = -vertical->page_size / 2;
+			page_size = allocation.height / scale;
+			gtk_adjustment_configure (vertical,
+				-page_size / 2, -100, 100, 0.5, 5, page_size);
 
 			self->priv->adjustment_v = vertical;
 		}
@@ -675,18 +669,18 @@ ld_diagram_view_real_set_scroll_adjustments (LdDiagramView *self,
 static void
 on_adjustment_value_changed (GtkAdjustment *adjustment, LdDiagramView *self)
 {
-	GtkWidget *widget;
+	GtkAllocation allocation;
 	gdouble scale;
 
-	widget = GTK_WIDGET (self);
+	gtk_widget_get_allocation (GTK_WIDGET (self), &allocation);
 	scale = ld_diagram_view_get_scale_in_px (self);
 
 	if (adjustment == self->priv->adjustment_h)
-		ld_diagram_view_set_x (self, adjustment->value
-			+ widget->allocation.width / scale / 2);
+		ld_diagram_view_set_x (self, gtk_adjustment_get_value (adjustment)
+			+ allocation.width  / scale / 2);
 	else if (adjustment == self->priv->adjustment_v)
-		ld_diagram_view_set_y (self, adjustment->value
-			+ widget->allocation.height / scale / 2);
+		ld_diagram_view_set_y (self, gtk_adjustment_get_value (adjustment)
+			+ allocation.height / scale / 2);
 }
 
 static void
@@ -706,24 +700,26 @@ on_size_allocate (GtkWidget *widget, GtkAllocation *allocation,
 static void
 update_adjustments (LdDiagramView *self)
 {
-	gdouble scale;
+	GtkAllocation allocation;
+	gdouble scale, page_size;
 
+	gtk_widget_get_allocation (GTK_WIDGET (self), &allocation);
 	scale = ld_diagram_view_get_scale_in_px (self);
 
 	if (self->priv->adjustment_h)
 	{
-		self->priv->adjustment_h->page_size
-			= GTK_WIDGET (self)->allocation.width  / scale;
-		self->priv->adjustment_h->value
-			= self->priv->x - self->priv->adjustment_h->page_size / 2;
+		page_size = allocation.width  / scale;
+		gtk_adjustment_set_page_size (self->priv->adjustment_h, page_size);
+		gtk_adjustment_set_value (self->priv->adjustment_h,
+			self->priv->x - page_size / 2);
 		gtk_adjustment_changed (self->priv->adjustment_h);
 	}
 	if (self->priv->adjustment_v)
 	{
-		self->priv->adjustment_v->page_size
-			= GTK_WIDGET (self)->allocation.height / scale;
-		self->priv->adjustment_v->value
-			= self->priv->y - self->priv->adjustment_v->page_size / 2;
+		page_size = allocation.height / scale;
+		gtk_adjustment_set_page_size (self->priv->adjustment_v, page_size);
+		gtk_adjustment_set_value (self->priv->adjustment_v,
+			self->priv->y - page_size / 2);
 		gtk_adjustment_changed (self->priv->adjustment_v);
 	}
 }
@@ -907,22 +903,22 @@ void
 ld_diagram_view_widget_to_diagram_coords (LdDiagramView *self,
 	gdouble wx, gdouble wy, gdouble *dx, gdouble *dy)
 {
-	GtkWidget *widget;
+	GtkAllocation allocation;
 	gdouble scale;
 
 	g_return_if_fail (LD_IS_DIAGRAM_VIEW (self));
 	g_return_if_fail (dx != NULL);
 	g_return_if_fail (dy != NULL);
 
-	widget = GTK_WIDGET (self);
+	gtk_widget_get_allocation (GTK_WIDGET (self), &allocation);
 	scale = ld_diagram_view_get_scale_in_px (self);
 
 	/* We know diagram coordinates of the center of view, so we may
 	 * translate the given X and Y coordinates to this center and then scale
 	 * them by dividing them by the current scale.
 	 */
-	*dx = self->priv->x + (wx - (widget->allocation.width  * 0.5)) / scale;
-	*dy = self->priv->y + (wy - (widget->allocation.height * 0.5)) / scale;
+	*dx = self->priv->x + (wx - (allocation.width  * 0.5)) / scale;
+	*dy = self->priv->y + (wy - (allocation.height * 0.5)) / scale;
 }
 
 /**
@@ -939,19 +935,19 @@ void
 ld_diagram_view_diagram_to_widget_coords (LdDiagramView *self,
 	gdouble dx, gdouble dy, gdouble *wx, gdouble *wy)
 {
-	GtkWidget *widget;
+	GtkAllocation allocation;
 	gdouble scale;
 
 	g_return_if_fail (LD_IS_DIAGRAM_VIEW (self));
 	g_return_if_fail (wx != NULL);
 	g_return_if_fail (wy != NULL);
 
-	widget = GTK_WIDGET (self);
+	gtk_widget_get_allocation (GTK_WIDGET (self), &allocation);
 	scale = ld_diagram_view_get_scale_in_px (self);
 
 	/* Just the reversal of ld_diagram_view_widget_to_diagram_coords(). */
-	*wx = scale * (dx - self->priv->x) + 0.5 * widget->allocation.width;
-	*wy = scale * (dy - self->priv->y) + 0.5 * widget->allocation.height;
+	*wx = scale * (dx - self->priv->x) + 0.5 * allocation.width;
+	*wy = scale * (dy - self->priv->y) + 0.5 * allocation.height;
 }
 
 /**
@@ -1770,7 +1766,8 @@ oper_move_view_begin (LdDiagramView *self, const LdPoint *point)
 	data->last_pos = *point;
 
 	move_cursor = gdk_cursor_new (GDK_FLEUR);
-	gdk_window_set_cursor (GTK_WIDGET (self)->window, move_cursor);
+	gdk_window_set_cursor
+		(gtk_widget_get_window (GTK_WIDGET (self)), move_cursor);
 	gdk_cursor_unref (move_cursor);
 }
 
@@ -1794,7 +1791,7 @@ oper_move_view_motion (LdDiagramView *self, const LdPoint *point)
 static void
 oper_move_view_end (LdDiagramView *self)
 {
-	gdk_window_set_cursor (GTK_WIDGET (self)->window, NULL);
+	gdk_window_set_cursor (gtk_widget_get_window (GTK_WIDGET (self)), NULL);
 }
 
 /**
@@ -2131,18 +2128,19 @@ simulate_motion (LdDiagramView *self)
 {
 	GdkEventMotion event;
 	GtkWidget *widget;
+	GdkWindow *window;
 	gint x, y;
 	GdkModifierType state;
 
 	widget = GTK_WIDGET (self);
+	window = gtk_widget_get_window (widget);
 
-	if (gdk_window_get_pointer (widget->window, &x, &y, &state)
-		!= widget->window)
+	if (gdk_window_get_pointer (window, &x, &y, &state) != window)
 		return;
 
 	memset (&event, 0, sizeof (event));
 	event.type = GDK_MOTION_NOTIFY;
-	event.window = widget->window;
+	event.window = window;
 	event.x = x;
 	event.y = y;
 	event.state = state;
@@ -2430,7 +2428,7 @@ on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 {
 	DrawData data;
 
-	data.cr = gdk_cairo_create (widget->window);
+	data.cr = gdk_cairo_create (gtk_widget_get_window (widget));
 	data.self = LD_DIAGRAM_VIEW (widget);
 	data.scale = ld_diagram_view_get_scale_in_px (data.self);
 	data.exposed_rect.x = event->area.x;

@@ -263,18 +263,27 @@ reload_category (LdCategoryView *self)
 
 	if (self->priv->category)
 	{
-		GSList *children;
+		GSList *symbols, *children;
 
-		/* TODO: Also show the symbols. */
-
+		symbols  = (GSList *) ld_category_get_symbols  (self->priv->category);
 		children = (GSList *) ld_category_get_children (self->priv->category);
+
+		if (symbols)
+		{
+			GtkWidget *symbol_view;
+
+			symbol_view = ld_category_symbol_view_new ();
+			ld_category_symbol_view_set_category
+				(LD_CATEGORY_SYMBOL_VIEW (symbol_view), self->priv->category);
+			gtk_box_pack_start (GTK_BOX (self), symbol_view, FALSE, FALSE, 0);
+		}
+
 		if (children)
 		{
 			reconstruct_prefix (self);
 			g_slist_foreach (children, load_category_cb, self);
 		}
-		else
-			/* TODO: Don't show this if there are any symbols. */
+		else if (!symbols)
 			gtk_box_pack_start (GTK_BOX (self),
 				create_empty_label (), FALSE, FALSE, 0);
 	}

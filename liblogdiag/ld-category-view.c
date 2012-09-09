@@ -134,13 +134,18 @@ ld_category_view_set_property (GObject *object, guint property_id,
 
 /**
  * ld_category_view_new:
+ * @category: (allow-none): a category to be assigned to the widget.
  *
  * Create an instance.
  */
 GtkWidget *
-ld_category_view_new (void)
+ld_category_view_new (LdCategory *category)
 {
-	return g_object_new (LD_TYPE_CATEGORY_VIEW, NULL);
+	LdCategoryView *self;
+
+	self = g_object_new (LD_TYPE_CATEGORY_VIEW, NULL);
+	ld_category_view_set_category (self, category);
+	return GTK_WIDGET (self);
 }
 
 /**
@@ -272,9 +277,7 @@ reload_category (LdCategoryView *self)
 		{
 			GtkWidget *symbol_view;
 
-			symbol_view = ld_category_symbol_view_new ();
-			ld_category_symbol_view_set_category
-				(LD_CATEGORY_SYMBOL_VIEW (symbol_view), self->priv->category);
+			symbol_view = ld_category_symbol_view_new (self->priv->category);
 			gtk_box_pack_start (GTK_BOX (self), symbol_view, FALSE, FALSE, 0);
 		}
 
@@ -312,9 +315,7 @@ load_category_cb (gpointer data, gpointer user_data)
 	gtk_expander_set_use_markup (GTK_EXPANDER (expander), TRUE);
 	g_free (label_markup);
 
-	child = ld_category_view_new ();
-	ld_category_view_set_category (LD_CATEGORY_VIEW (child), cat);
-
+	child = ld_category_view_new (cat);
 	gtk_container_add (GTK_CONTAINER (expander), child);
 	gtk_box_pack_start (GTK_BOX (self), expander, FALSE, FALSE, 0);
 }

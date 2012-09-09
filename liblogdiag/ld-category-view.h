@@ -50,7 +50,7 @@ struct _LdCategoryViewClass
 
 GType ld_category_view_get_type (void) G_GNUC_CONST;
 
-GtkWidget *ld_category_view_new (void);
+GtkWidget *ld_category_view_new (LdCategory *category);
 
 void ld_category_view_set_category (LdCategoryView *self, LdCategory *category);
 LdCategory *ld_category_view_get_category (LdCategoryView *self);

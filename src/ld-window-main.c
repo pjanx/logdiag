@@ -262,7 +262,7 @@ ld_window_main_init (LdWindowMain *self)
 	priv->toolbar = gtk_ui_manager_get_widget (priv->ui_manager, "/Toolbar");
 
 	/* Create the remaining widgets. */
-	priv->library_view = ld_category_view_new ();
+	priv->library_view = ld_category_view_new (NULL);
 
 	priv->view = LD_DIAGRAM_VIEW (ld_diagram_view_new ());
 	priv->scrolled_window = gtk_scrolled_window_new (NULL, NULL);

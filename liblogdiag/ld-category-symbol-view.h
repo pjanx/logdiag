@@ -50,7 +50,7 @@ struct _LdCategorySymbolViewClass
 
 GType ld_category_symbol_view_get_type (void) G_GNUC_CONST;
 
-GtkWidget *ld_category_symbol_view_new (void);
+GtkWidget *ld_category_symbol_view_new (LdCategory *category);
 
 void ld_category_symbol_view_set_category
 	(LdCategorySymbolView *self, LdCategory *category);

@@ -205,13 +205,18 @@ on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 
 /**
  * ld_category_symbol_view_new:
+ * @category: (allow-none): a category to be assigned to the widget.
  *
  * Create an instance.
  */
 GtkWidget *
-ld_category_symbol_view_new (void)
+ld_category_symbol_view_new (LdCategory *category)
 {
-	return g_object_new (LD_TYPE_CATEGORY_SYMBOL_VIEW, NULL);
+	LdCategorySymbolView *self;
+
+	self = g_object_new (LD_TYPE_CATEGORY_SYMBOL_VIEW, NULL);
+	ld_category_symbol_view_set_category (self, category);
+	return GTK_WIDGET (self);
 }
 
 /**

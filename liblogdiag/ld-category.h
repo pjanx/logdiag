@@ -67,6 +67,7 @@ const GSList *ld_category_get_symbols (LdCategory *self);
 
 void ld_category_set_parent (LdCategory *self, LdCategory *parent);
 LdCategory *ld_category_get_parent (LdCategory *self);
+gchar *ld_category_get_path (LdCategory *self);
 
 gboolean ld_category_add_child (LdCategory *self, LdCategory *category);
 void ld_category_remove_child (LdCategory *self, LdCategory *category);

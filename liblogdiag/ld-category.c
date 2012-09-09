@@ -428,6 +428,38 @@ ld_category_get_parent (LdCategory *self)
 	return self->priv->parent;
 }
 
+/**
+ * ld_category_get_path:
+ * @self: an #LdCategory object.
+ *
+ * Return value: the path to this category within the library.
+ */
+gchar *
+ld_category_get_path (LdCategory *self)
+{
+	LdCategory *iter;
+	gchar *path = NULL, *new_path;
+
+	g_return_val_if_fail (LD_IS_CATEGORY (self), NULL);
+
+	for (iter = self; iter; iter = ld_category_get_parent (iter))
+	{
+		const gchar *name;
+
+		/* Stop at the root category. */
+		name = ld_category_get_name (iter);
+		if (!strcmp (name, LD_LIBRARY_IDENTIFIER_SEPARATOR))
+			break;
+
+		new_path = g_build_path
+			(LD_LIBRARY_IDENTIFIER_SEPARATOR, name, path, NULL);
+		g_free (path);
+		path = new_path;
+	}
+
+	return path;
+}
+
 static void
 on_category_notify_name (LdCategory *category,
 	GParamSpec *pspec, gpointer user_data)

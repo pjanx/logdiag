@@ -28,6 +28,7 @@
 struct _LdCategorySymbolViewPrivate
 {
 	LdCategory *category;
+	gchar *path;
 	guint height_negotiation : 1;
 };
 
@@ -106,6 +107,7 @@ ld_category_symbol_view_finalize (GObject *gobject)
 
 	if (self->priv->category)
 		g_object_unref (self->priv->category);
+	g_free (self->priv->path);
 
 	/* Chain up to the parent class. */
 	G_OBJECT_CLASS (ld_category_symbol_view_parent_class)->finalize (gobject);
@@ -234,7 +236,16 @@ ld_category_symbol_view_set_category (LdCategorySymbolView *self,
 	g_return_if_fail (LD_IS_CATEGORY (category));
 
 	if (self->priv->category)
+	{
 		g_object_unref (self->priv->category);
+
+		g_free (self->priv->path);
+		self->priv->path = NULL;
+	}
+
+	/* XXX: We should rebuild the path if the name changes but it shouldn't
+	 *      happen and we would have to track the parents, too. */
+	self->priv->path = ld_category_get_path (category);
 
 	self->priv->category = category;
 	g_object_ref (category);

@@ -21,16 +21,40 @@
  * onto #LdDiagramView.
  */
 
+/* Milimetres per inch. */
+#define MM_PER_INCH 25.4
+/* The default screen resolution in DPI units. */
+#define DEFAULT_SCREEN_RESOLUTION 96
+
+#define SYMBOL_WIDTH    50   /* Width  of a symbol. */
+#define SYMBOL_HEIGHT   40   /* Height of a symbol. */
+#define SYMBOL_SPACING  10   /* Spacing between symbols, and also borders. */
+
 /*
  * LdCategorySymbolViewPrivate:
  * @category: a category object assigned as a model.
+ * @path: path to the category within the library.
+ * @layout: (element-type SymbolData *): current layout of symbols.
+ * @height_negotiation: whether we are negotiating height right now.
  */
 struct _LdCategorySymbolViewPrivate
 {
 	LdCategory *category;
 	gchar *path;
+	GSList *layout;
 	guint height_negotiation : 1;
 };
+
+typedef struct
+{
+	LdSymbol *symbol;        /* The associated symbol, ref'ed. */
+	gchar *path;             /* Path to the symbol. */
+
+	GdkRectangle rect;       /* Clipping rectangle. */
+	gdouble scale;           /* Scale to draw the symbol in. */
+	gdouble dx, dy;          /* Delta into .rect. */
+}
+SymbolData;
 
 enum
 {
@@ -99,12 +123,29 @@ ld_category_symbol_view_init (LdCategorySymbolView *self)
 }
 
 static void
+symbol_data_free (SymbolData *self)
+{
+	g_object_unref (self->symbol);
+	g_free (self->path);
+	g_slice_free (SymbolData, self);
+}
+
+static void
+layout_destroy (LdCategorySymbolView *self)
+{
+	g_slist_foreach (self->priv->layout, (GFunc) symbol_data_free, NULL);
+	g_slist_free (self->priv->layout);
+	self->priv->layout = NULL;
+}
+
+static void
 ld_category_symbol_view_finalize (GObject *gobject)
 {
 	LdCategorySymbolView *self;
 
 	self = LD_CATEGORY_SYMBOL_VIEW (gobject);
 
+	layout_destroy (self);
 	if (self->priv->category)
 		g_object_unref (self->priv->category);
 	g_free (self->priv->path);
@@ -148,6 +189,163 @@ ld_category_symbol_view_set_property (GObject *object, guint property_id,
 	}
 }
 
+
+typedef struct
+{
+	guint total_height;      /* Total height required to show the symbols. */
+	guint max_width;         /* Width available to the widget. */
+
+	GSList *cur_row;         /* Current row of symbols. */
+	guint cur_width;         /* Current width of the row. */
+	guint cur_height_up;     /* Current max. upper height of symbols. */
+	guint cur_height_down;   /* Current max. lower height of symbols. */
+}
+LayoutContext;
+
+static GSList *
+layout_finish_row (LayoutContext *ctx)
+{
+	GSList *item, *result;
+	gint row_height, h_delta;
+
+	row_height = SYMBOL_SPACING + ctx->cur_height_up + ctx->cur_height_down;
+	h_delta = (ctx->max_width - ctx->cur_width) / 2;
+
+	for (item = ctx->cur_row; item; item = item->next)
+	{
+		SymbolData *data;
+
+		data = item->data;
+		data->rect.x += h_delta;
+		data->rect.height = row_height;
+		data->dy = SYMBOL_SPACING * 0.5 + ctx->cur_height_up;
+	}
+
+	result = g_slist_reverse (ctx->cur_row);
+
+	ctx->cur_row = NULL;
+	ctx->total_height += row_height;
+
+	ctx->cur_width = SYMBOL_SPACING;
+	ctx->cur_height_up = 0;
+	ctx->cur_height_down = 0;
+
+	return result;
+}
+
+static gint
+layout_for_width (LdCategorySymbolView *self, gint width)
+{
+	GSList *symbols, *iter;
+	LayoutContext ctx = {SYMBOL_SPACING, 0, NULL, SYMBOL_SPACING, 0, 0};
+
+	layout_destroy (self);
+	ctx.max_width = width;
+
+	symbols = (GSList *) ld_category_get_symbols (self->priv->category);
+	for (iter = symbols; iter; iter = iter->next)
+	{
+		SymbolData *data;
+		LdRectangle area;
+		LdSymbol *symbol;
+		gint real_width, height_up, height_down;
+
+		symbol = LD_SYMBOL (iter->data);
+		ld_symbol_get_area (symbol, &area);
+
+		data = g_slice_new (SymbolData);
+		data->symbol = g_object_ref (symbol);
+		data->path = g_build_path (LD_LIBRARY_IDENTIFIER_SEPARATOR,
+			self->priv->path, ld_symbol_get_name (symbol), NULL);
+
+		/* Compute the scale to fit the symbol to an area of
+		 * SYMBOL_WIDTH * SYMBOL_HEIGHT, vertically centred. */
+		data->scale = SYMBOL_HEIGHT * 0.5
+			/ MAX (ABS (area.y), ABS (area.y + area.height)) * 0.5;
+		if (data->scale * area.width > SYMBOL_WIDTH)
+			data->scale = SYMBOL_WIDTH / area.width;
+
+		real_width = data->scale * area.width + 0.5;
+		data->rect.width = real_width + SYMBOL_SPACING;
+		/* Now I have no idea what this does but it worked before.
+		 * When I do, I have to write it in here. */
+		data->dx = data->rect.width * 0.5 + data->scale
+			* (area.width * 0.5 - ABS (area.x + area.width));
+
+		if (ctx.cur_width + real_width + SYMBOL_SPACING > ctx.max_width
+			&& ctx.cur_row != NULL)
+		{
+			self->priv->layout = g_slist_concat (self->priv->layout,
+				layout_finish_row (&ctx));
+		}
+
+		/* Half of the spacing is included on each side of the rect. */
+		data->rect.x = ctx.cur_width    - SYMBOL_SPACING / 2;
+		data->rect.y = ctx.total_height - SYMBOL_SPACING / 2;
+
+		height_up   = data->scale * ABS (area.y);
+		height_down = data->scale * ABS (area.y + area.height);
+
+		if (height_up   > ctx.cur_height_up)
+			ctx.cur_height_up   = height_up;
+		if (height_down > ctx.cur_height_down)
+			ctx.cur_height_down = height_down;
+
+		ctx.cur_row = g_slist_prepend (ctx.cur_row, data);
+		ctx.cur_width += real_width + SYMBOL_SPACING;
+	}
+
+	if (ctx.cur_row != NULL)
+		self->priv->layout = g_slist_concat (self->priv->layout,
+			layout_finish_row (&ctx));
+
+	return ctx.total_height;
+}
+
+
+static gboolean
+on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
+{
+	LdCategorySymbolView *self;
+	cairo_t *cr;
+	GSList *iter;
+
+	self = LD_CATEGORY_SYMBOL_VIEW (widget);
+	cr = gdk_cairo_create (gtk_widget_get_window (widget));
+	gdk_cairo_rectangle (cr, &event->area);
+	cairo_clip (cr);
+
+	gdk_cairo_set_source_color (cr,
+		&gtk_widget_get_style (widget)->base[GTK_STATE_NORMAL]);
+	cairo_paint (cr);
+
+	for (iter = self->priv->layout; iter; iter = iter->next)
+	{
+		SymbolData *data;
+
+		data = iter->data;
+		if (!gdk_rectangle_intersect (&data->rect, &event->area, NULL))
+			continue;
+
+		cairo_save (cr);
+		gdk_cairo_rectangle (cr, &data->rect);
+		cairo_clip (cr);
+
+		cairo_translate (cr, data->rect.x + data->dx, data->rect.y + data->dy);
+		cairo_scale (cr, data->scale, data->scale);
+
+		gdk_cairo_set_source_color (cr,
+			&gtk_widget_get_style (widget)->text[GTK_STATE_NORMAL]);
+		cairo_set_line_width (cr, 1 / data->scale);
+		ld_symbol_draw (data->symbol, cr);
+
+		cairo_restore (cr);
+	}
+
+	cairo_destroy (cr);
+	return FALSE;
+}
+
 static void
 on_size_request (GtkWidget *widget, GtkRequisition *requisition,
 	gpointer user_data)
@@ -156,17 +354,25 @@ on_size_request (GtkWidget *widget, GtkRequisition *requisition,
 
 	self = LD_CATEGORY_SYMBOL_VIEW (widget);
 
-	requisition->width = 10;
+	if (!self->priv->category
+	 || !ld_category_get_symbols (self->priv->category))
+	{
+		requisition->width  = 0;
+		requisition->height = 0;
+		return;
+	}
+
+	requisition->width = SYMBOL_WIDTH + 2 * SYMBOL_SPACING;
 
 	if (self->priv->height_negotiation)
 	{
 		GtkAllocation alloc;
 
 		gtk_widget_get_allocation (widget, &alloc);
-		requisition->height = 5000 / alloc.width;
+		requisition->height = layout_for_width (self, alloc.width);
 	}
 	else
-		requisition->height = 10;
+		requisition->height = SYMBOL_HEIGHT + 2 * SYMBOL_SPACING;
 }
 
 static void
@@ -184,23 +390,6 @@ on_size_allocate (GtkWidget *widget, GdkRectangle *allocation,
 		self->priv->height_negotiation = TRUE;
 		gtk_widget_queue_resize (widget);
 	}
-}
-
-static gboolean
-on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
-{
-	cairo_t *cr;
-
-	cr = gdk_cairo_create (gtk_widget_get_window (widget));
-	gdk_cairo_rectangle (cr, &event->area);
-	cairo_clip (cr);
-
-	gdk_cairo_set_source_color (cr,
-		&gtk_widget_get_style (widget)->base[GTK_STATE_NORMAL]);
-	cairo_paint (cr);
-
-	cairo_destroy (cr);
-	return FALSE;
 }
 
 /* ===== Generic interface etc. ============================================ */
@@ -251,6 +440,7 @@ ld_category_symbol_view_set_category (LdCategorySymbolView *self,
 	g_object_ref (category);
 
 	g_object_notify (G_OBJECT (self), "category");
+	gtk_widget_queue_resize (GTK_WIDGET (self));
 }
 
 /**

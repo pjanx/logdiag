@@ -292,6 +292,7 @@ ld_window_main_init (LdWindowMain *self)
 		priv->lv_window, FALSE, FALSE);
 	gtk_paned_pack2 (GTK_PANED (priv->paned),
 		priv->scrolled_window, TRUE, TRUE);
+	gtk_paned_set_position (GTK_PANED (priv->paned), 180);
 
 	/* Pack all widgets into the window. */
 	priv->vbox = gtk_vbox_new (FALSE, 0);
@@ -308,7 +309,7 @@ ld_window_main_init (LdWindowMain *self)
 
 	gtk_window_add_accel_group (GTK_WINDOW (self),
 		gtk_ui_manager_get_accel_group (priv->ui_manager));
-	gtk_window_set_default_size (GTK_WINDOW (self), 500, 400);
+	gtk_window_set_default_size (GTK_WINDOW (self), 640, 440);
 	gtk_window_set_position (GTK_WINDOW (self), GTK_WIN_POS_CENTER);
 
 	/* Initialize the backend. */

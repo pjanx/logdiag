@@ -30,21 +30,6 @@
 #define SYMBOL_HEIGHT   40   /* Height of a symbol. */
 #define SYMBOL_SPACING  10   /* Spacing between symbols, and also borders. */
 
-/*
- * LdCategorySymbolViewPrivate:
- * @category: a category object assigned as a model.
- * @path: path to the category within the library.
- * @layout: (element-type SymbolData *): current layout of symbols.
- * @height_negotiation: whether we are negotiating height right now.
- */
-struct _LdCategorySymbolViewPrivate
-{
-	LdCategory *category;
-	gchar *path;
-	GSList *layout;
-	guint height_negotiation : 1;
-};
-
 typedef struct
 {
 	LdSymbol *symbol;        /* The associated symbol, ref'ed. */
@@ -55,6 +40,23 @@ typedef struct
 	gdouble dx, dy;          /* Delta into .rect. */
 }
 SymbolData;
+
+/*
+ * LdCategorySymbolViewPrivate:
+ * @category: a category object assigned as a model.
+ * @path: path to the category within the library.
+ * @layout: (element-type SymbolData *): current layout of symbols.
+ * @preselected: currently preselected symbol.
+ * @height_negotiation: whether we are negotiating height right now.
+ */
+struct _LdCategorySymbolViewPrivate
+{
+	LdCategory *category;
+	gchar *path;
+	GSList *layout;
+	SymbolData *preselected;
+	guint height_negotiation : 1;
+};
 
 enum
 {
@@ -104,6 +106,112 @@ ld_category_symbol_view_class_init (LdCategorySymbolViewClass *klass)
 }
 
 static void
+symbol_redraw (LdCategorySymbolView *self, SymbolData *symbol)
+{
+	gtk_widget_queue_draw_area (GTK_WIDGET (self),
+		symbol->rect.x,
+		symbol->rect.y,
+		symbol->rect.width,
+		symbol->rect.height);
+}
+
+static void
+symbol_deselect (LdCategorySymbolView *self)
+{
+	if (!self->priv->preselected)
+		return;
+
+	symbol_redraw (self, self->priv->preselected);
+	self->priv->preselected = NULL;
+	gtk_drag_source_unset (GTK_WIDGET (self));
+}
+
+static gboolean
+on_leave_notify (GtkWidget *widget, GdkEventCrossing *event, gpointer user_data)
+{
+	symbol_deselect (LD_CATEGORY_SYMBOL_VIEW (widget));
+	return FALSE;
+}
+
+static gboolean
+on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
+{
+	LdCategorySymbolView *self;
+	GSList *iter;
+
+	if (event->state & GDK_BUTTON1_MASK)
+		return FALSE;
+
+	self = LD_CATEGORY_SYMBOL_VIEW (widget);
+	for (iter = self->priv->layout; iter; iter = iter->next)
+	{
+		SymbolData *data;
+
+		data = iter->data;
+		if (event->x <  data->rect.x
+		 || event->y <  data->rect.y
+		 || event->x >= data->rect.x + data->rect.width
+		 || event->y >= data->rect.y + data->rect.height)
+			continue;
+
+		if (data != self->priv->preselected)
+		{
+			GtkTargetEntry target = {"ld-symbol", GTK_TARGET_SAME_APP, 0};
+
+			symbol_deselect (self);
+			self->priv->preselected = data;
+			symbol_redraw (self, data);
+
+			gtk_drag_source_set (widget,
+				GDK_BUTTON1_MASK, &target, 1, GDK_ACTION_COPY);
+		}
+		return FALSE;
+	}
+
+	symbol_deselect (self);
+	return FALSE;
+}
+
+static void
+on_drag_data_get
+(GtkWidget *widget, GdkDragContext *ctx, GtkSelectionData *selection_data,
+	guint target_type, guint time, gpointer user_data)
+{
+	LdCategorySymbolView *self;
+
+	self = LD_CATEGORY_SYMBOL_VIEW (widget);
+	g_return_if_fail (self->priv->preselected != NULL);
+
+	gtk_selection_data_set (selection_data,
+		gtk_selection_data_get_target (selection_data),
+		8, (guchar *) self->priv->preselected->path,
+		strlen (self->priv->preselected->path));
+}
+
+static void
+on_drag_begin (GtkWidget *widget, GdkDragContext *ctx, gpointer user_data)
+{
+	LdCategorySymbolView *self;
+	GdkPixbuf *pbuf;
+
+	self = LD_CATEGORY_SYMBOL_VIEW (widget);
+	g_return_if_fail (self->priv->preselected != NULL);
+
+	/* Some of the larger previews didn't work, and we have to get rid of
+	 * the icon later when we're hovering above LdDiagramView anyway. */
+	pbuf = gdk_pixbuf_new (GDK_COLORSPACE_RGB, TRUE, 8, 1, 1);
+	gdk_pixbuf_fill (pbuf, 0x00000000);
+	gtk_drag_set_icon_pixbuf (ctx, pbuf, 0, 0);
+	g_object_unref (pbuf);
+}
+
+static void
+on_drag_end (GtkWidget *widget, GdkDragContext *ctx, gpointer user_data)
+{
+	symbol_deselect (LD_CATEGORY_SYMBOL_VIEW (widget));
+}
+
+static void
 ld_category_symbol_view_init (LdCategorySymbolView *self)
 {
 	self->priv = G_TYPE_INSTANCE_GET_PRIVATE
@@ -115,6 +223,18 @@ ld_category_symbol_view_init (LdCategorySymbolView *self)
 		G_CALLBACK (on_size_request), NULL);
 	g_signal_connect (self, "expose-event",
 		G_CALLBACK (on_expose_event), NULL);
+
+	g_signal_connect (self, "motion-notify-event",
+		G_CALLBACK (on_motion_notify), NULL);
+	g_signal_connect (self, "leave-notify-event",
+		G_CALLBACK (on_leave_notify), NULL);
+
+	g_signal_connect (self, "drag-begin",
+		G_CALLBACK (on_drag_begin), NULL);
+	g_signal_connect (self, "drag-data-get",
+		G_CALLBACK (on_drag_data_get), NULL);
+	g_signal_connect (self, "drag-end",
+		G_CALLBACK (on_drag_end), NULL);
 
 	gtk_widget_add_events (GTK_WIDGET (self),
 		GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK
@@ -136,6 +256,7 @@ layout_destroy (LdCategorySymbolView *self)
 	g_slist_foreach (self->priv->layout, (GFunc) symbol_data_free, NULL);
 	g_slist_free (self->priv->layout);
 	self->priv->layout = NULL;
+	self->priv->preselected = NULL;
 }
 
 static void
@@ -331,11 +452,15 @@ on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 		gdk_cairo_rectangle (cr, &data->rect);
 		cairo_clip (cr);
 
+		gdk_cairo_set_source_color (cr,
+			&gtk_widget_get_style (widget)->text[GTK_STATE_NORMAL]);
+
+		if (data == self->priv->preselected)
+			cairo_paint_with_alpha (cr, 0.1);
+
 		cairo_translate (cr, data->rect.x + data->dx, data->rect.y + data->dy);
 		cairo_scale (cr, data->scale, data->scale);
 
-		gdk_cairo_set_source_color (cr,
-			&gtk_widget_get_style (widget)->text[GTK_STATE_NORMAL]);
 		cairo_set_line_width (cr, 1 / data->scale);
 		ld_symbol_draw (data->symbol, cr);
 

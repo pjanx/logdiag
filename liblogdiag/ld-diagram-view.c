@@ -129,6 +129,9 @@ Color;
  * @y: the Y coordinate of the center of view.
  * @zoom: the current zoom.
  * @show_grid: whether to show the grid.
+ * @dnd_symbol: currently dragged symbol.
+ * @dnd_last_position: last cursor movement position.
+ * @dnd_left: whether the user has stopped dragging.
  * @terminal: position of the highlighted terminal.
  * @terminal_hovered: whether a terminal is hovered.
  * @drag_start_pos: position of the mouse pointer when dragging started.
@@ -151,6 +154,10 @@ struct _LdDiagramViewPrivate
 	gdouble zoom;
 
 	gboolean show_grid;
+
+	LdDiagramObject *dnd_symbol;
+	LdPoint dnd_last_position;
+	guint dnd_left : 1;
 
 	LdPoint terminal;
 	gboolean terminal_hovered;
@@ -343,6 +350,16 @@ static gboolean on_button_release (GtkWidget *widget, GdkEventButton *event,
 static gboolean on_scroll (GtkWidget *widget, GdkEventScroll *event,
 	gpointer user_data);
 
+static gboolean on_drag_motion (GtkWidget *widget, GdkDragContext *drag_ctx,
+	gint x, gint y, guint time, gpointer user_data);
+static gboolean on_drag_drop (GtkWidget *widget, GdkDragContext *drag_ctx,
+	gint x, gint y, guint time, gpointer user_data);
+static void on_drag_data_received (GtkWidget *widget, GdkDragContext *drag_ctx,
+	gint x, gint y, GtkSelectionData *data, guint info,
+	guint time, gpointer user_data);
+static void on_drag_leave (GtkWidget *widget, GdkDragContext *drag_ctx,
+	guint time, gpointer user_data);
+
 static gboolean on_expose_event (GtkWidget *widget, GdkEventExpose *event,
 	gpointer user_data);
 static void draw_grid (GtkWidget *widget, DrawData *data);
@@ -486,6 +503,8 @@ ld_diagram_view_class_init (LdDiagramViewClass *klass)
 static void
 ld_diagram_view_init (LdDiagramView *self)
 {
+	GtkTargetEntry target = {"ld-symbol", GTK_TARGET_SAME_APP, 0};
+
 	self->priv = G_TYPE_INSTANCE_GET_PRIVATE
 		(self, LD_TYPE_DIAGRAM_VIEW, LdDiagramViewPrivate);
 
@@ -517,12 +536,23 @@ ld_diagram_view_init (LdDiagramView *self)
 	g_signal_connect (self, "scroll-event",
 		G_CALLBACK (on_scroll), NULL);
 
+	g_signal_connect (self, "drag-motion",
+		G_CALLBACK (on_drag_motion), NULL);
+	g_signal_connect (self, "drag-leave",
+		G_CALLBACK (on_drag_leave), NULL);
+	g_signal_connect (self, "drag-drop",
+		G_CALLBACK (on_drag_drop), NULL);
+	g_signal_connect (self, "drag-data-received",
+		G_CALLBACK (on_drag_data_received), NULL);
+
 	g_object_set (self, "can-focus", TRUE, NULL);
 
 	gtk_widget_add_events (GTK_WIDGET (self),
 		GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK
 		| GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
 		| GDK_LEAVE_NOTIFY_MASK);
+
+	gtk_drag_dest_set (GTK_WIDGET (self), 0, &target, 1, GDK_ACTION_COPY);
 }
 
 static void
@@ -541,6 +571,8 @@ ld_diagram_view_finalize (GObject *gobject)
 	}
 	if (self->priv->library)
 		g_object_unref (self->priv->library);
+	if (self->priv->dnd_symbol)
+		g_object_unref (self->priv->dnd_symbol);
 
 	/* Chain up to the parent class. */
 	G_OBJECT_CLASS (ld_diagram_view_parent_class)->finalize (gobject);
@@ -2425,6 +2457,109 @@ on_scroll (GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
 }
 
 static gboolean
+on_drag_motion (GtkWidget *widget, GdkDragContext *drag_ctx,
+	gint x, gint y, guint time, gpointer user_data)
+{
+	LdDiagramView *self;
+	GdkAtom target;
+
+	self = LD_DIAGRAM_VIEW (widget);
+	target = gtk_drag_dest_find_target (widget, drag_ctx, NULL);
+	if (target == GDK_NONE)
+	{
+		gdk_drag_status (drag_ctx, 0, time);
+		return TRUE;
+	}
+
+	gdk_drag_status (drag_ctx,
+		gdk_drag_context_get_suggested_action (drag_ctx), time);
+
+	/* Discard leftovers from any previous unsuccessful drag. */
+	if (self->priv->dnd_left)
+	{
+		g_object_unref (self->priv->dnd_symbol);
+		self->priv->dnd_symbol = NULL;
+		self->priv->dnd_left = FALSE;
+	}
+
+	self->priv->dnd_last_position.x = x;
+	self->priv->dnd_last_position.y = y;
+
+	if (!self->priv->dnd_symbol)
+		gtk_drag_get_data (widget, drag_ctx, target, time);
+	else
+	{
+		queue_object_draw (self, self->priv->dnd_symbol);
+		move_object_to_point (self, self->priv->dnd_symbol,
+			&self->priv->dnd_last_position);
+		queue_object_draw (self, self->priv->dnd_symbol);
+	}
+
+	return TRUE;
+}
+
+static void
+on_drag_data_received (GtkWidget *widget, GdkDragContext *drag_ctx,
+	gint x, gint y, GtkSelectionData *data, guint info, guint time,
+	gpointer user_data)
+{
+	LdDiagramView *self;
+	LdDiagramSymbol *symbol;
+	const gchar *klass;
+
+	self = LD_DIAGRAM_VIEW (widget);
+
+	g_return_if_fail (gtk_selection_data_get_length (data) >= 0);
+	g_return_if_fail (self->priv->dnd_symbol == NULL);
+
+	klass = (const gchar *) gtk_selection_data_get_data (data);
+	symbol = ld_diagram_symbol_new (NULL);
+	ld_diagram_symbol_set_class (symbol, klass);
+	self->priv->dnd_symbol = LD_DIAGRAM_OBJECT (symbol);
+
+	move_object_to_point (self, self->priv->dnd_symbol,
+		&self->priv->dnd_last_position);
+	queue_object_draw (self, self->priv->dnd_symbol);
+}
+
+static void
+on_drag_leave (GtkWidget *widget, GdkDragContext *drag_ctx,
+	guint time, gpointer user_data)
+{
+	LdDiagramView *self;
+
+	self = LD_DIAGRAM_VIEW (widget);
+	self->priv->dnd_left = TRUE;
+	queue_object_draw (self, self->priv->dnd_symbol);
+}
+
+static gboolean
+on_drag_drop (GtkWidget *widget, GdkDragContext *drag_ctx,
+	gint x, gint y, guint time, gpointer user_data)
+{
+	LdDiagramView *self;
+	gboolean del;
+
+	del = gdk_drag_context_get_suggested_action (drag_ctx)
+		== GDK_ACTION_MOVE;
+
+	self = LD_DIAGRAM_VIEW (widget);
+	if (!self->priv->dnd_symbol)
+		gtk_drag_finish (drag_ctx, FALSE, del, time);
+	else
+	{
+		gtk_drag_finish (drag_ctx, TRUE,  del, time);
+
+		ld_diagram_insert_object (self->priv->diagram,
+			self->priv->dnd_symbol, -1);
+		g_object_unref (self->priv->dnd_symbol);
+		self->priv->dnd_symbol = NULL;
+		self->priv->dnd_left = FALSE;
+	}
+	return TRUE;
+}
+
+static gboolean
 on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 {
 	DrawData data;
@@ -2571,6 +2706,9 @@ draw_diagram (GtkWidget *widget, DrawData *data)
 		draw_object (LD_DIAGRAM_OBJECT (connect_data->connection), data);
 		break;
 	}
+
+	if (data->self->priv->dnd_symbol && !data->self->priv->dnd_left)
+		draw_object (data->self->priv->dnd_symbol, data);
 
 	cairo_restore (data->cr);
 }

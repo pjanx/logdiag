@@ -42,6 +42,9 @@ struct _LdWindowMainPrivate
 	GtkWidget *statusbar;
 	guint statusbar_symbol_context_id;
 	guint statusbar_menu_context_id;
+	guint statusbar_hint_context_id;
+
+	guint statusbar_hint_drag;
 };
 
 
@@ -276,6 +279,8 @@ ld_window_main_init (LdWindowMain *self)
 		(GTK_STATUSBAR (priv->statusbar), "menu");
 	priv->statusbar_symbol_context_id = gtk_statusbar_get_context_id
 		(GTK_STATUSBAR (priv->statusbar), "symbol");
+	priv->statusbar_hint_context_id = gtk_statusbar_get_context_id
+		(GTK_STATUSBAR (priv->statusbar), "hint");
 
 	priv->lv_viewport = gtk_viewport_new (NULL, NULL);
 	gtk_viewport_set_shadow_type
@@ -337,6 +342,10 @@ ld_window_main_init (LdWindowMain *self)
 		ld_library_get_root (priv->library));
 
 	diagram_set_filename (self, NULL);
+
+	priv->statusbar_hint_drag = gtk_statusbar_push
+		(GTK_STATUSBAR (priv->statusbar), priv->statusbar_hint_context_id,
+		_("Drag symbols from the library pane to add them to the diagram."));
 
 	action_set_sensitive (self, "Undo", FALSE);
 	action_set_sensitive (self, "Redo", FALSE);
@@ -498,6 +507,14 @@ static void
 on_diagram_changed (LdDiagram *diagram, LdWindowMain *self)
 {
 	update_title (self);
+
+	if (self->priv->statusbar_hint_drag)
+	{
+		gtk_statusbar_remove (GTK_STATUSBAR (self->priv->statusbar),
+			self->priv->statusbar_hint_context_id,
+			self->priv->statusbar_hint_drag);
+		self->priv->statusbar_hint_drag = 0;
+	}
 }
 
 static void

@@ -31,7 +31,6 @@
  *              each containing a #GList of #LdUndoAction subactions.
  * @objects: all objects in the diagram.
  * @selection: all currently selected objects.
- * @connections: connections between objects.
  */
 struct _LdDiagramPrivate
 {
@@ -43,7 +42,6 @@ struct _LdDiagramPrivate
 
 	GList *objects;
 	GList *selection;
-	GList *connections;
 };
 
 typedef struct _ObjectActionData ObjectActionData;
@@ -76,6 +74,7 @@ static void ld_diagram_set_property (GObject *object, guint property_id,
 static void ld_diagram_dispose (GObject *gobject);
 static void ld_diagram_finalize (GObject *gobject);
 static void ld_diagram_real_changed (LdDiagram *self);
+static void ld_diagram_clear_internal (LdDiagram *self, gboolean emit_signals);
 
 static gboolean write_signature (GOutputStream *stream, GError **error);
 
@@ -232,7 +231,7 @@ ld_diagram_dispose (GObject *gobject)
 	LdDiagram *self;
 
 	self = LD_DIAGRAM (gobject);
-	ld_diagram_clear (self);
+	ld_diagram_clear_internal (self, FALSE);
 
 	/* Chain up to the parent class. */
 	G_OBJECT_CLASS (ld_diagram_parent_class)->dispose (gobject);
@@ -287,10 +286,15 @@ ld_diagram_new (void)
 void
 ld_diagram_clear (LdDiagram *self)
 {
+	g_return_if_fail (LD_IS_DIAGRAM (self));
+	ld_diagram_clear_internal (self, TRUE);
+}
+
+static void
+ld_diagram_clear_internal (LdDiagram *self, gboolean emit_signals)
+{
 	gboolean changed = FALSE;
 	gboolean selection_changed = FALSE;
-
-	g_return_if_fail (LD_IS_DIAGRAM (self));
 
 	if (self->priv->selection)
 	{
@@ -298,12 +302,6 @@ ld_diagram_clear (LdDiagram *self)
 		selection_changed = TRUE;
 	}
 
-	if (self->priv->connections)
-	{
-		g_list_free (self->priv->connections);
-		self->priv->connections = NULL;
-		changed = TRUE;
-	}
 	if (self->priv->objects)
 	{
 		g_list_foreach (self->priv->objects, (GFunc) uninstall_object, self);
@@ -315,15 +313,18 @@ ld_diagram_clear (LdDiagram *self)
 	destroy_action_stack (&self->priv->undo_stack);
 	destroy_action_stack (&self->priv->redo_stack);
 
-	g_object_notify (G_OBJECT (self), "can-undo");
-	g_object_notify (G_OBJECT (self), "can-redo");
+	if (emit_signals)
+	{
+		g_object_notify (G_OBJECT (self), "can-undo");
+		g_object_notify (G_OBJECT (self), "can-redo");
 
-	if (changed)
-		g_signal_emit (self,
-			LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
-	if (selection_changed)
-		g_signal_emit (self,
-			LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
+		if (changed)
+			g_signal_emit (self,
+				LD_DIAGRAM_GET_CLASS (self)->changed_signal, 0);
+		if (selection_changed)
+			g_signal_emit (self,
+				LD_DIAGRAM_GET_CLASS (self)->selection_changed_signal, 0);
+	}
 }
 
 /**

@@ -2232,7 +2232,8 @@ on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 	LdDiagramView *self;
 
 	self = LD_DIAGRAM_VIEW (widget);
-	if (!self->priv->diagram)
+	if (!self->priv->diagram
+	 || event->type != GDK_BUTTON_PRESS)
 		return FALSE;
 
 	point.x = event->x;

@@ -68,7 +68,7 @@ ld_category_view_class_init (LdCategoryViewClass *klass)
  */
 	pspec = g_param_spec_object ("category", "Category",
 		"The symbol category that is shown by this widget.",
-		LD_TYPE_LIBRARY, G_PARAM_READWRITE);
+		LD_TYPE_CATEGORY, G_PARAM_READWRITE);
 	g_object_class_install_property (object_class, PROP_CATEGORY, pspec);
 
 	g_type_class_add_private (klass, sizeof (LdCategoryViewPrivate));

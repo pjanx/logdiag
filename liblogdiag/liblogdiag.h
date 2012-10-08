@@ -28,9 +28,9 @@
 #include "ld-diagram.h"
 
 #include "ld-diagram-view.h"
-#include "ld-category-view-if.h"
-#include "ld-category-symbol-view.h"
 #include "ld-category-view.h"
+#include "ld-category-symbol-view.h"
+#include "ld-category-tree-view.h"
 
 #include "ld-lua.h"
 #include "ld-lua-symbol.h"

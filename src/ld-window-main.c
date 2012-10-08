@@ -270,7 +270,7 @@ ld_window_main_init (LdWindowMain *self)
 	priv->toolbar = gtk_ui_manager_get_widget (priv->ui_manager, "/Toolbar");
 
 	/* Create the remaining widgets. */
-	priv->library_view = ld_category_view_new (NULL);
+	priv->library_view = ld_category_tree_view_new (NULL);
 
 	priv->view = LD_DIAGRAM_VIEW (ld_diagram_view_new ());
 	priv->scrolled_window = gtk_scrolled_window_new (NULL, NULL);
@@ -343,7 +343,7 @@ ld_window_main_init (LdWindowMain *self)
 	g_signal_connect (priv->view, "notify::zoom",
 		G_CALLBACK (on_view_zoom_changed), self);
 
-	ld_category_view_if_set_category (LD_CATEGORY_VIEW_IF (priv->library_view),
+	ld_category_view_set_category (LD_CATEGORY_VIEW (priv->library_view),
 		ld_library_get_root (priv->library));
 
 	g_signal_connect_after (priv->library_view, "symbol-selected",

@@ -71,9 +71,9 @@ static void ld_category_symbol_view_set_property (GObject *object,
 static void ld_category_symbol_view_finalize (GObject *gobject);
 
 static void ld_category_symbol_view_set_category
-	(LdCategoryViewIf *iface, LdCategory *category);
+	(LdCategoryView *iface, LdCategory *category);
 static LdCategory *ld_category_symbol_view_get_category
-	(LdCategoryViewIf *iface);
+	(LdCategoryView *iface);
 
 static void on_size_request (GtkWidget *widget, GtkRequisition *requisition,
 	gpointer user_data);
@@ -84,7 +84,7 @@ static gboolean on_expose_event (GtkWidget *widget, GdkEventExpose *event,
 
 
 static void
-ld_category_view_if_init (LdCategoryViewIfInterface *iface)
+ld_category_view_init (LdCategoryViewInterface *iface)
 {
 	iface->set_category = ld_category_symbol_view_set_category;
 	iface->get_category = ld_category_symbol_view_get_category;
@@ -92,7 +92,7 @@ ld_category_view_if_init (LdCategoryViewIfInterface *iface)
 
 G_DEFINE_TYPE_WITH_CODE (LdCategorySymbolView,
 	ld_category_symbol_view, GTK_TYPE_DRAWING_AREA,
-	G_IMPLEMENT_INTERFACE (LD_TYPE_CATEGORY_VIEW_IF, ld_category_view_if_init));
+	G_IMPLEMENT_INTERFACE (LD_TYPE_CATEGORY_VIEW, ld_category_view_init));
 
 static void
 ld_category_symbol_view_class_init (LdCategorySymbolViewClass *klass)
@@ -128,7 +128,7 @@ symbol_deselect (LdCategorySymbolView *self)
 	if (!preselected)
 		return;
 
-	g_signal_emit (self, LD_CATEGORY_VIEW_IF_GET_INTERFACE (self)->
+	g_signal_emit (self, LD_CATEGORY_VIEW_GET_INTERFACE (self)->
 		symbol_deselected_signal, 0, preselected->symbol, preselected->path);
 
 	symbol_redraw (self, preselected);
@@ -175,7 +175,7 @@ on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 			gtk_drag_source_set (widget,
 				GDK_BUTTON1_MASK, &target, 1, GDK_ACTION_COPY);
 
-			g_signal_emit (self, LD_CATEGORY_VIEW_IF_GET_INTERFACE (self)->
+			g_signal_emit (self, LD_CATEGORY_VIEW_GET_INTERFACE (self)->
 				symbol_selected_signal, 0, data->symbol, data->path);
 		}
 		return FALSE;
@@ -298,7 +298,7 @@ ld_category_symbol_view_get_property (GObject *object, guint property_id,
 	{
 	case PROP_CATEGORY:
 		g_value_set_object (value,
-			ld_category_view_if_get_category (LD_CATEGORY_VIEW_IF (object)));
+			ld_category_view_get_category (LD_CATEGORY_VIEW (object)));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -312,7 +312,7 @@ ld_category_symbol_view_set_property (GObject *object, guint property_id,
 	switch (property_id)
 	{
 	case PROP_CATEGORY:
-		ld_category_view_if_set_category (LD_CATEGORY_VIEW_IF (object),
+		ld_category_view_set_category (LD_CATEGORY_VIEW (object),
 			LD_CATEGORY (g_value_get_object (value)));
 		break;
 	default:
@@ -541,12 +541,12 @@ ld_category_symbol_view_new (LdCategory *category)
 	LdCategorySymbolView *self;
 
 	self = g_object_new (LD_TYPE_CATEGORY_SYMBOL_VIEW, NULL);
-	ld_category_view_if_set_category (LD_CATEGORY_VIEW_IF (self), category);
+	ld_category_view_set_category (LD_CATEGORY_VIEW (self), category);
 	return GTK_WIDGET (self);
 }
 
 static void
-ld_category_symbol_view_set_category (LdCategoryViewIf *iface,
+ld_category_symbol_view_set_category (LdCategoryView *iface,
 	LdCategory *category)
 {
 	LdCategorySymbolView *self;
@@ -575,7 +575,7 @@ ld_category_symbol_view_set_category (LdCategoryViewIf *iface,
 }
 
 static LdCategory *
-ld_category_symbol_view_get_category (LdCategoryViewIf *iface)
+ld_category_symbol_view_get_category (LdCategoryView *iface)
 {
 	g_return_val_if_fail (LD_IS_CATEGORY_SYMBOL_VIEW (iface), NULL);
 	return LD_CATEGORY_SYMBOL_VIEW (iface)->priv->category;

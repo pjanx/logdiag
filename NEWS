@@ -1,13 +1,17 @@
 Version TBD
+ - Added a library pane instead of a toolbar.
  - Added scrolling using the middle mouse button.
  - View menu settings are remembered.
- - Fixed command line parsing on Windows,
+ - Fixed command line parsing on Windows;
    it's not limited to the system ANSI codepage anymore.
  - Fixed checking for the shift key when selecting.
  - Terminals are ignored when hovering the cursor above a selection.
  - Disallowed wheel zooming when holding mouse buttons.
  - Fixed the behaviour of saving.
- - Now working on recent GTK+ versions.
+ - Fixed rapid right-clicking rotating more than it should.
+ - Symbol categories are also loaded from user-specific directories.
+ - Show the current zoom in the statusbar.
+ - Now working with recent GTK+ versions.
  - Various unimportant fixes and changes.
 
 Version 0.1.2

@@ -62,6 +62,36 @@ ld_category_view_class_init (LdCategoryViewClass *klass)
 	object_class->dispose = ld_category_view_dispose;
 
 /**
+ * LdCategoryView::symbol-selected:
+ * @self: an #LdCategoryView object.
+ * @symbol: the selected #LdSymbol object.
+ * @path: location of the symbol within the library.
+ *
+ * A symbol has been selected.
+ */
+	klass->symbol_selected_signal = g_signal_new
+		("symbol-selected", G_TYPE_FROM_CLASS (klass),
+		G_SIGNAL_RUN_LAST, 0, NULL, NULL,
+		ld_marshal_VOID__OBJECT_STRING,
+		G_TYPE_NONE, 2, LD_TYPE_SYMBOL,
+		G_TYPE_STRING | G_SIGNAL_TYPE_STATIC_SCOPE);
+
+/**
+ * LdCategoryView::symbol-deselected:
+ * @self: an #LdCategoryView object.
+ * @symbol: the deselected #LdSymbol object.
+ * @path: location of the symbol within the library.
+ *
+ * A symbol has been deselected.
+ */
+	klass->symbol_deselected_signal = g_signal_new
+		("symbol-deselected", G_TYPE_FROM_CLASS (klass),
+		G_SIGNAL_RUN_LAST, 0, NULL, NULL,
+		ld_marshal_VOID__OBJECT_STRING,
+		G_TYPE_NONE, 2, LD_TYPE_SYMBOL,
+		G_TYPE_STRING | G_SIGNAL_TYPE_STATIC_SCOPE);
+
+/**
  * LdCategoryView:category:
  *
  * The #LdCategory this widget retrieves content from.
@@ -258,6 +288,22 @@ reconstruct_prefix (LdCategoryView *self)
 }
 
 static void
+on_symbol_selected (GObject *source,
+	LdSymbol *symbol, const gchar *path, LdCategoryView *self)
+{
+	g_signal_emit (self, LD_CATEGORY_VIEW_GET_CLASS (self)->
+		symbol_selected_signal, 0, symbol, path);
+}
+
+static void
+on_symbol_deselected (GObject *source,
+	LdSymbol *symbol, const gchar *path, LdCategoryView *self)
+{
+	g_signal_emit (self, LD_CATEGORY_VIEW_GET_CLASS (self)->
+		symbol_deselected_signal, 0, symbol, path);
+}
+
+static void
 reload_category (LdCategoryView *self)
 {
 	g_return_if_fail (LD_IS_CATEGORY_VIEW (self));
@@ -265,6 +311,8 @@ reload_category (LdCategoryView *self)
 	/* Clear the container first, if there is already something in it. */
 	gtk_container_foreach (GTK_CONTAINER (self),
 		(GtkCallback) gtk_widget_destroy, NULL);
+
+	/* XXX: We might want to disconnect signal handlers. */
 
 	if (self->priv->category)
 	{
@@ -279,6 +327,11 @@ reload_category (LdCategoryView *self)
 
 			symbol_view = ld_category_symbol_view_new (self->priv->category);
 			gtk_box_pack_start (GTK_BOX (self), symbol_view, FALSE, FALSE, 0);
+
+			g_signal_connect_after (symbol_view, "symbol-selected",
+				G_CALLBACK (on_symbol_selected), self);
+			g_signal_connect_after (symbol_view, "symbol-deselected",
+				G_CALLBACK (on_symbol_deselected), self);
 		}
 
 		if (children)
@@ -318,5 +371,10 @@ load_category_cb (gpointer data, gpointer user_data)
 	child = ld_category_view_new (cat);
 	gtk_container_add (GTK_CONTAINER (expander), child);
 	gtk_box_pack_start (GTK_BOX (self), expander, FALSE, FALSE, 0);
+
+	g_signal_connect_after (child, "symbol-selected",
+		G_CALLBACK (on_symbol_selected), self);
+	g_signal_connect_after (child, "symbol-deselected",
+		G_CALLBACK (on_symbol_deselected), self);
 }
 

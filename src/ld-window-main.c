@@ -90,6 +90,11 @@ static gboolean may_close_diagram (LdWindowMain *self,
 	const gchar *dialog_message);
 static gboolean may_quit (LdWindowMain *self);
 
+static void on_symbol_selected (LdCategoryView *view,
+	LdSymbol *symbol, const gchar *path, LdWindowMain *self);
+static void on_symbol_deselected (LdCategoryView *view,
+	LdSymbol *symbol, const gchar *path, LdWindowMain *self);
+
 static void on_action_new (GtkAction *action, LdWindowMain *self);
 static void on_action_open (GtkAction *action, LdWindowMain *self);
 static void on_action_save (GtkAction *action, LdWindowMain *self);
@@ -340,6 +345,11 @@ ld_window_main_init (LdWindowMain *self)
 
 	ld_category_view_set_category (LD_CATEGORY_VIEW (priv->library_view),
 		ld_library_get_root (priv->library));
+
+	g_signal_connect_after (priv->library_view, "symbol-selected",
+		G_CALLBACK (on_symbol_selected), self);
+	g_signal_connect_after (priv->library_view, "symbol-deselected",
+		G_CALLBACK (on_symbol_deselected), self);
 
 	diagram_set_filename (self, NULL);
 
@@ -840,6 +850,25 @@ may_quit (LdWindowMain *self)
 
 
 /* ===== User interface actions ============================================ */
+
+static void
+on_symbol_selected (LdCategoryView *view,
+	LdSymbol *symbol, const gchar *path, LdWindowMain *self)
+{
+	const gchar *symbol_name;
+
+	symbol_name = ld_symbol_get_human_name (symbol);
+	gtk_statusbar_push (GTK_STATUSBAR (self->priv->statusbar),
+		self->priv->statusbar_menu_context_id, symbol_name);
+}
+
+static void
+on_symbol_deselected (LdCategoryView *view,
+	LdSymbol *symbol, const gchar *path, LdWindowMain *self)
+{
+	gtk_statusbar_pop (GTK_STATUSBAR (self->priv->statusbar),
+		self->priv->statusbar_menu_context_id);
+}
 
 static void
 on_view_zoom_changed (LdDiagramView *view, GParamSpec *pspec,

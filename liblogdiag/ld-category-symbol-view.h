@@ -45,6 +45,9 @@ struct _LdCategorySymbolViewClass
 {
 /*< private >*/
 	GtkDrawingAreaClass parent_class;
+
+	guint symbol_selected_signal;
+	guint symbol_deselected_signal;
 };
 
 

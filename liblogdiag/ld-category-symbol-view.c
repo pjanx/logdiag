@@ -93,6 +93,36 @@ ld_category_symbol_view_class_init (LdCategorySymbolViewClass *klass)
 	object_class->finalize = ld_category_symbol_view_finalize;
 
 /**
+ * LdCategorySymbolView::symbol-selected:
+ * @self: an #LdCategorySymbolView object.
+ * @symbol: the selected #LdSymbol object.
+ * @path: location of the symbol within the library.
+ *
+ * A symbol has been selected.
+ */
+	klass->symbol_selected_signal = g_signal_new
+		("symbol-selected", G_TYPE_FROM_CLASS (klass),
+		G_SIGNAL_RUN_LAST, 0, NULL, NULL,
+		ld_marshal_VOID__OBJECT_STRING,
+		G_TYPE_NONE, 2, LD_TYPE_SYMBOL,
+		G_TYPE_STRING | G_SIGNAL_TYPE_STATIC_SCOPE);
+
+/**
+ * LdCategorySymbolView::symbol-deselected:
+ * @self: an #LdCategorySymbolView object.
+ * @symbol: the deselected #LdSymbol object.
+ * @path: location of the symbol within the library.
+ *
+ * A symbol has been deselected.
+ */
+	klass->symbol_deselected_signal = g_signal_new
+		("symbol-deselected", G_TYPE_FROM_CLASS (klass),
+		G_SIGNAL_RUN_LAST, 0, NULL, NULL,
+		ld_marshal_VOID__OBJECT_STRING,
+		G_TYPE_NONE, 2, LD_TYPE_SYMBOL,
+		G_TYPE_STRING | G_SIGNAL_TYPE_STATIC_SCOPE);
+
+/**
  * LdCategorySymbolView:category:
  *
  * The underlying #LdCategory object of this view.
@@ -118,10 +148,16 @@ symbol_redraw (LdCategorySymbolView *self, SymbolData *symbol)
 static void
 symbol_deselect (LdCategorySymbolView *self)
 {
-	if (!self->priv->preselected)
+	SymbolData *preselected;
+
+	preselected = self->priv->preselected;
+	if (!preselected)
 		return;
 
-	symbol_redraw (self, self->priv->preselected);
+	g_signal_emit (self, LD_CATEGORY_SYMBOL_VIEW_GET_CLASS (self)->
+		symbol_deselected_signal, 0, preselected->symbol, preselected->path);
+
+	symbol_redraw (self, preselected);
 	self->priv->preselected = NULL;
 	gtk_drag_source_unset (GTK_WIDGET (self));
 }
@@ -164,6 +200,9 @@ on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 
 			gtk_drag_source_set (widget,
 				GDK_BUTTON1_MASK, &target, 1, GDK_ACTION_COPY);
+
+			g_signal_emit (self, LD_CATEGORY_SYMBOL_VIEW_GET_CLASS (self)->
+				symbol_selected_signal, 0, data->symbol, data->path);
 		}
 		return FALSE;
 	}
@@ -253,6 +292,8 @@ symbol_data_free (SymbolData *self)
 static void
 layout_destroy (LdCategorySymbolView *self)
 {
+	symbol_deselect (self);
+
 	g_slist_foreach (self->priv->layout, (GFunc) symbol_data_free, NULL);
 	g_slist_free (self->priv->layout);
 	self->priv->layout = NULL;

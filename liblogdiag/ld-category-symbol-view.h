@@ -45,20 +45,12 @@ struct _LdCategorySymbolViewClass
 {
 /*< private >*/
 	GtkDrawingAreaClass parent_class;
-
-	guint symbol_selected_signal;
-	guint symbol_deselected_signal;
 };
 
 
 GType ld_category_symbol_view_get_type (void) G_GNUC_CONST;
 
 GtkWidget *ld_category_symbol_view_new (LdCategory *category);
-
-void ld_category_symbol_view_set_category
-	(LdCategorySymbolView *self, LdCategory *category);
-LdCategory *ld_category_symbol_view_get_category
-	(LdCategorySymbolView *self);
 
 
 G_END_DECLS

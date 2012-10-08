@@ -124,6 +124,7 @@ set (liblogdiag_SOURCES
 	liblogdiag/ld-diagram-connection.c
 	liblogdiag/ld-diagram-view.c
 	liblogdiag/ld-library.c
+	liblogdiag/ld-category-view-if.c
 	liblogdiag/ld-category-view.c
 	liblogdiag/ld-category-symbol-view.c
 	liblogdiag/ld-category.c
@@ -142,6 +143,7 @@ set (liblogdiag_HEADERS
 	liblogdiag/ld-diagram-connection.h
 	liblogdiag/ld-diagram-view.h
 	liblogdiag/ld-library.h
+	liblogdiag/ld-category-view-if.h
 	liblogdiag/ld-category-view.h
 	liblogdiag/ld-category-symbol-view.h
 	liblogdiag/ld-category.h

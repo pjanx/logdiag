@@ -44,62 +44,35 @@ static void ld_category_view_set_property (GObject *object, guint property_id,
 	const GValue *value, GParamSpec *pspec);
 static void ld_category_view_dispose (GObject *gobject);
 
+static void ld_category_view_set_category (LdCategoryViewIf *iface,
+	LdCategory *category);
+static LdCategory *ld_category_view_get_category (LdCategoryViewIf *iface);
+
 static void reload_category (LdCategoryView *self);
 static void load_category_cb (gpointer data, gpointer user_data);
 
 
-G_DEFINE_TYPE (LdCategoryView, ld_category_view, GTK_TYPE_VBOX);
+static void
+ld_category_view_if_init (LdCategoryViewIfInterface *iface)
+{
+	iface->set_category = ld_category_view_set_category;
+	iface->get_category = ld_category_view_get_category;
+}
+
+G_DEFINE_TYPE_WITH_CODE (LdCategoryView, ld_category_view, GTK_TYPE_VBOX,
+	G_IMPLEMENT_INTERFACE (LD_TYPE_CATEGORY_VIEW_IF, ld_category_view_if_init));
 
 static void
 ld_category_view_class_init (LdCategoryViewClass *klass)
 {
 	GObjectClass *object_class;
-	GParamSpec *pspec;
 
 	object_class = G_OBJECT_CLASS (klass);
 	object_class->get_property = ld_category_view_get_property;
 	object_class->set_property = ld_category_view_set_property;
 	object_class->dispose = ld_category_view_dispose;
 
-/**
- * LdCategoryView::symbol-selected:
- * @self: an #LdCategoryView object.
- * @symbol: the selected #LdSymbol object.
- * @path: location of the symbol within the library.
- *
- * A symbol has been selected.
- */
-	klass->symbol_selected_signal = g_signal_new
-		("symbol-selected", G_TYPE_FROM_CLASS (klass),
-		G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-		ld_marshal_VOID__OBJECT_STRING,
-		G_TYPE_NONE, 2, LD_TYPE_SYMBOL,
-		G_TYPE_STRING | G_SIGNAL_TYPE_STATIC_SCOPE);
-
-/**
- * LdCategoryView::symbol-deselected:
- * @self: an #LdCategoryView object.
- * @symbol: the deselected #LdSymbol object.
- * @path: location of the symbol within the library.
- *
- * A symbol has been deselected.
- */
-	klass->symbol_deselected_signal = g_signal_new
-		("symbol-deselected", G_TYPE_FROM_CLASS (klass),
-		G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-		ld_marshal_VOID__OBJECT_STRING,
-		G_TYPE_NONE, 2, LD_TYPE_SYMBOL,
-		G_TYPE_STRING | G_SIGNAL_TYPE_STATIC_SCOPE);
-
-/**
- * LdCategoryView:category:
- *
- * The #LdCategory this widget retrieves content from.
- */
-	pspec = g_param_spec_object ("category", "Category",
-		"The symbol category that is shown by this widget.",
-		LD_TYPE_CATEGORY, G_PARAM_READWRITE);
-	g_object_class_install_property (object_class, PROP_CATEGORY, pspec);
+	g_object_class_override_property (object_class, PROP_CATEGORY, "category");
 
 	g_type_class_add_private (klass, sizeof (LdCategoryViewPrivate));
 }
@@ -117,7 +90,7 @@ ld_category_view_dispose (GObject *gobject)
 	LdCategoryView *self;
 
 	self = LD_CATEGORY_VIEW (gobject);
-	ld_category_view_set_category (self, NULL);
+	ld_category_view_if_set_category (LD_CATEGORY_VIEW_IF (self), NULL);
 
 	g_free (self->priv->expander_prefix);
 	self->priv->expander_prefix = NULL;
@@ -130,13 +103,11 @@ static void
 ld_category_view_get_property (GObject *object, guint property_id,
 	GValue *value, GParamSpec *pspec)
 {
-	LdCategoryView *self;
-
-	self = LD_CATEGORY_VIEW (object);
 	switch (property_id)
 	{
 	case PROP_CATEGORY:
-		g_value_set_object (value, ld_category_view_get_category (self));
+		g_value_set_object (value,
+			ld_category_view_if_get_category (LD_CATEGORY_VIEW_IF (object)));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -147,13 +118,10 @@ static void
 ld_category_view_set_property (GObject *object, guint property_id,
 	const GValue *value, GParamSpec *pspec)
 {
-	LdCategoryView *self;
-
-	self = LD_CATEGORY_VIEW (object);
 	switch (property_id)
 	{
 	case PROP_CATEGORY:
-		ld_category_view_set_category (self,
+		ld_category_view_if_set_category (LD_CATEGORY_VIEW_IF (object),
 			LD_CATEGORY (g_value_get_object (value)));
 		break;
 	default:
@@ -174,23 +142,19 @@ ld_category_view_new (LdCategory *category)
 	LdCategoryView *self;
 
 	self = g_object_new (LD_TYPE_CATEGORY_VIEW, NULL);
-	ld_category_view_set_category (self, category);
+	ld_category_view_if_set_category (LD_CATEGORY_VIEW_IF (self), category);
 	return GTK_WIDGET (self);
 }
 
-/**
- * ld_category_view_set_category:
- * @self: an #LdCategoryView object.
- * @category: (allow-none): the category to be assigned to the widget.
- *
- * Assign an #LdCategory object to the widget.
- */
-void
-ld_category_view_set_category (LdCategoryView *self, LdCategory *category)
+static void
+ld_category_view_set_category (LdCategoryViewIf *iface, LdCategory *category)
 {
-	g_return_if_fail (LD_IS_CATEGORY_VIEW (self));
+	LdCategoryView *self;
+
+	g_return_if_fail (LD_IS_CATEGORY_VIEW (iface));
 	g_return_if_fail (LD_IS_CATEGORY (category) || category == NULL);
 
+	self = LD_CATEGORY_VIEW (iface);
 	if (self->priv->category)
 	{
 		g_signal_handlers_disconnect_by_func (self->priv->category,
@@ -214,18 +178,11 @@ ld_category_view_set_category (LdCategoryView *self, LdCategory *category)
 	g_object_notify (G_OBJECT (self), "category");
 }
 
-/**
- * ld_category_view_get_category:
- * @self: an #LdCategoryView object.
- *
- * Return value: (transfer none): the #LdCategory object
- *               assigned to the widget.
- */
-LdCategory *
-ld_category_view_get_category (LdCategoryView *self)
+static LdCategory *
+ld_category_view_get_category (LdCategoryViewIf *iface)
 {
-	g_return_val_if_fail (LD_IS_CATEGORY_VIEW (self), NULL);
-	return self->priv->category;
+	g_return_val_if_fail (LD_IS_CATEGORY_VIEW (iface), NULL);
+	return LD_CATEGORY_VIEW (iface)->priv->category;
 }
 
 static GtkWidget *
@@ -291,7 +248,7 @@ static void
 on_symbol_selected (GObject *source,
 	LdSymbol *symbol, const gchar *path, LdCategoryView *self)
 {
-	g_signal_emit (self, LD_CATEGORY_VIEW_GET_CLASS (self)->
+	g_signal_emit (self, LD_CATEGORY_VIEW_IF_GET_INTERFACE (self)->
 		symbol_selected_signal, 0, symbol, path);
 }
 
@@ -299,7 +256,7 @@ static void
 on_symbol_deselected (GObject *source,
 	LdSymbol *symbol, const gchar *path, LdCategoryView *self)
 {
-	g_signal_emit (self, LD_CATEGORY_VIEW_GET_CLASS (self)->
+	g_signal_emit (self, LD_CATEGORY_VIEW_IF_GET_INTERFACE (self)->
 		symbol_deselected_signal, 0, symbol, path);
 }
 

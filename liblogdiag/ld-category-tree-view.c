@@ -48,9 +48,6 @@ static void ld_category_tree_view_set_category (LdCategoryView *iface,
 	LdCategory *category);
 static LdCategory *ld_category_tree_view_get_category (LdCategoryView *iface);
 
-static void reload_category (LdCategoryTreeView *self);
-static void load_category_cb (gpointer data, gpointer user_data);
-
 
 static void
 ld_category_view_init (LdCategoryViewInterface *iface)
@@ -131,61 +128,6 @@ ld_category_tree_view_set_property (GObject *object, guint property_id,
 }
 
 
-/**
- * ld_category_tree_view_new:
- * @category: (allow-none): a category to be assigned to the widget.
- *
- * Create an instance.
- */
-GtkWidget *
-ld_category_tree_view_new (LdCategory *category)
-{
-	LdCategoryTreeView *self;
-
-	self = g_object_new (LD_TYPE_CATEGORY_TREE_VIEW, NULL);
-	ld_category_view_set_category (LD_CATEGORY_VIEW (self), category);
-	return GTK_WIDGET (self);
-}
-
-static void
-ld_category_tree_view_set_category (LdCategoryView *iface, LdCategory *category)
-{
-	LdCategoryTreeView *self;
-
-	g_return_if_fail (LD_IS_CATEGORY_TREE_VIEW (iface));
-	g_return_if_fail (LD_IS_CATEGORY (category) || category == NULL);
-
-	self = LD_CATEGORY_TREE_VIEW (iface);
-	if (self->priv->category)
-	{
-		g_signal_handlers_disconnect_by_func (self->priv->category,
-			reload_category, self);
-		g_object_unref (self->priv->category);
-	}
-
-	self->priv->category = category;
-
-	if (category)
-	{
-		g_signal_connect_data (category, "children-changed",
-			G_CALLBACK (reload_category), self,
-			NULL, G_CONNECT_AFTER | G_CONNECT_SWAPPED);
-		g_signal_connect_data (category, "notify::parent",
-			G_CALLBACK (reload_category), self,
-			NULL, G_CONNECT_AFTER | G_CONNECT_SWAPPED);
-		g_object_ref (category);
-	}
-	reload_category (self);
-	g_object_notify (G_OBJECT (self), "category");
-}
-
-static LdCategory *
-ld_category_tree_view_get_category (LdCategoryView *iface)
-{
-	g_return_val_if_fail (LD_IS_CATEGORY_TREE_VIEW (iface), NULL);
-	return LD_CATEGORY_TREE_VIEW (iface)->priv->category;
-}
-
 static GtkWidget *
 create_empty_label (void)
 {
@@ -262,6 +204,39 @@ on_symbol_deselected (GObject *source,
 }
 
 static void
+load_category_cb (gpointer data, gpointer user_data)
+{
+	LdCategoryTreeView *self;
+	LdCategory *cat;
+	GtkWidget *expander, *child;
+	gchar *name, *label_markup;
+
+	g_return_if_fail (LD_IS_CATEGORY_TREE_VIEW (user_data));
+	g_return_if_fail (LD_IS_CATEGORY (data));
+
+	self = user_data;
+	cat = data;
+
+	name = g_markup_escape_text (ld_category_get_human_name (cat), -1);
+	label_markup = g_strconcat (self->priv->expander_prefix, name, NULL);
+	g_free (name);
+
+	expander = gtk_expander_new (label_markup);
+	gtk_expander_set_expanded (GTK_EXPANDER (expander), TRUE);
+	gtk_expander_set_use_markup (GTK_EXPANDER (expander), TRUE);
+	g_free (label_markup);
+
+	child = ld_category_tree_view_new (cat);
+	gtk_container_add (GTK_CONTAINER (expander), child);
+	gtk_box_pack_start (GTK_BOX (self), expander, FALSE, FALSE, 0);
+
+	g_signal_connect_after (child, "symbol-selected",
+		G_CALLBACK (on_symbol_selected), self);
+	g_signal_connect_after (child, "symbol-deselected",
+		G_CALLBACK (on_symbol_deselected), self);
+}
+
+static void
 reload_category (LdCategoryTreeView *self)
 {
 	g_return_if_fail (LD_IS_CATEGORY_TREE_VIEW (self));
@@ -303,36 +278,59 @@ reload_category (LdCategoryTreeView *self)
 	}
 }
 
-static void
-load_category_cb (gpointer data, gpointer user_data)
+/* ===== Interface ========================================================= */
+
+/**
+ * ld_category_tree_view_new:
+ * @category: (allow-none): a category to be assigned to the widget.
+ *
+ * Create an instance.
+ */
+GtkWidget *
+ld_category_tree_view_new (LdCategory *category)
 {
 	LdCategoryTreeView *self;
-	LdCategory *cat;
-	GtkWidget *expander, *child;
-	gchar *name, *label_markup;
 
-	g_return_if_fail (LD_IS_CATEGORY_TREE_VIEW (user_data));
-	g_return_if_fail (LD_IS_CATEGORY (data));
-
-	self = user_data;
-	cat = data;
-
-	name = g_markup_escape_text (ld_category_get_human_name (cat), -1);
-	label_markup = g_strconcat (self->priv->expander_prefix, name, NULL);
-	g_free (name);
-
-	expander = gtk_expander_new (label_markup);
-	gtk_expander_set_expanded (GTK_EXPANDER (expander), TRUE);
-	gtk_expander_set_use_markup (GTK_EXPANDER (expander), TRUE);
-	g_free (label_markup);
-
-	child = ld_category_tree_view_new (cat);
-	gtk_container_add (GTK_CONTAINER (expander), child);
-	gtk_box_pack_start (GTK_BOX (self), expander, FALSE, FALSE, 0);
-
-	g_signal_connect_after (child, "symbol-selected",
-		G_CALLBACK (on_symbol_selected), self);
-	g_signal_connect_after (child, "symbol-deselected",
-		G_CALLBACK (on_symbol_deselected), self);
+	self = g_object_new (LD_TYPE_CATEGORY_TREE_VIEW, NULL);
+	ld_category_view_set_category (LD_CATEGORY_VIEW (self), category);
+	return GTK_WIDGET (self);
 }
 
+static void
+ld_category_tree_view_set_category (LdCategoryView *iface, LdCategory *category)
+{
+	LdCategoryTreeView *self;
+
+	g_return_if_fail (LD_IS_CATEGORY_TREE_VIEW (iface));
+	g_return_if_fail (LD_IS_CATEGORY (category) || category == NULL);
+
+	self = LD_CATEGORY_TREE_VIEW (iface);
+	if (self->priv->category)
+	{
+		g_signal_handlers_disconnect_by_func (self->priv->category,
+			reload_category, self);
+		g_object_unref (self->priv->category);
+	}
+
+	self->priv->category = category;
+
+	if (category)
+	{
+		g_signal_connect_data (category, "children-changed",
+			G_CALLBACK (reload_category), self,
+			NULL, G_CONNECT_AFTER | G_CONNECT_SWAPPED);
+		g_signal_connect_data (category, "notify::parent",
+			G_CALLBACK (reload_category), self,
+			NULL, G_CONNECT_AFTER | G_CONNECT_SWAPPED);
+		g_object_ref (category);
+	}
+	reload_category (self);
+	g_object_notify (G_OBJECT (self), "category");
+}
+
+static LdCategory *
+ld_category_tree_view_get_category (LdCategoryView *iface)
+{
+	g_return_val_if_fail (LD_IS_CATEGORY_TREE_VIEW (iface), NULL);
+	return LD_CATEGORY_TREE_VIEW (iface)->priv->category;
+}

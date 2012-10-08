@@ -75,13 +75,6 @@ static void ld_category_symbol_view_set_category
 static LdCategory *ld_category_symbol_view_get_category
 	(LdCategoryView *iface);
 
-static void on_size_request (GtkWidget *widget, GtkRequisition *requisition,
-	gpointer user_data);
-static void on_size_allocate (GtkWidget *widget, GdkRectangle *allocation,
-	gpointer user_data);
-static gboolean on_expose_event (GtkWidget *widget, GdkEventExpose *event,
-	gpointer user_data);
-
 
 static void
 ld_category_view_init (LdCategoryViewInterface *iface)
@@ -136,125 +129,6 @@ symbol_deselect (LdCategorySymbolView *self)
 	gtk_drag_source_unset (GTK_WIDGET (self));
 }
 
-static gboolean
-on_leave_notify (GtkWidget *widget, GdkEventCrossing *event, gpointer user_data)
-{
-	symbol_deselect (LD_CATEGORY_SYMBOL_VIEW (widget));
-	return FALSE;
-}
-
-static gboolean
-on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
-{
-	LdCategorySymbolView *self;
-	GSList *iter;
-
-	if (event->state & GDK_BUTTON1_MASK)
-		return FALSE;
-
-	self = LD_CATEGORY_SYMBOL_VIEW (widget);
-	for (iter = self->priv->layout; iter; iter = iter->next)
-	{
-		SymbolData *data;
-
-		data = iter->data;
-		if (event->x <  data->rect.x
-		 || event->y <  data->rect.y
-		 || event->x >= data->rect.x + data->rect.width
-		 || event->y >= data->rect.y + data->rect.height)
-			continue;
-
-		if (data != self->priv->preselected)
-		{
-			GtkTargetEntry target = {"ld-symbol", GTK_TARGET_SAME_APP, 0};
-
-			symbol_deselect (self);
-			self->priv->preselected = data;
-			symbol_redraw (self, data);
-
-			gtk_drag_source_set (widget,
-				GDK_BUTTON1_MASK, &target, 1, GDK_ACTION_COPY);
-
-			g_signal_emit (self, LD_CATEGORY_VIEW_GET_INTERFACE (self)->
-				symbol_selected_signal, 0, data->symbol, data->path);
-		}
-		return FALSE;
-	}
-
-	symbol_deselect (self);
-	return FALSE;
-}
-
-static void
-on_drag_data_get
-(GtkWidget *widget, GdkDragContext *ctx, GtkSelectionData *selection_data,
-	guint target_type, guint time, gpointer user_data)
-{
-	LdCategorySymbolView *self;
-
-	self = LD_CATEGORY_SYMBOL_VIEW (widget);
-	g_return_if_fail (self->priv->preselected != NULL);
-
-	gtk_selection_data_set (selection_data,
-		gtk_selection_data_get_target (selection_data),
-		8, (guchar *) self->priv->preselected->path,
-		strlen (self->priv->preselected->path));
-}
-
-static void
-on_drag_begin (GtkWidget *widget, GdkDragContext *ctx, gpointer user_data)
-{
-	LdCategorySymbolView *self;
-	GdkPixbuf *pbuf;
-
-	self = LD_CATEGORY_SYMBOL_VIEW (widget);
-	g_return_if_fail (self->priv->preselected != NULL);
-
-	/* Some of the larger previews didn't work, and we have to get rid of
-	 * the icon later when we're hovering above LdDiagramView anyway. */
-	pbuf = gdk_pixbuf_new (GDK_COLORSPACE_RGB, TRUE, 8, 1, 1);
-	gdk_pixbuf_fill (pbuf, 0x00000000);
-	gtk_drag_set_icon_pixbuf (ctx, pbuf, 0, 0);
-	g_object_unref (pbuf);
-}
-
-static void
-on_drag_end (GtkWidget *widget, GdkDragContext *ctx, gpointer user_data)
-{
-	symbol_deselect (LD_CATEGORY_SYMBOL_VIEW (widget));
-}
-
-static void
-ld_category_symbol_view_init (LdCategorySymbolView *self)
-{
-	self->priv = G_TYPE_INSTANCE_GET_PRIVATE
-		(self, LD_TYPE_CATEGORY_SYMBOL_VIEW, LdCategorySymbolViewPrivate);
-
-	g_signal_connect (self, "size-allocate",
-		G_CALLBACK (on_size_allocate), NULL);
-	g_signal_connect (self, "size-request",
-		G_CALLBACK (on_size_request), NULL);
-	g_signal_connect (self, "expose-event",
-		G_CALLBACK (on_expose_event), NULL);
-
-	g_signal_connect (self, "motion-notify-event",
-		G_CALLBACK (on_motion_notify), NULL);
-	g_signal_connect (self, "leave-notify-event",
-		G_CALLBACK (on_leave_notify), NULL);
-
-	g_signal_connect (self, "drag-begin",
-		G_CALLBACK (on_drag_begin), NULL);
-	g_signal_connect (self, "drag-data-get",
-		G_CALLBACK (on_drag_data_get), NULL);
-	g_signal_connect (self, "drag-end",
-		G_CALLBACK (on_drag_end), NULL);
-
-	gtk_widget_add_events (GTK_WIDGET (self),
-		GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK
-		| GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
-		| GDK_LEAVE_NOTIFY_MASK);
-}
-
 static void
 symbol_data_free (SymbolData *self)
 {
@@ -262,64 +136,6 @@ symbol_data_free (SymbolData *self)
 	g_free (self->path);
 	g_slice_free (SymbolData, self);
 }
-
-static void
-layout_destroy (LdCategorySymbolView *self)
-{
-	symbol_deselect (self);
-
-	g_slist_foreach (self->priv->layout, (GFunc) symbol_data_free, NULL);
-	g_slist_free (self->priv->layout);
-	self->priv->layout = NULL;
-	self->priv->preselected = NULL;
-}
-
-static void
-ld_category_symbol_view_finalize (GObject *gobject)
-{
-	LdCategorySymbolView *self;
-
-	self = LD_CATEGORY_SYMBOL_VIEW (gobject);
-
-	layout_destroy (self);
-	if (self->priv->category)
-		g_object_unref (self->priv->category);
-	g_free (self->priv->path);
-
-	/* Chain up to the parent class. */
-	G_OBJECT_CLASS (ld_category_symbol_view_parent_class)->finalize (gobject);
-}
-
-static void
-ld_category_symbol_view_get_property (GObject *object, guint property_id,
-	GValue *value, GParamSpec *pspec)
-{
-	switch (property_id)
-	{
-	case PROP_CATEGORY:
-		g_value_set_object (value,
-			ld_category_view_get_category (LD_CATEGORY_VIEW (object)));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-	}
-}
-
-static void
-ld_category_symbol_view_set_property (GObject *object, guint property_id,
-	const GValue *value, GParamSpec *pspec)
-{
-	switch (property_id)
-	{
-	case PROP_CATEGORY:
-		ld_category_view_set_category (LD_CATEGORY_VIEW (object),
-			LD_CATEGORY (g_value_get_object (value)));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-	}
-}
-
 
 typedef struct
 {
@@ -332,6 +148,17 @@ typedef struct
 	guint cur_height_down;   /* Current max. lower height of symbols. */
 }
 LayoutContext;
+
+static void
+layout_destroy (LdCategorySymbolView *self)
+{
+	symbol_deselect (self);
+
+	g_slist_foreach (self->priv->layout, (GFunc) symbol_data_free, NULL);
+	g_slist_free (self->priv->layout);
+	self->priv->layout = NULL;
+	self->priv->preselected = NULL;
+}
 
 static GSList *
 layout_finish_row (LayoutContext *ctx)
@@ -433,6 +260,51 @@ layout_for_width (LdCategorySymbolView *self, gint width)
 	return ctx.total_height;
 }
 
+static void
+on_size_request (GtkWidget *widget, GtkRequisition *requisition,
+	gpointer user_data)
+{
+	LdCategorySymbolView *self;
+
+	self = LD_CATEGORY_SYMBOL_VIEW (widget);
+
+	if (!self->priv->category
+	 || !ld_category_get_symbols (self->priv->category))
+	{
+		requisition->width  = 0;
+		requisition->height = 0;
+		return;
+	}
+
+	requisition->width = SYMBOL_WIDTH + 2 * SYMBOL_SPACING;
+
+	if (self->priv->height_negotiation)
+	{
+		GtkAllocation alloc;
+
+		gtk_widget_get_allocation (widget, &alloc);
+		requisition->height = layout_for_width (self, alloc.width);
+	}
+	else
+		requisition->height = SYMBOL_HEIGHT + 2 * SYMBOL_SPACING;
+}
+
+static void
+on_size_allocate (GtkWidget *widget, GdkRectangle *allocation,
+	gpointer user_data)
+{
+	LdCategorySymbolView *self;
+
+	self = LD_CATEGORY_SYMBOL_VIEW (widget);
+
+	if (self->priv->height_negotiation)
+		self->priv->height_negotiation = FALSE;
+	else
+	{
+		self->priv->height_negotiation = TRUE;
+		gtk_widget_queue_resize (widget);
+	}
+}
 
 static gboolean
 on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
@@ -481,53 +353,173 @@ on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 	return FALSE;
 }
 
+static gboolean
+on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
+{
+	LdCategorySymbolView *self;
+	GSList *iter;
+
+	if (event->state & GDK_BUTTON1_MASK)
+		return FALSE;
+
+	self = LD_CATEGORY_SYMBOL_VIEW (widget);
+	for (iter = self->priv->layout; iter; iter = iter->next)
+	{
+		SymbolData *data;
+
+		data = iter->data;
+		if (event->x <  data->rect.x
+		 || event->y <  data->rect.y
+		 || event->x >= data->rect.x + data->rect.width
+		 || event->y >= data->rect.y + data->rect.height)
+			continue;
+
+		if (data != self->priv->preselected)
+		{
+			GtkTargetEntry target = {"ld-symbol", GTK_TARGET_SAME_APP, 0};
+
+			symbol_deselect (self);
+			self->priv->preselected = data;
+			symbol_redraw (self, data);
+
+			gtk_drag_source_set (widget,
+				GDK_BUTTON1_MASK, &target, 1, GDK_ACTION_COPY);
+
+			g_signal_emit (self, LD_CATEGORY_VIEW_GET_INTERFACE (self)->
+				symbol_selected_signal, 0, data->symbol, data->path);
+		}
+		return FALSE;
+	}
+
+	symbol_deselect (self);
+	return FALSE;
+}
+
+static gboolean
+on_leave_notify (GtkWidget *widget, GdkEventCrossing *event, gpointer user_data)
+{
+	symbol_deselect (LD_CATEGORY_SYMBOL_VIEW (widget));
+	return FALSE;
+}
+
 static void
-on_size_request (GtkWidget *widget, GtkRequisition *requisition,
-	gpointer user_data)
+on_drag_data_get
+(GtkWidget *widget, GdkDragContext *ctx, GtkSelectionData *selection_data,
+	guint target_type, guint time, gpointer user_data)
 {
 	LdCategorySymbolView *self;
 
 	self = LD_CATEGORY_SYMBOL_VIEW (widget);
+	g_return_if_fail (self->priv->preselected != NULL);
 
-	if (!self->priv->category
-	 || !ld_category_get_symbols (self->priv->category))
-	{
-		requisition->width  = 0;
-		requisition->height = 0;
-		return;
-	}
-
-	requisition->width = SYMBOL_WIDTH + 2 * SYMBOL_SPACING;
-
-	if (self->priv->height_negotiation)
-	{
-		GtkAllocation alloc;
-
-		gtk_widget_get_allocation (widget, &alloc);
-		requisition->height = layout_for_width (self, alloc.width);
-	}
-	else
-		requisition->height = SYMBOL_HEIGHT + 2 * SYMBOL_SPACING;
+	gtk_selection_data_set (selection_data,
+		gtk_selection_data_get_target (selection_data),
+		8, (guchar *) self->priv->preselected->path,
+		strlen (self->priv->preselected->path));
 }
 
 static void
-on_size_allocate (GtkWidget *widget, GdkRectangle *allocation,
-	gpointer user_data)
+on_drag_begin (GtkWidget *widget, GdkDragContext *ctx, gpointer user_data)
+{
+	LdCategorySymbolView *self;
+	GdkPixbuf *pbuf;
+
+	self = LD_CATEGORY_SYMBOL_VIEW (widget);
+	g_return_if_fail (self->priv->preselected != NULL);
+
+	/* Some of the larger previews didn't work, and we have to get rid of
+	 * the icon later when we're hovering above LdDiagramView anyway. */
+	pbuf = gdk_pixbuf_new (GDK_COLORSPACE_RGB, TRUE, 8, 1, 1);
+	gdk_pixbuf_fill (pbuf, 0x00000000);
+	gtk_drag_set_icon_pixbuf (ctx, pbuf, 0, 0);
+	g_object_unref (pbuf);
+}
+
+static void
+on_drag_end (GtkWidget *widget, GdkDragContext *ctx, gpointer user_data)
+{
+	symbol_deselect (LD_CATEGORY_SYMBOL_VIEW (widget));
+}
+
+static void
+ld_category_symbol_view_init (LdCategorySymbolView *self)
+{
+	self->priv = G_TYPE_INSTANCE_GET_PRIVATE
+		(self, LD_TYPE_CATEGORY_SYMBOL_VIEW, LdCategorySymbolViewPrivate);
+
+	g_signal_connect (self, "size-allocate",
+		G_CALLBACK (on_size_allocate), NULL);
+	g_signal_connect (self, "size-request",
+		G_CALLBACK (on_size_request), NULL);
+	g_signal_connect (self, "expose-event",
+		G_CALLBACK (on_expose_event), NULL);
+
+	g_signal_connect (self, "motion-notify-event",
+		G_CALLBACK (on_motion_notify), NULL);
+	g_signal_connect (self, "leave-notify-event",
+		G_CALLBACK (on_leave_notify), NULL);
+
+	g_signal_connect (self, "drag-begin",
+		G_CALLBACK (on_drag_begin), NULL);
+	g_signal_connect (self, "drag-data-get",
+		G_CALLBACK (on_drag_data_get), NULL);
+	g_signal_connect (self, "drag-end",
+		G_CALLBACK (on_drag_end), NULL);
+
+	gtk_widget_add_events (GTK_WIDGET (self),
+		GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK
+		| GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
+		| GDK_LEAVE_NOTIFY_MASK);
+}
+
+static void
+ld_category_symbol_view_finalize (GObject *gobject)
 {
 	LdCategorySymbolView *self;
 
-	self = LD_CATEGORY_SYMBOL_VIEW (widget);
+	self = LD_CATEGORY_SYMBOL_VIEW (gobject);
 
-	if (self->priv->height_negotiation)
-		self->priv->height_negotiation = FALSE;
-	else
+	layout_destroy (self);
+	if (self->priv->category)
+		g_object_unref (self->priv->category);
+	g_free (self->priv->path);
+
+	/* Chain up to the parent class. */
+	G_OBJECT_CLASS (ld_category_symbol_view_parent_class)->finalize (gobject);
+}
+
+static void
+ld_category_symbol_view_get_property (GObject *object, guint property_id,
+	GValue *value, GParamSpec *pspec)
+{
+	switch (property_id)
 	{
-		self->priv->height_negotiation = TRUE;
-		gtk_widget_queue_resize (widget);
+	case PROP_CATEGORY:
+		g_value_set_object (value,
+			ld_category_view_get_category (LD_CATEGORY_VIEW (object)));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
 	}
 }
 
-/* ===== Generic interface etc. ============================================ */
+static void
+ld_category_symbol_view_set_property (GObject *object, guint property_id,
+	const GValue *value, GParamSpec *pspec)
+{
+	switch (property_id)
+	{
+	case PROP_CATEGORY:
+		ld_category_view_set_category (LD_CATEGORY_VIEW (object),
+			LD_CATEGORY (g_value_get_object (value)));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+	}
+}
+
+
+/* ===== Interface ========================================================= */
 
 /**
  * ld_category_symbol_view_new:

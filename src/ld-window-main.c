@@ -694,16 +694,30 @@ diagram_open (LdWindowMain *self, const gchar *filename)
 		GtkWidget *message_dialog;
 
 		g_warning ("loading failed: %s", error->message);
-		g_error_free (error);
 
 		message_dialog = gtk_message_dialog_new (GTK_WINDOW (self),
 			GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
 			_("Failed to open the file"));
-		gtk_message_dialog_format_secondary_text
-			(GTK_MESSAGE_DIALOG (message_dialog),
-			_("The file is probably corrupted."));
+
+		if (error->domain != G_FILE_ERROR)
+		{
+			gchar *display_filename;
+
+			display_filename = g_filename_display_name (filename);
+			gtk_message_dialog_format_secondary_text
+				(GTK_MESSAGE_DIALOG (message_dialog),
+				_("Failed to open file `%s': Invalid contents."), filename);
+			g_free (display_filename);
+		}
+		else
+			gtk_message_dialog_format_secondary_text
+				(GTK_MESSAGE_DIALOG (message_dialog),
+				"%s", error->message);
+
 		gtk_dialog_run (GTK_DIALOG (message_dialog));
 		gtk_widget_destroy (message_dialog);
+
+		g_error_free (error);
 		return FALSE;
 	}
 

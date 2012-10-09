@@ -316,7 +316,6 @@ ld_window_main_init (LdWindowMain *self)
 	gtk_container_add (GTK_CONTAINER (self), priv->vbox);
 
 	/* Configure the window. */
-	g_signal_connect (self, "destroy", G_CALLBACK (gtk_main_quit), NULL);
 	g_signal_connect (self, "delete-event", G_CALLBACK (on_delete), NULL);
 
 	gtk_window_add_accel_group (GTK_WINDOW (self),

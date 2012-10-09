@@ -76,14 +76,33 @@ get_utf8_args_fail:
 }
 #endif
 
+static gint ld_active_windows = 0;
+
+static void
+window_on_destroyed (GtkObject *object, gpointer user_data)
+{
+	if (--ld_active_windows <= 0)
+		gtk_main_quit ();
+}
+
+static void
+window_create (const gchar *file)
+{
+	GtkWidget *wm;
+
+	wm = ld_window_main_new (file);
+	g_signal_connect (wm, "destroy", G_CALLBACK (window_on_destroyed), NULL);
+	ld_active_windows++;
+}
+
 int
 main (int argc, char *argv[])
 {
-	gchar **files = NULL;
+	gchar **iter, **files = NULL;
 	GOptionEntry option_entries[] =
 	{
 		{G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &files,
-			NULL, N_("[FILE]")},
+			NULL, N_("[FILE...]")},
 		{NULL}
 	};
 
@@ -142,14 +161,14 @@ main (int argc, char *argv[])
 
 	gtk_window_set_default_icon_name (PROJECT_NAME);
 
-	/* TODO: Be able to open multiple files. */
 	if (files)
 	{
-		ld_window_main_new (files[0]);
+		for (iter = files; *iter; iter++)
+			window_create (*iter);
 		g_strfreev (files);
 	}
 	else
-		ld_window_main_new (NULL);
+		window_create (NULL);
 
 	gtk_main ();
 	return 0;

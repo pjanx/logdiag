@@ -40,6 +40,7 @@ struct _LdWindowMainPrivate
 	LdDiagramView *view;
 
 	GtkWidget *statusbar;
+	GtkWidget *zoom_label;
 	guint statusbar_symbol_context_id;
 	guint statusbar_menu_context_id;
 	guint statusbar_hint_context_id;
@@ -341,9 +342,6 @@ ld_window_main_init (LdWindowMain *self)
 	ld_diagram_view_set_diagram (priv->view, priv->diagram);
 	ld_diagram_view_set_library (priv->view, priv->library);
 
-	g_signal_connect (priv->view, "notify::zoom",
-		G_CALLBACK (on_view_zoom_changed), self);
-
 	ld_category_view_set_category (LD_CATEGORY_VIEW (priv->library_view),
 		ld_library_get_root (priv->library));
 
@@ -357,6 +355,15 @@ ld_window_main_init (LdWindowMain *self)
 	priv->statusbar_hint_drag = gtk_statusbar_push
 		(GTK_STATUSBAR (priv->statusbar), priv->statusbar_hint_context_id,
 		_("Drag symbols from the library pane to add them to the diagram."));
+
+	priv->zoom_label = gtk_label_new ("");
+	gtk_label_set_single_line_mode (GTK_LABEL (priv->zoom_label), TRUE);
+	gtk_box_pack_end (GTK_BOX (gtk_statusbar_get_message_area
+		(GTK_STATUSBAR (priv->statusbar))), priv->zoom_label, FALSE, FALSE, 0);
+
+	g_signal_connect (priv->view, "notify::zoom",
+		G_CALLBACK (on_view_zoom_changed), self);
+	g_object_notify (G_OBJECT (priv->view), "zoom");
 
 	action_set_sensitive (self, "Undo", FALSE);
 	action_set_sensitive (self, "Redo", FALSE);
@@ -901,12 +908,19 @@ static void
 on_view_zoom_changed (LdDiagramView *view, GParamSpec *pspec,
 	LdWindowMain *self)
 {
+	gchar *zoom;
+
 	action_set_sensitive (self, "ZoomIn",
 		ld_diagram_view_can_zoom_in (self->priv->view));
 	action_set_sensitive (self, "ZoomOut",
 		ld_diagram_view_can_zoom_out (self->priv->view));
 	action_set_sensitive (self, "NormalSize",
 		ld_diagram_view_get_zoom (self->priv->view) != 1);
+
+	zoom = g_strdup_printf (_("%d%%"),
+		(gint) (ld_diagram_view_get_zoom (self->priv->view) * 100 + 0.5));
+	gtk_label_set_text (GTK_LABEL (self->priv->zoom_label), zoom);
+	g_free (zoom);
 }
 
 static void

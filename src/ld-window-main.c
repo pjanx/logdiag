@@ -51,6 +51,7 @@ struct _LdWindowMainPrivate
 /* ===== Local functions =================================================== */
 
 static void ld_window_main_finalize (GObject *gobject);
+static void load_library_directories (LdLibrary *library);
 
 static void on_ui_proxy_connected (GtkUIManager *ui, GtkAction *action,
 	GtkWidget *proxy, LdWindowMain *window);
@@ -335,7 +336,7 @@ ld_window_main_init (LdWindowMain *self)
 		G_CALLBACK (on_diagram_selection_changed), self);
 
 	priv->library = ld_library_new ();
-	ld_library_load (priv->library, PROJECT_SHARE_DIR "library");
+	load_library_directories (priv->library);
 
 	ld_diagram_view_set_diagram (priv->view, priv->diagram);
 	ld_diagram_view_set_library (priv->view, priv->library);
@@ -402,6 +403,32 @@ ld_window_main_finalize (GObject *gobject)
 
 	/* Chain up to the parent class. */
 	G_OBJECT_CLASS (ld_window_main_parent_class)->finalize (gobject);
+}
+
+static void
+load_library_directories (LdLibrary *library)
+{
+	GFile *file_program, *file_user;
+	const gchar *program_dir;
+	gchar *user_dir;
+
+	program_dir = PROJECT_SHARE_DIR "library";
+	user_dir = g_build_filename (g_get_user_data_dir (),
+		PROJECT_NAME, "library", NULL);
+
+	file_program = g_file_new_for_path (program_dir);
+	file_user    = g_file_new_for_path (user_dir);
+
+	ld_library_load (library, program_dir);
+
+	/* Don't try to load the same directory twice. */
+	if (!g_file_equal (file_program, file_user))
+		ld_library_load (library, user_dir);
+
+	g_object_unref (file_user);
+	g_object_unref (file_program);
+
+	g_free (user_dir);
 }
 
 /*

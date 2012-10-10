@@ -298,7 +298,10 @@ on_size_allocate (GtkWidget *widget, GdkRectangle *allocation,
 	self = LD_CATEGORY_SYMBOL_VIEW (widget);
 
 	if (self->priv->height_negotiation)
+	{
+		gtk_widget_queue_draw (widget);
 		self->priv->height_negotiation = FALSE;
+	}
 	else
 	{
 		self->priv->height_negotiation = TRUE;

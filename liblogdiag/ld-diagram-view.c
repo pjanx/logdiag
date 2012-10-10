@@ -730,30 +730,33 @@ on_size_allocate (GtkWidget *widget, GtkAllocation *allocation,
 }
 
 static void
+update_adjustment_value (LdDiagramView *self, GtkAdjustment *adjustment,
+	gdouble value, gdouble page_size)
+{
+	gtk_adjustment_set_page_size (adjustment, page_size);
+	g_signal_handlers_block_by_func (adjustment,
+		on_adjustment_value_changed, self);
+	gtk_adjustment_set_value (adjustment, value - page_size / 2);
+	g_signal_handlers_unblock_by_func (adjustment,
+		on_adjustment_value_changed, self);
+	gtk_adjustment_changed (adjustment);
+}
+
+static void
 update_adjustments (LdDiagramView *self)
 {
 	GtkAllocation allocation;
-	gdouble scale, page_size;
+	gdouble scale;
 
 	gtk_widget_get_allocation (GTK_WIDGET (self), &allocation);
 	scale = ld_diagram_view_get_scale_in_px (self);
 
 	if (self->priv->adjustment_h)
-	{
-		page_size = allocation.width  / scale;
-		gtk_adjustment_set_page_size (self->priv->adjustment_h, page_size);
-		gtk_adjustment_set_value (self->priv->adjustment_h,
-			self->priv->x - page_size / 2);
-		gtk_adjustment_changed (self->priv->adjustment_h);
-	}
+		update_adjustment_value (self, self->priv->adjustment_h,
+			self->priv->x, allocation.width  / scale);
 	if (self->priv->adjustment_v)
-	{
-		page_size = allocation.height / scale;
-		gtk_adjustment_set_page_size (self->priv->adjustment_v, page_size);
-		gtk_adjustment_set_value (self->priv->adjustment_v,
-			self->priv->y - page_size / 2);
-		gtk_adjustment_changed (self->priv->adjustment_v);
-	}
+		update_adjustment_value (self, self->priv->adjustment_v,
+			self->priv->y, allocation.height / scale);
 }
 
 static void

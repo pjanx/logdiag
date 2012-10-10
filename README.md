@@ -1,8 +1,8 @@
 # logdiag
 
-logdiag is a schematic editor written in GTK+.
+logdiag is a simple multiplatform schematic editor written in GTK+.
 
-__This software is considered to be alpha quality and isn't recommended for
+__This software is considered to be of alpha quality and isn't recommended for
 regular usage.__
 
 ## Requirements
@@ -12,7 +12,6 @@ Runtime dependencies:
  - GTK+ &gt;= 2.12
  - json-glib &gt;= 0.10.4
  - lua = 5.1
- - librsvg &gt;= 2.0
 
 Build dependencies:
 
@@ -47,15 +46,17 @@ CMake offers DEB and RPM.
 After _cpack_ finishes making the package, install this file.
 
     $ fakeroot cpack -G DEB
-    # dpkg -i logdiag-0.0-Linux-x86_64.deb
+    # dpkg -i logdiag-version-system-arch.deb
 
 ## Building from sources on Windows
 
-First install CMake 2.8 and MinGW. Add both to the system path. If you want to
+First install CMake 2.8 and MinGW. Add both to your system path. If you want to
 build an installation package, also install NSIS.
 
 Run the following command in the directory with source files to automatically
-fetch and setup all dependencies:
+fetch and setup all dependencies (contact me if the script becomes obsolete,
+it's easy to fix but I usually update it only just a short while before
+releasing a new version in order to resolve compatibility issues):
 
     > cmake -P Win32Depends.cmake
 

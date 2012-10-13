@@ -21,7 +21,7 @@ endif (files)
 set (pkg_list "7za" "gtk" "winlibs" "mingw_lua")
 
 set (pkg_7za_root "http://sourceforge.net/projects/sevenzip/files")
-set (pkg_7za_urls "${pkg_7z_root}/7-Zip/9.20/7za920.zip")
+set (pkg_7za_urls "${pkg_7za_root}/7-Zip/9.20/7za920.zip")
 set (pkg_7za_md5 "2fac454a90ae96021f4ffc607d4c00f8")
 
 set (pkg_gtk_root "http://ftp.gnome.org/pub/gnome/binaries/win32")
@@ -81,7 +81,11 @@ foreach (pkg_set ${pkg_list})
 endforeach (pkg_set)
 
 if (NOT WIN32)
-	message (FATAL_ERROR "Must run on Windows to extract packages; aborting")
+	unset (sevenzip_executable)
+	find_program (sevenzip_executable 7za)
+	if (NOT sevenzip_executable)
+		message (FATAL_ERROR "Could not find 7za (part of p7zip)")
+	endif (NOT sevenzip_executable)
 endif (NOT WIN32)
 
 # Stage 2: setup 7za first
@@ -104,7 +108,7 @@ file (COPY ${tmp_dir}/7za.exe DESTINATION ${tools_dir})
 file (REMOVE_RECURSE ${tmp_dir})
 list (REMOVE_ITEM pkg_list "7za")
 
-# Stage 4: extract the rest of packages
+# Stage 3: extract the rest of packages
 foreach (pkg_set ${pkg_list})
 	foreach (url ${pkg_${pkg_set}_urls})
 		get_filename_component (filename ${url} NAME)
@@ -139,6 +143,6 @@ foreach (pkg_set ${pkg_list})
 	endforeach (url)
 endforeach (pkg_set)
 
-# Stage 5: final touches
+# Stage 4: final touches
 file (WRITE ${working_dir}/etc/gtk-2.0/gtkrc
 	"gtk-theme-name = \"MS-Windows\"")

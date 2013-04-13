@@ -5,6 +5,7 @@ cmake_minimum_required (VERSION 2.6.2)
 cmake_policy (VERSION 2.6.3)
 
 # Options
+option (OPTION_USE_VERA "Use vera++ for source code style checks" OFF)
 option (OPTION_NOINSTALL "Only for developers; work without installing" OFF)
 
 if (OPTION_NOINSTALL)
@@ -270,6 +271,40 @@ endif (GTK_DOC_FOUND)
 find_package (CppCheck)
 GENERATE_CPPCHECK (SOURCES liblogdiag src tests ENABLE_IDS all
 	TARGET_NAME ${CMAKE_PROJECT_NAME}_cppcheck INCLUDES ${CMAKE_CURRENT_BINARY_DIR})
+
+if (OPTION_USE_VERA)
+	# Make it build within the same build tree
+	get_directory_property (backup_includes INCLUDE_DIRECTORIES)
+	set_directory_properties (PROPERTIES INCLUDE_DIRECTORIES "")
+	set (backup_source_dir "${CMAKE_SOURCE_DIR}")
+	set (CMAKE_SOURCE_DIR "${CMAKE_SOURCE_DIR}/vera++")
+
+	add_subdirectory ("vera++")
+
+	set_directory_properties (PROPERTIES INCLUDE_DIRECTORIES "${backup_includes}")
+	set (CMAKE_SOURCE_DIR "${backup_source_dir}")
+
+	# Check the sources
+	# XXX: maybe do it per source file and not all at once
+	set (vera_srcs ${liblogdiag_SOURCES} ${logdiag_SOURCES} ${logdiag_HEADERS})
+	set (vera_output ${CMAKE_CURRENT_BINARY_DIR}/vera.log)
+	add_custom_command (OUTPUT ${vera_output}
+		COMMAND vera++
+			-R F001 -R L001 -R T001 -R T004 -R T005 -R T006
+			-R T007 -R T009 -R T010 -R T015 -R T017 -R T018
+			-R L004 -P max-line-length=80
+			-R L005 -P max-consecutive-empty-lines=2
+			--root ${CMAKE_SOURCE_DIR}/vera++
+			--std-report=-
+			--std-report=${vera_output}
+			--warning -s
+			${vera_srcs}
+		DEPENDS ${vera_srcs}
+		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+		COMMENT "Checking style for logdiag")
+
+	add_custom_target (logdiag_vera ALL DEPENDS ${vera_output})
+endif (OPTION_USE_VERA)
 
 # GSettings
 find_program (GLIB_COMPILE_SCHEMAS_EXECUTABLE glib-compile-schemas)

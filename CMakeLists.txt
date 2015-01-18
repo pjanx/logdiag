@@ -1,8 +1,8 @@
 project (logdiag C)
-cmake_minimum_required (VERSION 2.6.2)
+cmake_minimum_required (VERSION 2.8)
 
-# Default to 2.6.3 behaviour
-cmake_policy (VERSION 2.6.3)
+# Default to 2.8 behaviour
+cmake_policy (VERSION 2.8)
 
 # Options
 option (OPTION_USE_VERA "Use vera++ for source code style checks" OFF)

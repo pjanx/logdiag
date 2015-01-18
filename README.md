@@ -11,11 +11,11 @@ Runtime dependencies:
 
  - GTK+ &gt;= 2.12
  - json-glib &gt;= 0.10.4
- - lua = 5.1
+ - lua = 5.2
 
 Build dependencies:
 
- - CMake &gt;= 2.6
+ - CMake &gt;= 2.8
 
 ## Installation from sources on Unix-like systems
 
@@ -47,6 +47,8 @@ After _cpack_ finishes making the package, install this file.
 
     $ fakeroot cpack -G DEB
     # dpkg -i logdiag-version-system-arch.deb
+
+Leave out the fakeroot for CMake >= 2.8.9, it's been fixed since.
 
 ## Building from sources on Windows
 

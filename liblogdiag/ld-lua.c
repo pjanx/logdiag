@@ -196,17 +196,14 @@ ld_lua_init (LdLua *self)
 	/* XXX: Might not be a bad idea to use lua_atpanic(). */
 
 	/* Load some safe libraries. */
-	lua_pushcfunction (L, luaopen_string);
-	lua_call (L, 0, 0);
-
-	lua_pushcfunction (L, luaopen_table);
-	lua_call (L, 0, 0);
-
-	lua_pushcfunction (L, luaopen_math);
-	lua_call (L, 0, 0);
+	luaL_requiref (L, "string", luaopen_string, TRUE);
+	luaL_requiref (L, "table",  luaopen_table,  TRUE);
+	luaL_requiref (L, "math",   luaopen_math,   TRUE);
+	lua_pop (L, 3);
 
 	/* Load the application library. */
-	luaL_register (L, LD_LUA_LIBRARY_NAME, ld_lua_logdiag_lib);
+	luaL_newlib (L, ld_lua_logdiag_lib);
+	lua_setglobal (L, LD_LUA_LIBRARY_NAME);
 
 	/* Store user data to the registry. */
 	ud = lua_newuserdata (L, sizeof *ud);
@@ -351,7 +348,9 @@ ld_lua_private_draw (LdLua *self, LdLuaSymbol *symbol, cairo_t *cr)
 	data.cr = cr;
 	data.save_count = 0;
 
-	if (lua_cpcall (self->priv->L, ld_lua_private_draw_cb, &data))
+	lua_pushcfunction (self->priv->L, ld_lua_private_draw_cb);
+	lua_pushlightuserdata (self->priv->L, &data);
+	if (lua_pcall (self->priv->L, 1, 0, 0))
 	{
 		g_warning ("Lua error: %s", lua_tostring (self->priv->L, -1));
 		lua_pop (self->priv->L, 1);
@@ -415,7 +414,9 @@ ld_lua_private_unregister (LdLua *self, LdLuaSymbol *symbol)
 	g_return_if_fail (LD_IS_LUA (self));
 	g_return_if_fail (LD_IS_LUA_SYMBOL (symbol));
 
-	if (lua_cpcall (self->priv->L, ld_lua_private_unregister_cb, symbol))
+	lua_pushcfunction (self->priv->L, ld_lua_private_unregister_cb);
+	lua_pushlightuserdata (self->priv->L, symbol);
+	if (lua_pcall (self->priv->L, 1, 0, 0))
 	{
 		g_warning ("Lua error: %s", lua_tostring (self->priv->L, -1));
 		lua_pop (self->priv->L, 1);
@@ -580,7 +581,7 @@ read_symbol_area (lua_State *L, int index, LdRectangle *area)
 {
 	lua_Number x1, x2, y1, y2;
 
-	if (lua_objlen (L, index) != 4)
+	if (lua_rawlen (L, index) != 4)
 		return FALSE;
 
 	lua_rawgeti (L, index, 1);
@@ -628,7 +629,7 @@ read_terminals (lua_State *L, int index, LdPointArray **terminals)
 	LdPointArray *points;
 	size_t num_points;
 
-	num_points = lua_objlen (L, index);
+	num_points = lua_rawlen (L, index);
 	points = ld_point_array_sized_new (num_points);
 
 	lua_pushnil (L);
@@ -636,7 +637,7 @@ read_terminals (lua_State *L, int index, LdPointArray **terminals)
 	{
 		g_assert (points->length < points->size);
 
-		if (!lua_istable (L, -1) || lua_objlen (L, -1) != 2)
+		if (!lua_istable (L, -1) || lua_rawlen (L, -1) != 2)
 			goto read_terminals_fail;
 
 		lua_rawgeti (L, -1, 1);

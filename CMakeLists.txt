@@ -275,6 +275,9 @@ GENERATE_CPPCHECK (SOURCES liblogdiag src tests ENABLE_IDS all
 	TARGET_NAME ${CMAKE_PROJECT_NAME}_cppcheck INCLUDES ${CMAKE_CURRENT_BINARY_DIR})
 
 if (OPTION_USE_VERA)
+	# Force this off, we don't need it
+	option (VERA_LUA "" OFF)
+
 	# Make it build within the same build tree
 	get_directory_property (backup_includes INCLUDE_DIRECTORIES)
 	set_directory_properties (PROPERTIES INCLUDE_DIRECTORIES "")
@@ -291,7 +294,7 @@ if (OPTION_USE_VERA)
 	set (vera_srcs ${liblogdiag_SOURCES} ${logdiag_SOURCES} ${logdiag_HEADERS})
 	set (vera_output ${CMAKE_CURRENT_BINARY_DIR}/vera.log)
 	add_custom_command (OUTPUT ${vera_output}
-		COMMAND vera++
+		COMMAND vera
 			-R F001 -R L001 -R T001 -R T004 -R T005 -R T006
 			-R T007 -R T009 -R T010 -R T015 -R T017 -R T018
 			-R L004 -P max-line-length=80

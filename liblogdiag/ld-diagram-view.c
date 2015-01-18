@@ -392,15 +392,15 @@ ld_diagram_view_class_init (LdDiagramViewClass *klass)
 	klass->move = ld_diagram_view_real_move;
 
 	binding_set = gtk_binding_set_by_class (klass);
-	gtk_binding_entry_add_signal (binding_set, GDK_Escape, 0,
+	gtk_binding_entry_add_signal (binding_set, GDK_KEY_Escape, 0,
 		"cancel-operation", 0);
-	gtk_binding_entry_add_signal (binding_set, GDK_Left, 0,
+	gtk_binding_entry_add_signal (binding_set, GDK_KEY_Left, 0,
 		"move", 2, G_TYPE_DOUBLE, (gdouble) -1, G_TYPE_DOUBLE, (gdouble) 0);
-	gtk_binding_entry_add_signal (binding_set, GDK_Right, 0,
+	gtk_binding_entry_add_signal (binding_set, GDK_KEY_Right, 0,
 		"move", 2, G_TYPE_DOUBLE, (gdouble) 1, G_TYPE_DOUBLE, (gdouble) 0);
-	gtk_binding_entry_add_signal (binding_set, GDK_Up, 0,
+	gtk_binding_entry_add_signal (binding_set, GDK_KEY_Up, 0,
 		"move", 2, G_TYPE_DOUBLE, (gdouble) 0, G_TYPE_DOUBLE, (gdouble) -1);
-	gtk_binding_entry_add_signal (binding_set, GDK_Down, 0,
+	gtk_binding_entry_add_signal (binding_set, GDK_KEY_Down, 0,
 		"move", 2, G_TYPE_DOUBLE, (gdouble) 0, G_TYPE_DOUBLE, (gdouble) 1);
 
 /**
@@ -1803,7 +1803,7 @@ oper_move_view_begin (LdDiagramView *self, const LdPoint *point)
 	move_cursor = gdk_cursor_new (GDK_FLEUR);
 	gdk_window_set_cursor
 		(gtk_widget_get_window (GTK_WIDGET (self)), move_cursor);
-	gdk_cursor_unref (move_cursor);
+	g_object_unref (move_cursor);
 }
 
 static void

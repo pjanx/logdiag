@@ -97,11 +97,11 @@ if (CONVERT_EXECUTABLE AND NOT WIN32)
 endif (CONVERT_EXECUTABLE AND NOT WIN32)
 
 # Dependencies
-find_package (GTK2 2.12 REQUIRED gtk)
 find_package (JsonGlib REQUIRED)
 
 find_package (PkgConfig REQUIRED)
 pkg_search_module (Lua52 REQUIRED lua5.2 lua-5.2 lua>=5.2)
+pkg_check_modules (GTK3 REQUIRED gtk+-3.0)
 
 # Localization
 find_package (Gettext REQUIRED)
@@ -229,9 +229,9 @@ glib_genmarshal (${CMAKE_CURRENT_SOURCE_DIR}/liblogdiag/ld-marshal
 	ld_marshal)
 
 include_directories (${CMAKE_CURRENT_SOURCE_DIR})
-include_directories (${GTK2_INCLUDE_DIRS}
+include_directories (${GTK3_INCLUDE_DIRS}
 	${JSON_GLIB_INCLUDE_DIRS} ${Lua52_INCLUDE_DIRS})
-set (logdiag_LIBS ${GTK2_LIBRARIES}
+set (logdiag_LIBS ${GTK3_LIBRARIES}
 	${JSON_GLIB_LIBRARIES} ${Lua52_LIBRARIES})
 
 if (WIN32)

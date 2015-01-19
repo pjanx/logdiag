@@ -49,8 +49,6 @@ struct _LdDiagramViewClass
 	guint cancel_operation_signal;
 	guint move_signal;
 
-	void (*set_scroll_adjustments) (LdDiagramView *self,
-		GtkAdjustment *horizontal, GtkAdjustment *vertical);
 	void (*cancel_operation) (LdDiagramView *self);
 	void (*move) (LdDiagramView *self, gdouble dx, gdouble dy);
 };

@@ -148,6 +148,8 @@ struct _LdDiagramViewPrivate
 
 	GtkAdjustment *adjustment_h;
 	GtkAdjustment *adjustment_v;
+	GtkScrollablePolicy adjustment_policy_h;
+	GtkScrollablePolicy adjustment_policy_v;
 
 	gdouble x;
 	gdouble y;
@@ -214,6 +216,10 @@ CheckTerminalsData;
 enum
 {
 	PROP_0,
+	PROP_HADJUSTMENT,
+	PROP_VADJUSTMENT,
+	PROP_HSCROLL_POLICY,
+	PROP_VSCROLL_POLICY,
 	PROP_DIAGRAM,
 	PROP_LIBRARY,
 	PROP_X,
@@ -221,14 +227,17 @@ enum
 	PROP_ZOOM
 };
 
+static void ld_diagram_view_scrollable_init (GtkScrollableInterface *iface);
 static void ld_diagram_view_get_property (GObject *object, guint property_id,
 	GValue *value, GParamSpec *pspec);
 static void ld_diagram_view_set_property (GObject *object, guint property_id,
 	const GValue *value, GParamSpec *pspec);
 static void ld_diagram_view_finalize (GObject *gobject);
 
-static void ld_diagram_view_real_set_scroll_adjustments
-	(LdDiagramView *self, GtkAdjustment *horizontal, GtkAdjustment *vertical);
+static void set_hadjustment
+	(LdDiagramView *self, GtkAdjustment *hadjustment);
+static void set_vadjustment
+	(LdDiagramView *self, GtkAdjustment *vadjustment);
 static void on_adjustment_value_changed
 	(GtkAdjustment *adjustment, LdDiagramView *self);
 static void on_size_allocate (GtkWidget *widget, GtkAllocation *allocation,
@@ -360,8 +369,7 @@ static void on_drag_data_received (GtkWidget *widget, GdkDragContext *drag_ctx,
 static void on_drag_leave (GtkWidget *widget, GdkDragContext *drag_ctx,
 	guint time, gpointer user_data);
 
-static gboolean on_expose_event (GtkWidget *widget, GdkEventExpose *event,
-	gpointer user_data);
+static gboolean on_draw (GtkWidget *widget, cairo_t *cr, gpointer user_data);
 static void draw_grid (GtkWidget *widget, DrawData *data);
 static void draw_diagram (GtkWidget *widget, DrawData *data);
 static void draw_terminal (GtkWidget *widget, DrawData *data);
@@ -370,24 +378,27 @@ static void draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data);
 static void draw_connection (LdDiagramConnection *connection, DrawData *data);
 
 
-G_DEFINE_TYPE (LdDiagramView, ld_diagram_view, GTK_TYPE_DRAWING_AREA);
+G_DEFINE_TYPE_WITH_CODE (LdDiagramView, ld_diagram_view, GTK_TYPE_DRAWING_AREA,
+	G_IMPLEMENT_INTERFACE (GTK_TYPE_SCROLLABLE,
+		ld_diagram_view_scrollable_init))
+
+static void
+ld_diagram_view_scrollable_init (GtkScrollableInterface *iface)
+{
+}
 
 static void
 ld_diagram_view_class_init (LdDiagramViewClass *klass)
 {
 	GObjectClass *object_class;
-	GtkWidgetClass *widget_class;
 	GtkBindingSet *binding_set;
 	GParamSpec *pspec;
-
-	widget_class = GTK_WIDGET_CLASS (klass);
 
 	object_class = G_OBJECT_CLASS (klass);
 	object_class->get_property = ld_diagram_view_get_property;
 	object_class->set_property = ld_diagram_view_set_property;
 	object_class->finalize = ld_diagram_view_finalize;
 
-	klass->set_scroll_adjustments = ld_diagram_view_real_set_scroll_adjustments;
 	klass->cancel_operation = ld_diagram_view_real_cancel_operation;
 	klass->move = ld_diagram_view_real_move;
 
@@ -402,6 +413,16 @@ ld_diagram_view_class_init (LdDiagramViewClass *klass)
 		"move", 2, G_TYPE_DOUBLE, (gdouble) 0, G_TYPE_DOUBLE, (gdouble) -1);
 	gtk_binding_entry_add_signal (binding_set, GDK_KEY_Down, 0,
 		"move", 2, G_TYPE_DOUBLE, (gdouble) 0, G_TYPE_DOUBLE, (gdouble) 1);
+
+	g_object_class_override_property (object_class,
+		PROP_HADJUSTMENT, "hadjustment");
+	g_object_class_override_property (object_class,
+		PROP_VADJUSTMENT, "vadjustment");
+
+	g_object_class_override_property (object_class,
+		PROP_HSCROLL_POLICY, "hscroll-policy");
+	g_object_class_override_property (object_class,
+		PROP_VSCROLL_POLICY, "vscroll-policy");
 
 /**
  * LdDiagramView:diagram:
@@ -454,22 +475,6 @@ ld_diagram_view_class_init (LdDiagramViewClass *klass)
 	g_object_class_install_property (object_class, PROP_ZOOM, pspec);
 
 /**
- * LdDiagramView::set-scroll-adjustments:
- * @self: an #LdDiagramView object.
- * @horizontal: the horizontal #GtkAdjustment.
- * @vertical: the vertical #GtkAdjustment.
- *
- * Set scroll adjustments for the widget.
- */
-	widget_class->set_scroll_adjustments_signal = g_signal_new
-		("set-scroll-adjustments", G_TYPE_FROM_CLASS (widget_class),
-		G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
-		G_STRUCT_OFFSET (LdDiagramViewClass, set_scroll_adjustments),
-		NULL, NULL,
-		ld_marshal_VOID__OBJECT_OBJECT,
-		G_TYPE_NONE, 2, GTK_TYPE_ADJUSTMENT, GTK_TYPE_ADJUSTMENT);
-
-/**
  * LdDiagramView::cancel-operation:
  * @self: an #LdDiagramView object.
  *
@@ -508,6 +513,9 @@ ld_diagram_view_init (LdDiagramView *self)
 	self->priv = G_TYPE_INSTANCE_GET_PRIVATE
 		(self, LD_TYPE_DIAGRAM_VIEW, LdDiagramViewPrivate);
 
+	self->priv->adjustment_policy_h = GTK_SCROLL_MINIMUM;
+	self->priv->adjustment_policy_v = GTK_SCROLL_MINIMUM;
+
 	self->priv->x = 0;
 	self->priv->y = 0;
 	self->priv->zoom = ZOOM_DEFAULT;
@@ -522,8 +530,8 @@ ld_diagram_view_init (LdDiagramView *self)
 
 	g_signal_connect (self, "size-allocate",
 		G_CALLBACK (on_size_allocate), NULL);
-	g_signal_connect (self, "expose-event",
-		G_CALLBACK (on_expose_event), NULL);
+	g_signal_connect (self, "draw",
+		G_CALLBACK (on_draw), NULL);
 
 	g_signal_connect (self, "motion-notify-event",
 		G_CALLBACK (on_motion_notify), NULL);
@@ -562,7 +570,8 @@ ld_diagram_view_finalize (GObject *gobject)
 
 	self = LD_DIAGRAM_VIEW (gobject);
 
-	ld_diagram_view_real_set_scroll_adjustments (self, NULL, NULL);
+	g_object_set (self, "hadjustment", NULL, NULL);
+	g_object_set (self, "vadjustment", NULL, NULL);
 
 	if (self->priv->diagram)
 	{
@@ -587,6 +596,18 @@ ld_diagram_view_get_property (GObject *object, guint property_id,
 	self = LD_DIAGRAM_VIEW (object);
 	switch (property_id)
 	{
+	case PROP_HADJUSTMENT:
+		g_value_set_object (value, self->priv->adjustment_h);
+		break;
+	case PROP_VADJUSTMENT:
+		g_value_set_object (value, self->priv->adjustment_v);
+		break;
+	case PROP_HSCROLL_POLICY:
+		g_value_set_enum (value, self->priv->adjustment_policy_h);
+		break;
+	case PROP_VSCROLL_POLICY:
+		g_value_set_enum (value, self->priv->adjustment_policy_v);
+		break;
 	case PROP_DIAGRAM:
 		g_value_set_object (value, ld_diagram_view_get_diagram (self));
 		break;
@@ -608,6 +629,77 @@ ld_diagram_view_get_property (GObject *object, guint property_id,
 }
 
 static void
+set_hadjustment (LdDiagramView *self, GtkAdjustment *hadjustment)
+{
+	GtkAllocation allocation;
+	gdouble scale, page_size;
+
+	/* TODO: Infinite area. */
+
+	if (hadjustment == self->priv->adjustment_h)
+		return;
+
+	gtk_widget_get_allocation (GTK_WIDGET (self), &allocation);
+	scale = ld_diagram_view_get_scale_in_px (self);
+
+	if (self->priv->adjustment_h)
+	{
+		g_signal_handlers_disconnect_by_func (self->priv->adjustment_h,
+			on_adjustment_value_changed, self);
+		g_object_unref (self->priv->adjustment_h);
+		self->priv->adjustment_h = NULL;
+	}
+	if (hadjustment)
+	{
+		g_object_ref (hadjustment);
+		g_signal_connect (hadjustment, "value-changed",
+			G_CALLBACK (on_adjustment_value_changed), self);
+
+		page_size = allocation.width / scale;
+		gtk_adjustment_configure (hadjustment,
+			-page_size / 2, -100, 100, 0.5, 5, page_size);
+
+		self->priv->adjustment_h = hadjustment;
+	}
+}
+
+static void
+set_vadjustment (LdDiagramView *self, GtkAdjustment *vadjustment)
+{
+	GtkAllocation allocation;
+	gdouble scale, page_size;
+
+	/* TODO: Infinite area. */
+
+	if (vadjustment == self->priv->adjustment_v)
+		return;
+
+	gtk_widget_get_allocation (GTK_WIDGET (self), &allocation);
+	scale = ld_diagram_view_get_scale_in_px (self);
+
+	if (self->priv->adjustment_v)
+	{
+		g_signal_handlers_disconnect_by_func (self->priv->adjustment_v,
+			on_adjustment_value_changed, self);
+		g_object_unref (self->priv->adjustment_v);
+
+		self->priv->adjustment_v = NULL;
+	}
+	if (vadjustment)
+	{
+		g_object_ref (vadjustment);
+		g_signal_connect (vadjustment, "value-changed",
+			G_CALLBACK (on_adjustment_value_changed), self);
+
+		page_size = allocation.height / scale;
+		gtk_adjustment_configure (vadjustment,
+			-page_size / 2, -100, 100, 0.5, 5, page_size);
+
+		self->priv->adjustment_v = vadjustment;
+	}
+}
+
+static void
 ld_diagram_view_set_property (GObject *object, guint property_id,
 	const GValue *value, GParamSpec *pspec)
 {
@@ -616,6 +708,18 @@ ld_diagram_view_set_property (GObject *object, guint property_id,
 	self = LD_DIAGRAM_VIEW (object);
 	switch (property_id)
 	{
+	case PROP_HADJUSTMENT:
+		set_hadjustment (self, g_value_get_object (value));
+		break;
+	case PROP_VADJUSTMENT:
+		set_vadjustment (self, g_value_get_object (value));
+		break;
+	case PROP_HSCROLL_POLICY:
+		self->priv->adjustment_policy_h = g_value_get_enum (value);
+		break;
+	case PROP_VSCROLL_POLICY:
+		self->priv->adjustment_policy_v = g_value_get_enum (value);
+		break;
 	case PROP_DIAGRAM:
 		ld_diagram_view_set_diagram (self,
 			LD_DIAGRAM (g_value_get_object (value)));
@@ -635,66 +739,6 @@ ld_diagram_view_set_property (GObject *object, guint property_id,
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-	}
-}
-
-static void
-ld_diagram_view_real_set_scroll_adjustments (LdDiagramView *self,
-	GtkAdjustment *horizontal, GtkAdjustment *vertical)
-{
-	/* TODO: Infinite area. */
-	GtkAllocation allocation;
-	gdouble scale, page_size;
-
-	gtk_widget_get_allocation (GTK_WIDGET (self), &allocation);
-	scale = ld_diagram_view_get_scale_in_px (self);
-
-	if (horizontal != self->priv->adjustment_h)
-	{
-		if (self->priv->adjustment_h)
-		{
-			g_signal_handlers_disconnect_by_func (self->priv->adjustment_h,
-				on_adjustment_value_changed, self);
-			g_object_unref (self->priv->adjustment_h);
-
-			self->priv->adjustment_h = NULL;
-		}
-		if (horizontal)
-		{
-			g_object_ref (horizontal);
-			g_signal_connect (horizontal, "value-changed",
-				G_CALLBACK (on_adjustment_value_changed), self);
-
-			page_size = allocation.width / scale;
-			gtk_adjustment_configure (horizontal,
-				-page_size / 2, -100, 100, 0.5, 5, page_size);
-
-			self->priv->adjustment_h = horizontal;
-		}
-	}
-
-	if (vertical != self->priv->adjustment_v)
-	{
-		if (self->priv->adjustment_v)
-		{
-			g_signal_handlers_disconnect_by_func (self->priv->adjustment_v,
-				on_adjustment_value_changed, self);
-			g_object_unref (self->priv->adjustment_v);
-
-			self->priv->adjustment_v = NULL;
-		}
-		if (vertical)
-		{
-			g_object_ref (vertical);
-			g_signal_connect (vertical, "value-changed",
-				G_CALLBACK (on_adjustment_value_changed), self);
-
-			page_size = allocation.height / scale;
-			gtk_adjustment_configure (vertical,
-				-page_size / 2, -100, 100, 0.5, 5, page_size);
-
-			self->priv->adjustment_v = vertical;
-		}
 	}
 }
 
@@ -2563,20 +2607,21 @@ on_drag_drop (GtkWidget *widget, GdkDragContext *drag_ctx,
 }
 
 static gboolean
-on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
+on_draw (GtkWidget *widget, cairo_t *cr, gpointer user_data)
 {
 	DrawData data;
 
-	data.cr = gdk_cairo_create (gtk_widget_get_window (widget));
+	GdkRectangle draw_area;
+	if (!gdk_cairo_get_clip_rectangle (cr, &draw_area))
+		return FALSE;
+
+	data.cr = cr;
 	data.self = LD_DIAGRAM_VIEW (widget);
 	data.scale = ld_diagram_view_get_scale_in_px (data.self);
-	data.exposed_rect.x = event->area.x;
-	data.exposed_rect.y = event->area.y;
-	data.exposed_rect.width = event->area.width;
-	data.exposed_rect.height = event->area.height;
-
-	gdk_cairo_rectangle (data.cr, &event->area);
-	cairo_clip (data.cr);
+	data.exposed_rect.x = draw_area.x;
+	data.exposed_rect.y = draw_area.y;
+	data.exposed_rect.width = draw_area.width;
+	data.exposed_rect.height = draw_area.height;
 
 	color_apply (COLOR_GET (data.self, COLOR_BASE), data.cr);
 	cairo_paint (data.cr);
@@ -2590,7 +2635,6 @@ on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 	if (data.self->priv->operation == OPER_SELECT)
 		oper_select_draw (widget, &data);
 
-	cairo_destroy (data.cr);
 	return FALSE;
 }
 

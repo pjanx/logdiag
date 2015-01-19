@@ -79,7 +79,7 @@ get_utf8_args_fail:
 static gint ld_active_windows = 0;
 
 static void
-window_on_destroyed (GtkObject *object, gpointer user_data)
+window_on_destroyed (GtkWidget *object, gpointer user_data)
 {
 	if (--ld_active_windows <= 0)
 		gtk_main_quit ();

@@ -60,7 +60,7 @@ static void on_ui_proxy_disconnected (GtkUIManager *ui, GtkAction *action,
 	GtkWidget *proxy, LdWindowMain *window);
 
 static void on_menu_item_selected (GtkWidget *item, LdWindowMain *window);
-static void on_menu_item_deselected (GtkItem *item, LdWindowMain *window);
+static void on_menu_item_deselected (GtkMenuItem *item, LdWindowMain *window);
 
 static gboolean on_delete (LdWindowMain *self, GdkEvent *event,
 	gpointer user_data);
@@ -537,7 +537,7 @@ on_menu_item_selected (GtkWidget *item, LdWindowMain *window)
 }
 
 static void
-on_menu_item_deselected (GtkItem *item, LdWindowMain *window)
+on_menu_item_deselected (GtkMenuItem *item, LdWindowMain *window)
 {
 	gtk_statusbar_pop (GTK_STATUSBAR (window->priv->statusbar),
 		window->priv->statusbar_menu_context_id);

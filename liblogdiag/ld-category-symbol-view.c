@@ -310,16 +310,16 @@ on_size_allocate (GtkWidget *widget, GdkRectangle *allocation,
 }
 
 static gboolean
-on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
+on_draw (GtkWidget *widget, cairo_t *cr, gpointer user_data)
 {
 	LdCategorySymbolView *self;
-	cairo_t *cr;
 	GSList *iter;
 
 	self = LD_CATEGORY_SYMBOL_VIEW (widget);
-	cr = gdk_cairo_create (gtk_widget_get_window (widget));
-	gdk_cairo_rectangle (cr, &event->area);
-	cairo_clip (cr);
+
+	GdkRectangle draw_area;
+	if (!gdk_cairo_get_clip_rectangle (cr, &draw_area))
+		return FALSE;
 
 	gdk_cairo_set_source_color (cr,
 		&gtk_widget_get_style (widget)->base[GTK_STATE_NORMAL]);
@@ -330,7 +330,7 @@ on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 		SymbolData *data;
 
 		data = iter->data;
-		if (!gdk_rectangle_intersect (&data->rect, &event->area, NULL))
+		if (!gdk_rectangle_intersect (&data->rect, &draw_area, NULL))
 			continue;
 
 		cairo_save (cr);
@@ -351,8 +351,6 @@ on_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 
 		cairo_restore (cr);
 	}
-
-	cairo_destroy (cr);
 	return FALSE;
 }
 
@@ -454,8 +452,8 @@ ld_category_symbol_view_init (LdCategorySymbolView *self)
 		G_CALLBACK (on_size_allocate), NULL);
 	g_signal_connect (self, "size-request",
 		G_CALLBACK (on_size_request), NULL);
-	g_signal_connect (self, "expose-event",
-		G_CALLBACK (on_expose_event), NULL);
+	g_signal_connect (self, "draw",
+		G_CALLBACK (on_draw), NULL);
 
 	g_signal_connect (self, "motion-notify-event",
 		G_CALLBACK (on_motion_notify), NULL);

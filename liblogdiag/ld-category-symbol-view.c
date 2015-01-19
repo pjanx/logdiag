@@ -47,7 +47,6 @@ SymbolData;
  * @path: path to the category within the library.
  * @layout: (element-type SymbolData *): current layout of symbols.
  * @preselected: currently preselected symbol.
- * @height_negotiation: whether we are negotiating height right now.
  */
 struct _LdCategorySymbolViewPrivate
 {
@@ -55,7 +54,6 @@ struct _LdCategorySymbolViewPrivate
 	gchar *path;
 	GSList *layout;
 	SymbolData *preselected;
-	guint height_negotiation : 1;
 };
 
 enum
@@ -69,6 +67,19 @@ static void ld_category_symbol_view_get_property (GObject *object,
 static void ld_category_symbol_view_set_property (GObject *object,
 	guint property_id, const GValue *value, GParamSpec *pspec);
 static void ld_category_symbol_view_finalize (GObject *gobject);
+
+static void on_size_allocate (GtkWidget *widget, GdkRectangle *allocation);
+static gboolean on_draw (GtkWidget *widget, cairo_t *cr);
+
+static GtkSizeRequestMode on_get_request_mode (GtkWidget *widget);
+static void on_get_preferred_height (GtkWidget *widget,
+	gint *minimum_height, gint *natural_height);
+static void on_get_preferred_width_for_height (GtkWidget *widget,
+	gint height, gint *minimum_width, gint *natural_width);
+static void on_get_preferred_width (GtkWidget *widget,
+	gint *minimum_width, gint *natural_width);
+static void on_get_preferred_height_for_width (GtkWidget *widget,
+	gint width, gint *minimum_height, gint *natural_height);
 
 static void ld_category_symbol_view_set_category
 	(LdCategoryView *iface, LdCategory *category);
@@ -85,17 +96,28 @@ ld_category_view_init (LdCategoryViewInterface *iface)
 
 G_DEFINE_TYPE_WITH_CODE (LdCategorySymbolView,
 	ld_category_symbol_view, GTK_TYPE_DRAWING_AREA,
-	G_IMPLEMENT_INTERFACE (LD_TYPE_CATEGORY_VIEW, ld_category_view_init));
+	G_IMPLEMENT_INTERFACE (LD_TYPE_CATEGORY_VIEW, ld_category_view_init))
 
 static void
 ld_category_symbol_view_class_init (LdCategorySymbolViewClass *klass)
 {
 	GObjectClass *object_class;
+	GtkWidgetClass *widget_class;
 
 	object_class = G_OBJECT_CLASS (klass);
 	object_class->get_property = ld_category_symbol_view_get_property;
 	object_class->set_property = ld_category_symbol_view_set_property;
 	object_class->finalize = ld_category_symbol_view_finalize;
+
+	widget_class = GTK_WIDGET_CLASS (klass);
+	widget_class->draw = on_draw;
+	widget_class->get_request_mode = on_get_request_mode;
+	widget_class->get_preferred_width = on_get_preferred_width;
+	widget_class->get_preferred_width_for_height
+		= on_get_preferred_width_for_height;
+	widget_class->get_preferred_height = on_get_preferred_height;
+	widget_class->get_preferred_height_for_width
+		= on_get_preferred_height_for_width;
 
 	g_object_class_override_property (object_class, PROP_CATEGORY, "category");
 
@@ -260,57 +282,61 @@ layout_for_width (LdCategorySymbolView *self, gint width)
 	return ctx.total_height;
 }
 
-static void
-on_size_request (GtkWidget *widget, GtkRequisition *requisition,
-	gpointer user_data)
+static GtkSizeRequestMode
+on_get_request_mode (GtkWidget *widget)
 {
-	LdCategorySymbolView *self;
-
-	self = LD_CATEGORY_SYMBOL_VIEW (widget);
-
-	if (!self->priv->category
-	 || !ld_category_get_symbols (self->priv->category))
-	{
-		requisition->width  = 0;
-		requisition->height = 0;
-		return;
-	}
-
-	requisition->width = SYMBOL_WIDTH + 2 * SYMBOL_SPACING;
-
-	if (self->priv->height_negotiation)
-	{
-		GtkAllocation alloc;
-
-		gtk_widget_get_allocation (widget, &alloc);
-		requisition->height = layout_for_width (self, alloc.width);
-	}
-	else
-		requisition->height = SYMBOL_HEIGHT + 2 * SYMBOL_SPACING;
+	return GTK_SIZE_REQUEST_HEIGHT_FOR_WIDTH;
 }
 
 static void
-on_size_allocate (GtkWidget *widget, GdkRectangle *allocation,
-	gpointer user_data)
+on_get_preferred_height (GtkWidget *widget,
+	gint *minimum_height, gint *natural_height)
 {
-	LdCategorySymbolView *self;
-
-	self = LD_CATEGORY_SYMBOL_VIEW (widget);
-
-	if (self->priv->height_negotiation)
-	{
-		gtk_widget_queue_draw (widget);
-		self->priv->height_negotiation = FALSE;
-	}
+	LdCategorySymbolView *self = LD_CATEGORY_SYMBOL_VIEW (widget);
+	if (!self->priv->category
+	 || !ld_category_get_symbols (self->priv->category))
+		*minimum_height = *natural_height = 0;
 	else
-	{
-		self->priv->height_negotiation = TRUE;
-		gtk_widget_queue_resize (widget);
-	}
+		*minimum_height = *natural_height = SYMBOL_HEIGHT + 2 * SYMBOL_SPACING;
+}
+
+static void
+on_get_preferred_width_for_height (GtkWidget *widget,
+	gint height, gint *minimum_width, gint *natural_width)
+{
+	// TODO: compute it the other way around
+	on_get_preferred_width (widget, minimum_width, natural_width);
+}
+
+static void
+on_get_preferred_width (GtkWidget *widget,
+	gint *minimum_width, gint *natural_width)
+{
+	LdCategorySymbolView *self = LD_CATEGORY_SYMBOL_VIEW (widget);
+	if (!self->priv->category
+	 || !ld_category_get_symbols (self->priv->category))
+		*minimum_width = *natural_width = 0;
+	else
+		*minimum_width = *natural_width = SYMBOL_WIDTH + 2 * SYMBOL_SPACING;
+}
+
+static void
+on_get_preferred_height_for_width (GtkWidget *widget,
+	gint width, gint *minimum_height, gint *natural_height)
+{
+	LdCategorySymbolView *self = LD_CATEGORY_SYMBOL_VIEW (widget);
+	*minimum_height = *natural_height = layout_for_width (self, width);
+}
+
+static void
+on_size_allocate (GtkWidget *widget, GdkRectangle *allocation)
+{
+	LdCategorySymbolView *self = LD_CATEGORY_SYMBOL_VIEW (widget);
+	layout_for_width (self, allocation->width);
 }
 
 static gboolean
-on_draw (GtkWidget *widget, cairo_t *cr, gpointer user_data)
+on_draw (GtkWidget *widget, cairo_t *cr)
 {
 	LdCategorySymbolView *self;
 	GSList *iter;
@@ -450,10 +476,6 @@ ld_category_symbol_view_init (LdCategorySymbolView *self)
 
 	g_signal_connect (self, "size-allocate",
 		G_CALLBACK (on_size_allocate), NULL);
-	g_signal_connect (self, "size-request",
-		G_CALLBACK (on_size_request), NULL);
-	g_signal_connect (self, "draw",
-		G_CALLBACK (on_draw), NULL);
 
 	g_signal_connect (self, "motion-notify-event",
 		G_CALLBACK (on_motion_notify), NULL);

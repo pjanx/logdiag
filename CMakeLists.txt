@@ -245,7 +245,7 @@ set_target_properties (liblogdiag PROPERTIES OUTPUT_NAME logdiag)
 
 # Build the executable
 add_executable (logdiag WIN32 ${logdiag_SOURCES} ${logdiag_HEADERS})
-target_link_libraries (logdiag liblogdiag ${logdiag_LIBS})
+target_link_libraries (logdiag liblogdiag m ${logdiag_LIBS})
 
 # Testing
 option (BUILD_TESTING "Build tests" OFF)

@@ -36,8 +36,12 @@ find_path (JSON_GLIB_INCLUDE_DIR json-glib/json-glib.h
 find_path (JSON_GLIB_INCLUDE_DIR_GOBJECT glib-object.h
 	PATH_SUFFIXES glib-2.0)
 
+if (CMAKE_LIBRARY_ARCHITECTURE)
+	set (_json_glib_arch_dir /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE})
+endif (CMAKE_LIBRARY_ARCHITECTURE)
+
 find_path (JSON_GLIB_INCLUDE_DIR_GLIBCONFIG glibconfig.h
-	PATHS /usr/lib
+	PATHS ${_json_glib_arch_dir} /usr/lib
 	PATH_SUFFIXES glib-2.0 glib-2.0/include)
 
 find_library (JSON_GLIB_LIBRARIES json-glib-1.0)

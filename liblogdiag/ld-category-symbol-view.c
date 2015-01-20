@@ -340,6 +340,8 @@ on_draw (GtkWidget *widget, cairo_t *cr)
 {
 	LdCategorySymbolView *self;
 	GSList *iter;
+	GdkRGBA color;
+	GtkStyleContext *context;
 
 	self = LD_CATEGORY_SYMBOL_VIEW (widget);
 
@@ -347,8 +349,10 @@ on_draw (GtkWidget *widget, cairo_t *cr)
 	if (!gdk_cairo_get_clip_rectangle (cr, &draw_area))
 		return FALSE;
 
-	gdk_cairo_set_source_color (cr,
-		&gtk_widget_get_style (widget)->base[GTK_STATE_NORMAL]);
+	context = gtk_widget_get_style_context (widget);
+	gtk_style_context_get_background_color (context,
+		GTK_STATE_FLAG_NORMAL, &color);
+	gdk_cairo_set_source_rgba (cr, &color);
 	cairo_paint (cr);
 
 	for (iter = self->priv->layout; iter; iter = iter->next)
@@ -363,11 +367,16 @@ on_draw (GtkWidget *widget, cairo_t *cr)
 		gdk_cairo_rectangle (cr, &data->rect);
 		cairo_clip (cr);
 
-		gdk_cairo_set_source_color (cr,
-			&gtk_widget_get_style (widget)->text[GTK_STATE_NORMAL]);
-
+		GtkStateFlags state = GTK_STATE_FLAG_NORMAL;
 		if (data == self->priv->preselected)
-			cairo_paint_with_alpha (cr, 0.1);
+			state = GTK_STATE_FLAG_SELECTED;
+
+		gtk_style_context_get_background_color (context, state, &color);
+		gdk_cairo_set_source_rgba (cr, &color);
+		cairo_paint (cr);
+
+		gtk_style_context_get_color (context, state, &color);
+		gdk_cairo_set_source_rgba (cr, &color);
 
 		cairo_translate (cr, data->rect.x + data->dx, data->rect.y + data->dy);
 		cairo_scale (cr, data->scale, data->scale);

@@ -299,7 +299,7 @@ ld_window_main_init (LdWindowMain *self)
 		GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 	gtk_container_add (GTK_CONTAINER (priv->lv_window), priv->lv_viewport);
 
-	priv->paned = gtk_hpaned_new ();
+	priv->paned = gtk_paned_new (GTK_ORIENTATION_HORIZONTAL);
 	gtk_paned_pack1 (GTK_PANED (priv->paned),
 		priv->lv_window, FALSE, FALSE);
 	gtk_paned_pack2 (GTK_PANED (priv->paned),
@@ -307,7 +307,7 @@ ld_window_main_init (LdWindowMain *self)
 	gtk_paned_set_position (GTK_PANED (priv->paned), 180);
 
 	/* Pack all widgets into the window. */
-	priv->vbox = gtk_vbox_new (FALSE, 0);
+	priv->vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 	gtk_box_pack_start (GTK_BOX (priv->vbox), priv->menu, FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (priv->vbox), priv->toolbar, FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (priv->vbox), priv->paned, TRUE, TRUE, 0);

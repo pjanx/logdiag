@@ -37,14 +37,14 @@ typedef struct _LdCategoryTreeViewClass LdCategoryTreeViewClass;
 struct _LdCategoryTreeView
 {
 /*< private >*/
-	GtkVBox parent_instance;
+	GtkBox parent_instance;
 	LdCategoryTreeViewPrivate *priv;
 };
 
 struct _LdCategoryTreeViewClass
 {
 /*< private >*/
-	GtkVBoxClass parent_class;
+	GtkBoxClass parent_class;
 };
 
 

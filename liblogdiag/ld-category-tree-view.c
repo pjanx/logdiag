@@ -57,7 +57,7 @@ ld_category_view_init (LdCategoryViewInterface *iface)
 }
 
 G_DEFINE_TYPE_WITH_CODE (LdCategoryTreeView,
-	ld_category_tree_view, GTK_TYPE_VBOX,
+	ld_category_tree_view, GTK_TYPE_BOX,
 	G_IMPLEMENT_INTERFACE (LD_TYPE_CATEGORY_VIEW, ld_category_view_init));
 
 static void
@@ -80,6 +80,7 @@ ld_category_tree_view_init (LdCategoryTreeView *self)
 {
 	self->priv = G_TYPE_INSTANCE_GET_PRIVATE
 		(self, LD_TYPE_CATEGORY_TREE_VIEW, LdCategoryTreeViewPrivate);
+	gtk_orientable_set_orientation (GTK_ORIENTABLE (self), GTK_ORIENTATION_VERTICAL);
 }
 
 static void
@@ -136,8 +137,13 @@ create_empty_label (void)
 
 	label = gtk_label_new (_("Empty"));
 	gtk_widget_set_sensitive (label, FALSE);
-	gtk_misc_set_alignment (GTK_MISC (label), 0, 0.5);
-	gtk_misc_set_padding (GTK_MISC (label), 5, 0);
+
+	gtk_widget_set_halign (label, GTK_ALIGN_CENTER);
+	gtk_widget_set_valign (label, GTK_ALIGN_CENTER);
+	gtk_widget_set_margin_left (label, 5);
+	gtk_widget_set_margin_right (label, 5);
+	gtk_widget_set_margin_top (label, 5);
+	gtk_widget_set_margin_bottom (label, 5);
 
 	attr = pango_attr_list_new ();
 	pango_attr_list_change (attr, pango_attr_style_new (PANGO_STYLE_ITALIC));

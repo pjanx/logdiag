@@ -425,7 +425,15 @@ on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 static gboolean
 on_leave_notify (GtkWidget *widget, GdkEventCrossing *event, gpointer user_data)
 {
-	symbol_deselect (LD_CATEGORY_SYMBOL_VIEW (widget));
+	switch (event->mode)
+	{
+	case GDK_CROSSING_GRAB:
+	case GDK_CROSSING_GTK_GRAB:
+	case GDK_CROSSING_STATE_CHANGED:
+		break;
+	default:
+		symbol_deselect (LD_CATEGORY_SYMBOL_VIEW (widget));
+	}
 	return FALSE;
 }
 

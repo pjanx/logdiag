@@ -441,13 +441,13 @@ string (REPLACE "http://" "http:\\\\\\\\" project_URL_NSIS "${project_URL}")
 set (CPACK_NSIS_URL_INFO_ABOUT "${project_URL_NSIS}")
 
 set (CPACK_DEBIAN_PACKAGE_DEPENDS
-	"libgtk2.0-0 (>= 2.12), libjson-glib-1.0-0 (>= 0.10.4), liblua5.1-0")
+	"libgtk3.0-0 (>= 3.8), libjson-glib-1.0-0 (>= 0.10.4), liblua5.2-0")
 set (CPACK_DEBIAN_PACKAGE_BUILDS_DEPENDS
-	"libgtk2.0-dev (>= 2.12), libjson-glib-dev (>= 0.10.4), liblua5.1-0-dev")
+	"libgtk3.0-dev (>= 3.8), libjson-glib-dev (>= 0.10.4), liblua5.2-0-dev")
 set (CPACK_DEBIAN_PACKAGE_SECTION "Electronics")
 set (CPACK_DEBIAN_PACKAGE_HOMEPAGE "${project_URL}")
 
-set (CPACK_RPM_PACKAGE_REQUIRES "gtk2 >= 2.12, json-glib >= 0.10.4, lua = 5.1")
+set (CPACK_RPM_PACKAGE_REQUIRES "gtk2 >= 3.8, json-glib >= 0.10.4, lua = 5.2")
 set (CPACK_RPM_PACKAGE_GROUP "Graphics")
 set (CPACK_RPM_PACKAGE_LICENSE "BSD")
 set (CPACK_RPM_PACKAGE_URL "${project_URL}")

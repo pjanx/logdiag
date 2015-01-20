@@ -9,7 +9,7 @@ regular usage.__
 
 Runtime dependencies:
 
- - GTK+ &gt;= 2.12
+ - GTK+ &gt;= 3.8
  - json-glib &gt;= 0.10.4
  - lua = 5.2
 

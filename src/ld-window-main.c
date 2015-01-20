@@ -8,8 +8,6 @@
  *
  */
 
-#include <gtk/gtk.h>
-
 #include <liblogdiag/liblogdiag.h>
 #include "config.h"
 

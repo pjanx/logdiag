@@ -55,6 +55,8 @@ if (WIN32)
 		list (APPEND CMAKE_FIND_ROOT_PATH ${WIN32_DEPENDS_PATH})
 	endif (CMAKE_CROSSCOMPILING)
 
+	set (PKG_CONFIG_USE_CMAKE_PREFIX_PATH TRUE)
+
 	add_custom_target (win32-depends COMMAND ${CMAKE_COMMAND} -P
 		${CMAKE_CURRENT_SOURCE_DIR}/Win32Depends.cmake
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
@@ -98,10 +100,22 @@ endif (CONVERT_EXECUTABLE AND NOT WIN32)
 
 # Dependencies
 find_package (JsonGlib REQUIRED)
-
 find_package (PkgConfig REQUIRED)
-pkg_search_module (Lua52 REQUIRED lua5.2 lua-5.2 lua>=5.2)
 pkg_check_modules (GTK3 REQUIRED gtk+-3.0)
+
+if (NOT WIN32)
+	pkg_search_module (Lua52 REQUIRED lua5.2 lua-5.2 lua>=5.2)
+else (NOT WIN32)
+	find_package (Lua REQUIRED)
+	if (NOT LUA_FOUND OR LUA_VERSION_STRING VERSION_LESS "5.2")
+		message (FATAL_ERROR "Lua 5.2 not found")
+	endif (NOT LUA_FOUND OR LUA_VERSION_STRING VERSION_LESS "5.2")
+	set (Lua52_LIBRARIES ${LUA_LIBRARIES})
+	set (Lua52_INCLUDE_DIRS ${LUA_INCLUDE_DIR})
+endif (NOT WIN32)
+
+# This actually fucks up MinGW cross-compilation if omitted
+link_directories (${GTK3_LIBRARY_DIRS})
 
 # Localization
 find_package (Gettext REQUIRED)
@@ -360,13 +374,8 @@ if (WIN32)
 		${WIN32_DEPENDS_PATH}/etc/
 		DESTINATION etc)
 	install (DIRECTORY
-		${WIN32_DEPENDS_PATH}/lib/glib-2.0
-		${WIN32_DEPENDS_PATH}/lib/gtk-2.0
 		${WIN32_DEPENDS_PATH}/lib/gdk-pixbuf-2.0
 		DESTINATION lib)
-	install (DIRECTORY
-		${WIN32_DEPENDS_PATH}/share/themes/MS-Windows
-		DESTINATION share/themes)
 
 	# Avoid partial translations
 	file (GLOB locales ${WIN32_DEPENDS_PATH}/share/locale/*)

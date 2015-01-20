@@ -18,29 +18,38 @@ if (files)
 endif (files)
 
 # Packages
-set (pkg_list "7za" "gtk" "winlibs" "mingw_lua")
+set (pkg_list "7za" "gtk" "gtkalt" "winlibs" "mingw_lua")
 
 set (pkg_7za_root "http://sourceforge.net/projects/sevenzip/files")
 set (pkg_7za_urls "${pkg_7za_root}/7-Zip/9.20/7za920.zip")
 set (pkg_7za_md5 "2fac454a90ae96021f4ffc607d4c00f8")
 
 set (pkg_gtk_root "http://ftp.gnome.org/pub/gnome/binaries/win32")
-set (pkg_gtk_urls
-	"${pkg_gtk_root}/gtk+/2.24/gtk+-bundle_2.24.10-20120208_win32.zip"
-	"${pkg_gtk_root}/dependencies/gettext-tools-0.17.zip")
-set (pkg_gtk_md5
-	"7ae20007b76e8099b05edc789bb23e54"
-	"09baff956ebd1c391c7f71e9bd768edd")
+set (pkg_gtk_urls "${pkg_gtk_root}/dependencies/gettext-tools-0.17.zip")
+set (pkg_gtk_md5 "09baff956ebd1c391c7f71e9bd768edd")
+
+set (pkg_gtkalt_root "http://win32builder.gnome.org")
+set (pkg_gtkalt_urls "${pkg_gtkalt_root}/gtk+-bundle_3.8.2-20131001_win32.zip")
+set (pkg_gtkalt_md5 "3f9b159207edf44937f209b4a5e6bb63")
+
+# Doesn't work, no gtk+-3.0.pc file present
+#set (pkg_gtkalt_urls "${pkg_gtkalt_root}/gtk+-bundle_3.10.4-20131202_win32.zip")
+#set (pkg_gtkalt_md5 "520bed70943974efdaeea2a1dbe48f84")
+# Too old
+#set (pkg_gtkalt_urls "${pkg_gtkalt_root}/gtk+-bundle_3.6.4-20130921_win32.zip")
+#set (pkg_gtkalt_md5 "9bcb87d917982a6e52a69141ade8bd56")
 
 set (pkg_winlibs_root "http://sourceforge.net/projects/winlibs/files")
 set (pkg_winlibs_urls "${pkg_winlibs_root}/GTK+/libjson-glib-1.0-1-mingw32.7z")
 set (pkg_winlibs_md5 "f06e42c5998dae5fb6245fecc96a403e")
 
-set (pkg_mingw_lua_root "http://sourceforge.net/projects/mingw-cross/files/%5BLIB%5D%20Lua")
-set (pkg_mingw_lua_name "mingw32-lua-5.1.4-2")
-set (pkg_mingw_lua_urls "${pkg_mingw_lua_root}/${pkg_mingw_lua_name}/${pkg_mingw_lua_name}.zip")
-set (pkg_mingw_lua_strip ${pkg_mingw_lua_name})
-set (pkg_mingw_lua_md5 "7deb1f62a9631871e9b90c0419c2e2bb")
+set (pkg_mingw_lua_root "http://sourceforge.net/projects/mingw/files/MinGW/Extension")
+set (pkg_mingw_lua_urls
+	"${pkg_mingw_lua_root}/lua/lua-5.2.0-1/lua-5.2.0-1-mingw32-dll-52.tar.xz"
+	"${pkg_mingw_lua_root}/lua/lua-5.2.0-1/lua-5.2.0-1-mingw32-dev.tar.xz")
+set (pkg_mingw_lua_md5
+	"150b27cab05b78ba40bbd7225630c00d"
+	"6abe77c1e1a783075fe73c53b7c235fb")
 
 # Stage 1: fetch missing packages
 foreach (pkg_set ${pkg_list})
@@ -144,5 +153,12 @@ foreach (pkg_set ${pkg_list})
 endforeach (pkg_set)
 
 # Stage 4: final touches
-file (WRITE ${working_dir}/etc/gtk-2.0/gtkrc
-	"gtk-theme-name = \"MS-Windows\"")
+# We have to fix the prefix path as it is completely wrong everywhere
+file (GLOB files ${working_dir}/lib/pkgconfig/*.pc)
+foreach (file ${files})
+	message (STATUS "Fixing ${file}...")
+	file (READ ${file} file_content)
+	string (REGEX REPLACE "prefix=[^\r\n]*(.*)" "prefix=${working_dir}\\1"
+		file_content_fixed "${file_content}")
+	file (WRITE ${file} "${file_content_fixed}")
+endforeach (file)

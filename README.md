@@ -83,3 +83,15 @@ Now you can generate a package with CPack. You may choose between:
 
 By default, that is if you specify no generator, both packages are built.
 
+## Cross-compiling for Windows
+
+Just install MinGW-w64 and let automation take care of the rest.
+
+    $ cmake -P Win32Depends.cmake
+    $ mkdir build
+    $ cd build
+    $ cmake .. \
+      -DCMAKE_TOOLCHAIN_FILE=../ToolchainDebianMinGWW64.cmake \
+      -DCMAKE_BUILD_TYPE=Release
+    $ cpack -G ZIP
+

@@ -827,7 +827,9 @@ LD_LUA_CAIRO_END (0)
 
 LD_LUA_CAIRO_BEGIN (show_text)
 	const char *text;
-	GtkStyle *style;
+	GtkStyleContext *style;
+	const PangoFontDescription *orig_font_desc;
+	PangoFontDescription *font_desc;
 	PangoLayout *layout;
 	int width, height;
 	double x, y;
@@ -838,9 +840,13 @@ LD_LUA_CAIRO_BEGIN (show_text)
 	layout = pango_cairo_create_layout (data->cr);
 	pango_layout_set_text (layout, text, -1);
 
-	style = gtk_style_new ();
-	pango_font_description_set_size (style->font_desc, 1 * PANGO_SCALE);
-	pango_layout_set_font_description (layout, style->font_desc);
+	style = gtk_style_context_new ();
+	gtk_style_context_get (style, GTK_STATE_FLAG_NORMAL,
+		GTK_STYLE_PROPERTY_FONT, &orig_font_desc, NULL);
+	font_desc = pango_font_description_copy (orig_font_desc);
+	pango_font_description_set_size (font_desc, 1 * PANGO_SCALE);
+	pango_layout_set_font_description (layout, font_desc);
+	pango_font_description_free (font_desc);
 	g_object_unref (style);
 
 	pango_layout_get_size (layout, &width, &height);

@@ -974,7 +974,7 @@ on_action_about (GtkAction *action, LdWindowMain *self)
 		"program-name", PROJECT_NAME,
 		"version", PROJECT_VERSION,
 		"translator-credits", _("translator-credits"),
-		"copyright", "Copyright Přemysl Janouch 2010, 2011, 2012",
+		"copyright", "Copyright Přemysl Janouch 2010, 2011, 2012, 2013, 2015",
 		"website", PROJECT_URL,
 		NULL);
 }

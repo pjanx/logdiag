@@ -136,6 +136,7 @@ Color;
  * @terminal_hovered: whether a terminal is hovered.
  * @drag_start_pos: position of the mouse pointer when dragging started.
  * @drag_operation: the operation to start when dragging starts.
+ * @simulation_lock: prevents endless looping of simulate_motion()
  * @operation: the current operation.
  * @operation_data: data related to the current operation.
  * @operation_end: a callback to end the operation.
@@ -166,6 +167,8 @@ struct _LdDiagramViewPrivate
 
 	LdPoint drag_start_pos;
 	gint drag_operation;
+
+	gboolean simulation_lock;
 
 	gint operation;
 	union
@@ -1054,6 +1057,9 @@ ld_diagram_view_set_x (LdDiagramView *self, gdouble x)
 {
 	g_return_if_fail (LD_IS_DIAGRAM_VIEW (self));
 
+	if (self->priv->x == x)
+		return;
+
 	/* TODO: Check boundaries. */
 	self->priv->x = x;
 
@@ -1088,6 +1094,9 @@ void
 ld_diagram_view_set_y (LdDiagramView *self, gdouble y)
 {
 	g_return_if_fail (LD_IS_DIAGRAM_VIEW (self));
+
+	if (self->priv->y == y)
+		return;
 
 	/* TODO: Check boundaries. */
 	self->priv->y = y;
@@ -2208,14 +2217,21 @@ simulate_motion (LdDiagramView *self)
 	GdkEventMotion event;
 	GtkWidget *widget;
 	GdkWindow *window;
+	GdkDevice *pointer;
 	gint x, y;
 	GdkModifierType state;
+
+	if (self->priv->simulation_lock)
+		return;
 
 	widget = GTK_WIDGET (self);
 	window = gtk_widget_get_window (widget);
 
-	if (gdk_window_get_pointer (window, &x, &y, &state) != window)
+	pointer = gdk_device_manager_get_client_pointer
+		(gdk_display_get_device_manager (gtk_widget_get_display (widget)));
+	if (gdk_device_get_window_at_position (pointer, &x, &y) != window)
 		return;
+	gdk_device_get_state (pointer, window, NULL, &state);
 
 	memset (&event, 0, sizeof (event));
 	event.type = GDK_MOTION_NOTIFY;
@@ -2238,6 +2254,12 @@ on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 	point.y = event->y;
 
 	self = LD_DIAGRAM_VIEW (widget);
+
+	/* Prevent endless looping when any of the following code changes our
+	 * properties, for example during OPER_MOVE_VIEW.
+	 */
+	self->priv->simulation_lock = TRUE;
+
 	switch (self->priv->operation)
 	{
 	case OPER_MOVE_VIEW:
@@ -2281,6 +2303,8 @@ on_motion_notify (GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 		check_terminals (self, &point);
 		break;
 	}
+
+	self->priv->simulation_lock = FALSE;
 	return FALSE;
 }
 

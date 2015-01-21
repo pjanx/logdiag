@@ -21,11 +21,11 @@ set (project_VERSION "${project_VERSION}.${project_VERSION_PATCH}")
 set (project_URL "http://github.com/pjanouch/logdiag")
 
 # For custom modules
-set (CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+set (CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 # Automatic retrieval of dependencies
 if (WIN32)
-	set (WIN32_DEPENDS_PATH ${CMAKE_CURRENT_SOURCE_DIR}/win32-depends)
+	set (WIN32_DEPENDS_PATH ${PROJECT_SOURCE_DIR}/win32-depends)
 	list (APPEND CMAKE_PREFIX_PATH ${WIN32_DEPENDS_PATH})
 	list (APPEND CMAKE_INCLUDE_PATH ${WIN32_DEPENDS_PATH}/lib)
 	list (APPEND CMAKE_C_FLAGS "-mms-bitfields")
@@ -37,8 +37,8 @@ if (WIN32)
 	set (PKG_CONFIG_USE_CMAKE_PREFIX_PATH TRUE)
 
 	add_custom_target (win32-depends COMMAND ${CMAKE_COMMAND} -P
-		${CMAKE_CURRENT_SOURCE_DIR}/Win32Depends.cmake
-		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+		${PROJECT_SOURCE_DIR}/Win32Depends.cmake
+		WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 	add_custom_target (win32-depends-clean COMMAND ${CMAKE_COMMAND} -E
 		remove_directory ${WIN32_DEPENDS_PATH})
 endif (WIN32)
@@ -48,7 +48,7 @@ find_program (CONVERT_EXECUTABLE convert)
 mark_as_advanced (CONVERT_EXECUTABLE)
 
 if (CONVERT_EXECUTABLE AND NOT WIN32)
-	set (icon_base ${CMAKE_CURRENT_SOURCE_DIR}/share/icons/hicolor)
+	set (icon_base ${PROJECT_SOURCE_DIR}/share/icons/hicolor)
 	set (icon_svg ${icon_base}/scalable/apps/logdiag.svg)
 	set (icon_size_list 16x16 32x32 48x48)
 
@@ -58,7 +58,7 @@ if (CONVERT_EXECUTABLE AND NOT WIN32)
 		set (icon_png_path ${icon_base}/${icon_size}/apps)
 		set (icon_png ${icon_png_path}/logdiag.png)
 		list (APPEND icon_png_list ${icon_png})
-		set (icon_symbolic ${CMAKE_PROJECT_NAME}_icons_${icon_size})
+		set (icon_symbolic ${PROJECT_NAME}_icons_${icon_size})
 		list (APPEND icon_symbolic_list ${icon_symbolic})
 
 		add_custom_command (OUTPUT ${icon_symbolic}
@@ -70,8 +70,8 @@ if (CONVERT_EXECUTABLE AND NOT WIN32)
 			PROPERTIES SYMBOLIC TRUE)
 	endforeach (icon_size)
 
-	set (icon_ico ${CMAKE_CURRENT_SOURCE_DIR}/share/logdiag.ico)
-	add_custom_target (${CMAKE_PROJECT_NAME}_icons
+	set (icon_ico ${PROJECT_SOURCE_DIR}/share/logdiag.ico)
+	add_custom_target (${PROJECT_NAME}_icons
 		DEPENDS ${icon_symbolic_list}
 		COMMAND ${CONVERT_EXECUTABLE} ${icon_png_list} ${icon_ico}
 		COMMENT "Generating logdiag.ico" VERBATIM)
@@ -98,9 +98,9 @@ link_directories (${GTK3_LIBRARY_DIRS})
 
 # Localization
 find_package (Gettext REQUIRED)
-file (GLOB project_PO_FILES ${CMAKE_CURRENT_SOURCE_DIR}/po/*.po)
+file (GLOB project_PO_FILES ${PROJECT_SOURCE_DIR}/po/*.po)
 GETTEXT_CREATE_TRANSLATIONS (
-	${CMAKE_CURRENT_SOURCE_DIR}/po/${CMAKE_PROJECT_NAME}.pot
+	${PROJECT_SOURCE_DIR}/po/${PROJECT_NAME}.pot
 	ALL ${project_PO_FILES})
 
 foreach (file ${project_PO_FILES})
@@ -110,7 +110,7 @@ endforeach (file)
 
 # Documentation
 find_package (GtkDoc)
-set (project_DOC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/docs/reference")
+set (project_DOC_DIR "${PROJECT_SOURCE_DIR}/docs/reference")
 
 # Project source files
 set (liblogdiag_SOURCES
@@ -131,7 +131,7 @@ set (liblogdiag_SOURCES
 	liblogdiag/ld-lua.c
 	liblogdiag/ld-lua-symbol.c)
 set (liblogdiag_HEADERS
-	${CMAKE_CURRENT_BINARY_DIR}/config.h
+	${PROJECT_BINARY_DIR}/config.h
 	liblogdiag/liblogdiag.h
 	liblogdiag/ld-marshal.h
 	liblogdiag/ld-types.h
@@ -179,9 +179,9 @@ if (WIN32)
 endif (WIN32)
 
 # Generate a configure file
-configure_file (${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
-	${CMAKE_CURRENT_BINARY_DIR}/config.h)
-include_directories (${CMAKE_CURRENT_BINARY_DIR})
+configure_file (${PROJECT_SOURCE_DIR}/config.h.in
+	${PROJECT_BINARY_DIR}/config.h)
+include_directories (${PROJECT_BINARY_DIR})
 
 # Generate marshallers
 find_program (GLIB_GENMARSHAL_EXECUTABLE glib-genmarshal)
@@ -217,10 +217,10 @@ function (glib_genmarshal base prefix)
 		COMMENT "Generating marshallers header file")
 endfunction (glib_genmarshal)
 
-glib_genmarshal (${CMAKE_CURRENT_SOURCE_DIR}/liblogdiag/ld-marshal
+glib_genmarshal (${PROJECT_SOURCE_DIR}/liblogdiag/ld-marshal
 	ld_marshal)
 
-include_directories (${CMAKE_CURRENT_SOURCE_DIR})
+include_directories (${PROJECT_SOURCE_DIR})
 include_directories (${GTK3_INCLUDE_DIRS}
 	${JSON_GLIB_INCLUDE_DIRS} ${Lua52_INCLUDE_DIRS})
 set (logdiag_LIBS ${GTK3_LIBRARIES}
@@ -254,7 +254,7 @@ endif (BUILD_TESTING)
 # Generate documentation
 if (GTK_DOC_FOUND)
 	GTK_DOC_RUN (WORKING_DIR ${project_DOC_DIR}
-		SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/liblogdiag
+		SOURCE_DIRS ${PROJECT_SOURCE_DIR}/liblogdiag
 		SCANGOBJ liblogdiag ${logdiag_LIBS}
 		XML ${project_DOC_DIR}/xml --sgml-mode
 		HTML ${project_DOC_DIR}/html)
@@ -262,7 +262,7 @@ endif (GTK_DOC_FOUND)
 
 find_package (CppCheck)
 GENERATE_CPPCHECK (SOURCES liblogdiag src tests ENABLE_IDS all
-	TARGET_NAME ${CMAKE_PROJECT_NAME}_cppcheck INCLUDES ${CMAKE_CURRENT_BINARY_DIR})
+	TARGET_NAME ${PROJECT_NAME}_cppcheck INCLUDES ${PROJECT_BINARY_DIR})
 
 if (OPTION_USE_VERA)
 	# Force this off, we don't need it
@@ -282,7 +282,7 @@ if (OPTION_USE_VERA)
 	# Check the sources
 	# XXX: maybe do it per source file and not all at once
 	set (vera_srcs ${liblogdiag_SOURCES} ${logdiag_SOURCES} ${logdiag_HEADERS})
-	set (vera_output ${CMAKE_CURRENT_BINARY_DIR}/vera.log)
+	set (vera_output ${PROJECT_BINARY_DIR}/vera.log)
 	add_custom_command (OUTPUT ${vera_output}
 		COMMAND vera
 			-R F001 -R L001 -R T001 -R T004 -R T005 -R T006
@@ -307,23 +307,23 @@ if (NOT GLIB_COMPILE_SCHEMAS_EXECUTABLE)
 	message (FATAL_ERROR "glib-compile-schemas not found")
 endif (NOT GLIB_COMPILE_SCHEMAS_EXECUTABLE)
 
-set (GSETTINGS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/share")
+set (GSETTINGS_DIR "${PROJECT_SOURCE_DIR}/share")
 set (GSETTINGS_SCHEMAS "${GSETTINGS_DIR}/org.logdiag.gschema.xml")
 
-add_custom_target (${CMAKE_PROJECT_NAME}_gschema_check
+add_custom_target (${PROJECT_NAME}_gschema_check
 	COMMAND ${GLIB_COMPILE_SCHEMAS_EXECUTABLE} --dry-run "${GSETTINGS_DIR}"
 	DEPENDS "${GSETTINGS_SCHEMAS}"
 	COMMENT "Checking GSettings schema files" VERBATIM)
 
 if (OPTION_NOINSTALL)
-	set (GSETTINGS_COMPILED_SCHEMA "${CMAKE_CURRENT_BINARY_DIR}/gschemas.compiled")
+	set (GSETTINGS_COMPILED_SCHEMA "${PROJECT_BINARY_DIR}/gschemas.compiled")
 
 	add_custom_command (OUTPUT "${GSETTINGS_COMPILED_SCHEMA}"
 		COMMAND ${GLIB_COMPILE_SCHEMAS_EXECUTABLE}
-			"--targetdir=${CMAKE_CURRENT_BINARY_DIR}" "${GSETTINGS_DIR}"
+			"--targetdir=${PROJECT_BINARY_DIR}" "${GSETTINGS_DIR}"
 		DEPENDS "${GSETTINGS_SCHEMAS}"
 		COMMENT "Compiling GSettings schema files" VERBATIM)
-	add_custom_target (${CMAKE_PROJECT_NAME}_gschema ALL
+	add_custom_target (${PROJECT_NAME}_gschema ALL
 		DEPENDS "${GSETTINGS_COMPILED_SCHEMA}")
 endif (OPTION_NOINSTALL)
 
@@ -337,7 +337,7 @@ install (CODE " # DESTDIR is not in use on Windows
 	endif (WIN32 OR \"\$ENV{DESTDIR}\" STREQUAL \"\")")
 
 install (DIRECTORY share/gui share/library
-	DESTINATION share/${CMAKE_PROJECT_NAME})
+	DESTINATION share/${PROJECT_NAME})
 
 if (WIN32)
 	install (TARGETS logdiag DESTINATION .)
@@ -371,15 +371,15 @@ else (WIN32)
 	install (DIRECTORY share/icons DESTINATION share)
 # Don't install the documentation yet as we don't install any library
 #	install (DIRECTORY "${project_DOC_DIR}/html/"
-#		DESTINATION share/gtk-doc/html/${CMAKE_PROJECT_NAME})
-	install (FILES LICENSE NEWS DESTINATION share/doc/${CMAKE_PROJECT_NAME})
+#		DESTINATION share/gtk-doc/html/${PROJECT_NAME})
+	install (FILES LICENSE NEWS DESTINATION share/doc/${PROJECT_NAME})
 endif (WIN32)
 
 # CPack
 set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Schematic editor")
 set (CPACK_PACKAGE_VENDOR "Premysl Janouch")
 set (CPACK_PACKAGE_CONTACT "Přemysl Janouch <p.janouch@gmail.com>")
-set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set (CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
 set (CPACK_PACKAGE_VERSION_MAJOR ${project_VERSION_MAJOR})
 set (CPACK_PACKAGE_VERSION_MINOR ${project_VERSION_MINOR})
 set (CPACK_PACKAGE_VERSION_PATCH ${project_VERSION_PATCH})
@@ -392,12 +392,12 @@ else (WIN32)
 endif (WIN32)
 
 set (CPACK_PACKAGE_FILE_NAME
-	"${CMAKE_PROJECT_NAME}-${project_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+	"${PROJECT_NAME}-${project_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 set (CPACK_PACKAGE_INSTALL_DIRECTORY
-	"${CMAKE_PROJECT_NAME} ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}")
+	"${PROJECT_NAME} ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}")
 
 # FIXME: It is possible to install multiple copies. Everything screws up then.
-set (CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/share\\\\header.bmp")
+set (CPACK_PACKAGE_ICON "${PROJECT_SOURCE_DIR}/share\\\\header.bmp")
 set (CPACK_NSIS_INSTALLED_ICON_NAME "logdiag.exe")
 set (CPACK_NSIS_CREATE_ICONS_EXTRA "
 	CreateShortCut '\$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\logdiag.lnk' '\$INSTDIR\\\\logdiag.exe'")
@@ -430,7 +430,7 @@ set (CPACK_RPM_PACKAGE_URL "${project_URL}")
 
 set (CPACK_SOURCE_GENERATOR "TGZ;ZIP")
 set (CPACK_SOURCE_IGNORE_FILES "/\\\\.git;/build;/CMakeLists.txt.user;/win32-depends;/liblogdiag/ld-marshal.[ch]")
-set (CPACK_SOURCE_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${project_VERSION}")
+set (CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_NAME}-${project_VERSION}")
 
 include (CPack)
 

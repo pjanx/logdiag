@@ -11,7 +11,7 @@ Version TBD
  - Fixed rapid right-clicking rotating more than it should.
  - Symbol categories are also loaded from user-specific directories.
  - Show the current zoom in the statusbar.
- - Now working with recent GTK+ versions.
+ - Ported to GTK+ 3 and Lua 5.2.
  - Various unimportant fixes and changes.
 
 Version 0.1.2

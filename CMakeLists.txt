@@ -7,14 +7,7 @@ cmake_policy (VERSION 2.8)
 # Options
 option (OPTION_USE_VERA "Use vera++ for source code style checks" OFF)
 option (OPTION_NOINSTALL "Only for developers; work without installing" OFF)
-
-if (OPTION_NOINSTALL)
-	set (OPTION_NOINSTALL 1)
-else (OPTION_NOINSTALL)
-	set (OPTION_NOINSTALL 0)
-endif (OPTION_NOINSTALL)
-
-add_definitions (-DGSEAL_ENABLE)
+option (BUILD_TESTING "Build tests" OFF)
 
 # Project information
 set (project_VERSION_MAJOR "0")
@@ -29,20 +22,6 @@ set (project_URL "http://github.com/pjanouch/logdiag")
 
 # For custom modules
 set (CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-
-# Test this machine
-include (CheckCSourceCompiles)
-
-CHECK_C_SOURCE_COMPILES (
-"typedef struct abc *d;
-int test (d __restrict x);
-int main (void) {return 0;}"
-HAVE_SANE___RESTRICT)
-
-CHECK_C_SOURCE_COMPILES (
-"int test (void *restrict x);
-int main (void) {return 0;}"
-HAVE_RESTRICT)
 
 # Automatic retrieval of dependencies
 if (WIN32)
@@ -130,7 +109,6 @@ foreach (file ${project_PO_FILES})
 endforeach (file)
 
 # Documentation
-# TODO: Add pregenerated docs to the tree
 find_package (GtkDoc)
 set (project_DOC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/docs/reference")
 
@@ -262,8 +240,6 @@ add_executable (logdiag WIN32 ${logdiag_SOURCES} ${logdiag_HEADERS})
 target_link_libraries (logdiag liblogdiag m ${logdiag_LIBS})
 
 # Testing
-option (BUILD_TESTING "Build tests" OFF)
-
 if (BUILD_TESTING)
 	enable_testing ()
 

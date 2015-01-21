@@ -12,7 +12,9 @@
 #define PROJECT_VERSION "${project_VERSION}"
 #define PROJECT_URL "${project_URL}"
 
-#if ${OPTION_NOINSTALL}
+#cmakedefine OPTION_NOINSTALL
+
+#ifdef OPTION_NOINSTALL
 	/* For developers. */
 	#define PROJECT_SHARE_DIR "${CMAKE_SOURCE_DIR}/share/"
 	#define PROJECT_GSETTINGS_DIR "${CMAKE_BINARY_DIR}"
@@ -21,10 +23,6 @@
 #else
 	#define PROJECT_SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/"
 #endif
-
-
-#cmakedefine HAVE_SANE___RESTRICT
-#cmakedefine HAVE_RESTRICT
 
 
 #include <glib/gi18n.h>
@@ -36,14 +34,6 @@
 	#define GETTEXT_DIRNAME "${CMAKE_INSTALL_PREFIX}/share/locale"
 #endif
 
-
-#ifndef HAVE_SANE___RESTRICT
-	#ifdef HAVE_RESTRICT
-		#define __restrict restrict
-	#else
-		#define __restrict
-	#endif
-#endif /* ! HAVE_SANE___RESTRICT */
 
 /* We have to remove nodes first due to a bug in json-glib. */
 #define json_object_set_member(object, name, node) \

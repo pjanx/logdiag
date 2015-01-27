@@ -85,6 +85,7 @@ pkg_check_modules (GTK3 REQUIRED gtk+-3.0)
 if (NOT WIN32)
 	pkg_search_module (Lua52 REQUIRED lua5.2 lua-5.2 lua>=5.2)
 else (NOT WIN32)
+	# XXX: this seems to require CMake 3.0 ... include it in the project?
 	find_package (Lua REQUIRED)
 	if (NOT LUA_FOUND OR LUA_VERSION_STRING VERSION_LESS "5.2")
 		message (FATAL_ERROR "Lua 5.2 not found")
@@ -328,17 +329,6 @@ if (OPTION_NOINSTALL)
 endif (OPTION_NOINSTALL)
 
 # Installation
-install (FILES ${GSETTINGS_SCHEMAS}
-	DESTINATION share/glib-2.0/schemas)
-install (CODE " # DESTDIR is not in use on Windows
-	if (WIN32 OR \"\$ENV{DESTDIR}\" STREQUAL \"\")
-		execute_process (COMMAND ${GLIB_COMPILE_SCHEMAS_EXECUTABLE}
-			\"\${CMAKE_INSTALL_PREFIX}/share/glib-2.0/schemas\")
-	endif (WIN32 OR \"\$ENV{DESTDIR}\" STREQUAL \"\")")
-
-install (DIRECTORY share/gui share/library
-	DESTINATION share/${PROJECT_NAME})
-
 if (WIN32)
 	install (TARGETS logdiag DESTINATION .)
 	install (DIRECTORY
@@ -352,6 +342,10 @@ if (WIN32)
 	install (DIRECTORY
 		${WIN32_DEPENDS_PATH}/lib/gdk-pixbuf-2.0
 		DESTINATION lib)
+	install (DIRECTORY
+		${WIN32_DEPENDS_PATH}/share/glib-2.0/schemas
+		DESTINATION share/glib-2.0
+		FILES_MATCHING PATTERN "org.gtk.Settings.*")
 
 	# Avoid partial translations
 	file (GLOB locales ${WIN32_DEPENDS_PATH}/share/locale/*)
@@ -374,6 +368,17 @@ else (WIN32)
 #		DESTINATION share/gtk-doc/html/${PROJECT_NAME})
 	install (FILES LICENSE NEWS DESTINATION share/doc/${PROJECT_NAME})
 endif (WIN32)
+
+install (FILES ${GSETTINGS_SCHEMAS}
+	DESTINATION share/glib-2.0/schemas)
+install (CODE " # DESTDIR is not in use on Windows
+	if (WIN32 OR \"\$ENV{DESTDIR}\" STREQUAL \"\")
+		execute_process (COMMAND ${GLIB_COMPILE_SCHEMAS_EXECUTABLE}
+			\"\${CMAKE_INSTALL_PREFIX}/share/glib-2.0/schemas\")
+	endif (WIN32 OR \"\$ENV{DESTDIR}\" STREQUAL \"\")")
+
+install (DIRECTORY share/gui share/library
+	DESTINATION share/${PROJECT_NAME})
 
 # CPack
 set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Schematic editor")

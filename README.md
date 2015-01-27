@@ -52,8 +52,8 @@ Leave out the fakeroot for CMake >= 2.8.9, it's been fixed since.
 
 ## Building from sources on Windows
 
-First install CMake 2.8 and MinGW. Add both to your system path. If you want to
-build an installation package, also install NSIS.
+First install CMake >= 3.1 and MinGW. Add both to your system path. If you want
+to build an installation package, also install NSIS.
 
 Run the following command in the directory with source files to automatically
 fetch and setup all dependencies (contact me if the script becomes obsolete,
@@ -85,6 +85,7 @@ By default, that is if you specify no generator, both packages are built.
 
 ## Cross-compiling for Windows
 
+The procedure is almost exactly the same as before, including the requirements.
 Just install MinGW-w64 and let automation take care of the rest.
 
     $ cmake -P Win32Depends.cmake
@@ -93,5 +94,5 @@ Just install MinGW-w64 and let automation take care of the rest.
     $ cmake .. \
       -DCMAKE_TOOLCHAIN_FILE=../ToolchainDebianMinGWW64.cmake \
       -DCMAKE_BUILD_TYPE=Release
-    $ cpack -G ZIP
+    $ cpack
 

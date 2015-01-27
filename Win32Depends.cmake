@@ -1,5 +1,8 @@
 # Usage: cmake -P Win32Depends.cmake
 
+# Only CMake 3.1+ supports XZ archives and 7z doesn't also untar automatically
+cmake_minimum_required (VERSION 3.1)
+
 # Directories
 set (working_dir ${CMAKE_CURRENT_BINARY_DIR}/win32-depends)
 set (pkg_dir ${working_dir}/packages)
@@ -123,13 +126,13 @@ foreach (pkg_set ${pkg_list})
 		get_filename_component (filename ${url} NAME)
 		message (STATUS "Extracting ${filename}...")
 
-		if (filename MATCHES "7z$")
+		if (filename MATCHES "\\.7z$")
 			set (extract_command ${sevenzip_executable} x)
 			set (quiet OUTPUT_QUIET)
-		else (filename MATCHES "7z$")
+		else (filename MATCHES "\\.7z$")
 			set (extract_command ${CMAKE_COMMAND} -E tar xf)
 			set (quiet)
-		endif (filename MATCHES "7z$")
+		endif (filename MATCHES "\\.7z$")
 
 		set (filename ${pkg_dir}/${filename})
 		if (pkg_${pkg_set}_strip)

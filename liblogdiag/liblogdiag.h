@@ -14,7 +14,11 @@
 /* Whatever, I don't care, someone should at least appreciate my effort of
  * porting it to GTK+ 3 in the first place.  You make me work for free!
  */
+#ifdef GDK_VERSION_3_8
 #define GDK_VERSION_MIN_REQUIRED GDK_VERSION_3_8
+#else  // ! GDK_VERSION_3_8
+#define GDK_VERSION_MIN_REQUIRED GDK_VERSION_3_4
+#endif  // ! GDK_VERSION_3_8
 
 #include <gtk/gtk.h>
 #include <json-glib/json-glib.h>

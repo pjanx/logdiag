@@ -225,7 +225,7 @@ include_directories (${PROJECT_SOURCE_DIR})
 include_directories (${GTK3_INCLUDE_DIRS}
 	${JSON_GLIB_INCLUDE_DIRS} ${Lua52_INCLUDE_DIRS})
 set (logdiag_LIBS ${GTK3_LIBRARIES}
-	${JSON_GLIB_LIBRARIES} ${Lua52_LIBRARIES})
+	${JSON_GLIB_LIBRARIES} ${Lua52_LIBRARIES} m)
 
 if (WIN32)
 	find_package (LibIntl REQUIRED)
@@ -238,7 +238,7 @@ set_target_properties (liblogdiag PROPERTIES OUTPUT_NAME logdiag)
 
 # Build the executable
 add_executable (logdiag WIN32 ${logdiag_SOURCES} ${logdiag_HEADERS})
-target_link_libraries (logdiag liblogdiag m ${logdiag_LIBS})
+target_link_libraries (logdiag liblogdiag ${logdiag_LIBS})
 
 # Testing
 if (BUILD_TESTING)

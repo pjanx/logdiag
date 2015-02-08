@@ -19,4 +19,4 @@ script:
  - cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_TESTING=ON
  - make
  - cpack -G DEB
- - ctest
+ - ctest -V

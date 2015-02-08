@@ -9,12 +9,14 @@ compiler:
  - gcc
 before_install:
  - sudo apt-get update -qq
+ - export DISPLAY=:99.0
+ - export NO_AT_BRIDGE=1
+ - sh -e /etc/init.d/xvfb start
 install:
  - sudo apt-get install -y libgtk-3-dev liblua5.2-dev libjson-glib-dev
 before_script:
  - mkdir build
  - cd build
-env: NO_AT_BRIDGE=1
 script:
  - cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_TESTING=ON
  - make

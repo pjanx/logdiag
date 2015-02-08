@@ -118,7 +118,7 @@ point_array_test_remove (PointArray *fixture, gconstpointer user_data)
 int
 main (int argc, char *argv[])
 {
-	gtk_test_init (&argc, &argv, NULL);
+	g_test_init (&argc, &argv, NULL);
 
 	/* Creation. */
 	g_test_add_func ("/point-array/new", point_array_test_new);

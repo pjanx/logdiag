@@ -428,7 +428,7 @@ set (CPACK_DEBIAN_PACKAGE_BUILDS_DEPENDS
 set (CPACK_DEBIAN_PACKAGE_SECTION "Electronics")
 set (CPACK_DEBIAN_PACKAGE_HOMEPAGE "${project_URL}")
 
-set (CPACK_RPM_PACKAGE_REQUIRES "gtk2 >= 3.8, json-glib >= 0.10.4, lua = 5.2")
+set (CPACK_RPM_PACKAGE_REQUIRES "gtk3 >= 3.8, json-glib >= 0.10.4, lua = 5.2")
 set (CPACK_RPM_PACKAGE_GROUP "Graphics")
 set (CPACK_RPM_PACKAGE_LICENSE "BSD")
 set (CPACK_RPM_PACKAGE_URL "${project_URL}")

@@ -4,6 +4,18 @@ notifications:
   channels: "anathema.us.nu#anathema"
   use_notice: true
   skip_join: true
+env:
+ global:
+  - secure: "C7cO92N/v374viYwfnVQo75xeDRXO/3S//OruK5BsafWPotaRn1fHV8teLctVE5a8DOvLZVv3YcY0Hzf03KHvxHJsEuHyJhTePsdn2Ldx3RaQH/fNAvqH6uugR+1cz1p33ex+5Em9I+dgXrdDTj5XfJLxrBxfk0swvYnW4GyxD4="
+addons:
+ coverity_scan:
+  project:
+   name: "pjanouch/logdiag"
+   description: "Schematic editor"
+  notification_email: p.janouch@gmail.com
+  build_command_prepend: "cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON"
+  build_command: "make"
+  branch_pattern: coverity_scan
 compiler:
  - clang
  - gcc

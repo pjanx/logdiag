@@ -78,9 +78,8 @@ if (CONVERT_EXECUTABLE AND NOT WIN32)
 endif (CONVERT_EXECUTABLE AND NOT WIN32)
 
 # Dependencies
-find_package (JsonGlib REQUIRED)
 find_package (PkgConfig REQUIRED)
-pkg_check_modules (GTK3 REQUIRED gtk+-3.0)
+pkg_check_modules (GTK3 REQUIRED gtk+-3.0 json-glib-1.0)
 
 if (NOT WIN32)
 	pkg_search_module (Lua52 REQUIRED lua5.2 lua-5.2 lua>=5.2)

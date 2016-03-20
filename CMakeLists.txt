@@ -82,15 +82,15 @@ find_package (PkgConfig REQUIRED)
 pkg_check_modules (GTK3 REQUIRED gtk+-3.0 json-glib-1.0)
 
 if (NOT WIN32)
-	pkg_search_module (Lua52 REQUIRED lua5.2 lua-5.2 lua>=5.2)
+	pkg_search_module (Lua REQUIRED lua>=5.2 lua5.3 lua-5.3 lua5.2 lua-5.2)
 else (NOT WIN32)
 	# XXX: this seems to require CMake 3.0 ... include it in the project?
 	find_package (Lua REQUIRED)
 	if (NOT LUA_FOUND OR LUA_VERSION_STRING VERSION_LESS "5.2")
 		message (FATAL_ERROR "Lua 5.2 not found")
 	endif (NOT LUA_FOUND OR LUA_VERSION_STRING VERSION_LESS "5.2")
-	set (Lua52_LIBRARIES ${LUA_LIBRARIES})
-	set (Lua52_INCLUDE_DIRS ${LUA_INCLUDE_DIR})
+	set (Lua_LIBRARIES ${LUA_LIBRARIES})
+	set (Lua_INCLUDE_DIRS ${LUA_INCLUDE_DIR})
 endif (NOT WIN32)
 
 # This actually fucks up MinGW cross-compilation if omitted
@@ -221,10 +221,8 @@ glib_genmarshal (${PROJECT_SOURCE_DIR}/liblogdiag/ld-marshal
 	ld_marshal)
 
 include_directories (${PROJECT_SOURCE_DIR})
-include_directories (${GTK3_INCLUDE_DIRS}
-	${JSON_GLIB_INCLUDE_DIRS} ${Lua52_INCLUDE_DIRS})
-set (logdiag_LIBS ${GTK3_LIBRARIES}
-	${JSON_GLIB_LIBRARIES} ${Lua52_LIBRARIES} m)
+include_directories (${GTK3_INCLUDE_DIRS} ${Lua_INCLUDE_DIRS})
+set (logdiag_LIBS ${GTK3_LIBRARIES} ${Lua_LIBRARIES} m)
 
 if (WIN32)
 	find_package (LibIntl REQUIRED)

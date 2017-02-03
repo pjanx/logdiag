@@ -2,7 +2,7 @@
  * ld-lua.h
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010. All rights reserved.
+ * Copyright Přemysl Janouch 2010
  *
  * See the file LICENSE for licensing information.
  *

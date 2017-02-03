@@ -2,7 +2,7 @@
  * ld-category.c
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010, 2011, 2012. All rights reserved.
+ * Copyright Přemysl Janouch 2010, 2011, 2012
  *
  * See the file LICENSE for licensing information.
  *

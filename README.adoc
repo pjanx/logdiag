@@ -1,0 +1,124 @@
+logdiag
+=======
+
+'logdiag' is a simple multiplatform schematic editor written in GTK+.
+
+This software is considered to be of alpha quality and isn't recommended for
+regular usage.
+
+image::logdiag.png[align="center"]
+
+Packages
+--------
+Regular releases are sporadic.  git master should be stable enough.  You can get
+a package with the latest development version from Archlinux's AUR, or from
+openSUSE Build Service for the rest of mainstream distributions.  Consult the
+list of repositories and their respective links at:
+
+https://build.opensuse.org/project/repositories/home:pjanouch:git
+
+Requirements
+------------
+Runtime dependencies: GTK+ >= 3.8, json-glib >= 0.10.4, lua = 5.2 +
+Build dependencies: CMake >= 2.8
+
+Build from source on Unix-like
+------------------------------
+First check that you have all the required dependencies installed, including
+development packages, if your distribution provides them.
+
+Reserve a directory for an out-of-source build:
+
+ $ mkdir build
+ $ cd build
+
+Let CMake prepare the build. You may change the directory where you want the
+application to be installed. The default is _/usr/local_.
+
+ $ cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+
+Now you have two basic choices of installing the application.
+
+Using _make install_
+~~~~~~~~~~~~~~~~~~~~
+
+ # make install
+
+Using _cpack_
+~~~~~~~~~~~~~
+You have to choose a package format understood by your system package manager.
+CMake offers DEB and RPM.
+
+After _cpack_ finishes making the package, install this file.
+
+ $ fakeroot cpack -G DEB
+ # dpkg -i logdiag-version-system-arch.deb
+
+Leave out the fakeroot for CMake >= 2.8.9, it's been fixed since.
+
+Build from source on Windows
+----------------------------
+_Note that with the current method we're stuck with GTK+ 3.10.4 at best._
+
+First install CMake >= 3.1 and MinGW. Add both to your system path. If you want
+to build an installation package, also install NSIS.
+
+Run the following command in the directory with source files to automatically
+fetch and setup all dependencies (contact me if the script becomes obsolete,
+it's easy to fix but I usually update it only just a short while before
+releasing a new version in order to resolve compatibility issues):
+
+ > cmake -P Win32Depends.cmake
+
+Reserve a directory for an out-of-source build:
+
+ > mkdir build
+ > cd build
+
+Let CMake prepare the build:
+
+ > cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+
+Now you can generate a package with CPack. You may choose between:
+
+1. An NSIS-based installation package:
+
+ > cpack -G NSIS
+
+2. A portable ZIP package:
+
+ > cpack -G ZIP
+
+By default, that is if you specify no generator, both packages are built.
+
+Cross-compilation for Windows
+-----------------------------
+
+The procedure is almost exactly the same as before, including the requirements.
+Just install MinGW-w64 and let automation take care of the rest.
+
+ $ cmake -P Win32Depends.cmake
+ $ mkdir build
+ $ cd build
+ $ cmake .. \
+   -DCMAKE_TOOLCHAIN_FILE=../ToolchainDebianMinGWW64.cmake \
+   -DCMAKE_BUILD_TYPE=Release
+ $ cpack
+
+Contributing and support
+------------------------
+Use this project's GitHub to report any bugs, request features, or submit pull
+requests.  If you want to discuss this project, or maybe just hang out with
+the developer, feel free to join me at irc://irc.janouch.name, channel #dev.
+
+Bitcoin donations: 12r5uEWEgcHC46xd64tt3hHt9EUvYYDHe9
+
+License
+-------
+'logdiag' is written by Přemysl Janouch <p.janouch@gmail.com>.
+
+You may use the software under the terms of the ISC license, the text of which
+is included within the package, or, at your option, you may relicense the work
+under the MIT or the Modified BSD License, as listed at the following site:
+
+http://www.gnu.org/licenses/license-list.html

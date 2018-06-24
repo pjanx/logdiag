@@ -46,13 +46,16 @@ set (pkg_winlibs_root "http://sourceforge.net/projects/winlibs/files")
 set (pkg_winlibs_urls "${pkg_winlibs_root}/GTK+/libjson-glib-1.0-1-mingw32.7z")
 set (pkg_winlibs_md5 "f06e42c5998dae5fb6245fecc96a403e")
 
-set (pkg_mingw_lua_root "http://sourceforge.net/projects/mingw/files/MinGW/Extension")
+set (pkg_mingw_lua_root "http://repo.msys2.org/mingw/i686")
 set (pkg_mingw_lua_urls
-	"${pkg_mingw_lua_root}/lua/lua-5.2.0-1/lua-5.2.0-1-mingw32-dll-52.tar.xz"
-	"${pkg_mingw_lua_root}/lua/lua-5.2.0-1/lua-5.2.0-1-mingw32-dev.tar.xz")
+	"${pkg_mingw_lua_root}/mingw-w64-i686-lua-5.3.4-1-any.pkg.tar.xz"
+	"${pkg_mingw_lua_root}/mingw-w64-i686-gcc-libs-7.3.0-2-any.pkg.tar.xz"
+	"${pkg_mingw_lua_root}/mingw-w64-i686-libwinpthread-git-6.0.0.5134.2416de71-1-any.pkg.tar.xz")
+set (pkg_mingw_lua_strip "mingw32")
 set (pkg_mingw_lua_md5
-	"150b27cab05b78ba40bbd7225630c00d"
-	"6abe77c1e1a783075fe73c53b7c235fb")
+	"b75af38372cddde0b0ff997cf4fdb038"
+	"9507a011e7ab3c7fadf01b24590b8713"
+	"ecf4d62961c5f4b33841a4d22a0eda80")
 
 # Stage 1: fetch missing packages
 foreach (pkg_set ${pkg_list})

@@ -109,8 +109,8 @@ foreach (file ${project_PO_FILES})
 endforeach (file)
 
 # Documentation
-find_package (GtkDoc)
-set (project_DOC_DIR "${PROJECT_SOURCE_DIR}/docs/reference")
+find_package (GtkDoc 1.25)
+set (project_DOC_DIR "${PROJECT_BINARY_DIR}/liblogdiag")
 
 # Project source files
 set (liblogdiag_SOURCES
@@ -250,13 +250,16 @@ if (BUILD_TESTING)
 endif (BUILD_TESTING)
 
 # Generate documentation
-if (GTK_DOC_FOUND)
-	GTK_DOC_RUN (WORKING_DIR ${project_DOC_DIR}
-		SOURCE_DIRS ${PROJECT_SOURCE_DIR}/liblogdiag
-		SCANGOBJ liblogdiag ${logdiag_LIBS}
-		XML ${project_DOC_DIR}/xml --sgml-mode
-		HTML ${project_DOC_DIR}/html)
-endif (GTK_DOC_FOUND)
+if (GTKDOC_FOUND)
+	# FIXME: not our bug but xml/gtkdocentities.ent cannot be passed
+	target_link_libraries (liblogdiag ${logdiag_LIBS})
+	gtk_doc_add_module (liblogdiag
+		SOURCE ${PROJECT_SOURCE_DIR}/liblogdiag
+		SUFFIXES c h
+		# The "official" module wants an XML file I don't want to give it
+		XML ${PROJECT_BINARY_DIR}/liblogdiag/liblogdiag-docs.xml
+		LIBRARIES liblogdiag)
+endif ()
 
 find_package (CppCheck)
 GENERATE_CPPCHECK (SOURCES liblogdiag src tests ENABLE_IDS all

@@ -71,7 +71,7 @@ ld_category_view_default_init (LdCategoryViewInterface *iface)
 
 /**
  * ld_category_view_set_category:
- * @self: an #LdCategorylView object.
+ * @self: an #LdCategoryView object.
  * @category: the #LdCategory to be assigned to the view.
  *
  * Assign an #LdCategory object to the view.

@@ -18,7 +18,7 @@ set (project_VERSION "${project_VERSION_MAJOR}")
 set (project_VERSION "${project_VERSION}.${project_VERSION_MINOR}")
 set (project_VERSION "${project_VERSION}.${project_VERSION_PATCH}")
 
-set (project_URL "http://github.com/pjanouch/logdiag")
+set (project_URL "http://git.janouch.name/p/logdiag")
 
 # For custom modules
 set (CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)

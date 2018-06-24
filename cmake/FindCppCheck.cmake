@@ -44,7 +44,7 @@
 
 #=============================================================================
 # Copyright 2011 Johannes Wienke <jwienke at techfak dot uni-bielefeld dot de>
-# Copyright 2012 Přemysl Janouch <p.janouch at gmail dot com>
+# Copyright 2012 Přemysl Janouch <p at janouch dot name>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without

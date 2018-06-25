@@ -235,6 +235,7 @@ static void ld_diagram_view_get_property (GObject *object, guint property_id,
 	GValue *value, GParamSpec *pspec);
 static void ld_diagram_view_set_property (GObject *object, guint property_id,
 	const GValue *value, GParamSpec *pspec);
+static void ld_diagram_view_dispose (GObject *gobject);
 static void ld_diagram_view_finalize (GObject *gobject);
 
 static void set_hadjustment
@@ -400,6 +401,7 @@ ld_diagram_view_class_init (LdDiagramViewClass *klass)
 	object_class = G_OBJECT_CLASS (klass);
 	object_class->get_property = ld_diagram_view_get_property;
 	object_class->set_property = ld_diagram_view_set_property;
+	object_class->dispose = ld_diagram_view_dispose;
 	object_class->finalize = ld_diagram_view_finalize;
 
 	klass->cancel_operation = ld_diagram_view_real_cancel_operation;
@@ -567,7 +569,7 @@ ld_diagram_view_init (LdDiagramView *self)
 }
 
 static void
-ld_diagram_view_finalize (GObject *gobject)
+ld_diagram_view_dispose (GObject *gobject)
 {
 	LdDiagramView *self;
 
@@ -575,6 +577,17 @@ ld_diagram_view_finalize (GObject *gobject)
 
 	g_object_set (self, "hadjustment", NULL, NULL);
 	g_object_set (self, "vadjustment", NULL, NULL);
+
+	/* Chain up to the parent class. */
+	G_OBJECT_CLASS (ld_diagram_view_parent_class)->dispose (gobject);
+}
+
+static void
+ld_diagram_view_finalize (GObject *gobject)
+{
+	LdDiagramView *self;
+
+	self = LD_DIAGRAM_VIEW (gobject);
 
 	if (self->priv->diagram)
 	{

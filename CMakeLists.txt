@@ -353,6 +353,11 @@ if (WIN32)
 		DESTINATION share/glib-2.0
 		FILES_MATCHING PATTERN "org.gtk.Settings.*")
 
+	install (FILES
+		${WIN32_DEPENDS_PATH}/share/icons/hicolor/index.theme
+		DESTINATION share/icons/hicolor)
+	install (DIRECTORY share/icons DESTINATION share)
+
 	# Avoid partial translations
 	file (GLOB locales ${WIN32_DEPENDS_PATH}/share/locale/*)
 	foreach (locale ${locales})

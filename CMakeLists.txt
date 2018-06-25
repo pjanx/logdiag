@@ -34,7 +34,10 @@ if (WIN32)
 		list (APPEND CMAKE_FIND_ROOT_PATH ${WIN32_DEPENDS_PATH})
 	endif (CMAKE_CROSSCOMPILING)
 
-	set (PKG_CONFIG_USE_CMAKE_PREFIX_PATH TRUE)
+	set (PKG_CONFIG_USE_CMAKE_PREFIX_PATH FALSE)
+	# Seems like there is a regression setting this to two paths in one,
+	# setting the path manually
+	set (ENV{PKG_CONFIG_PATH} "${WIN32_DEPENDS_PATH}/lib/pkgconfig")
 
 	add_custom_target (win32-depends COMMAND ${CMAKE_COMMAND} -P
 		${PROJECT_SOURCE_DIR}/Win32Depends.cmake

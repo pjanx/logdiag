@@ -975,7 +975,7 @@ on_action_about (GtkAction *action, LdWindowMain *self)
 		"logo-icon-name", PROJECT_NAME,
 		"version", PROJECT_VERSION,
 		"translator-credits", _("translator-credits"),
-		"copyright", "Copyright Přemysl Janouch 2010, 2011, 2012, 2013, 2015",
+		"copyright", "Copyright Přemysl Janouch 2010 - 2018",
 		"website", PROJECT_URL,
 		NULL);
 }

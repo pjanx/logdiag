@@ -83,7 +83,21 @@ endif (CONVERT_EXECUTABLE AND NOT WIN32)
 # Dependencies
 find_package (PkgConfig REQUIRED)
 pkg_check_modules (GTK3 REQUIRED gtk+-3.0 json-glib-1.0)
-pkg_search_module (Lua REQUIRED lua>=5.2 lua5.3 lua-5.3 lua5.2 lua-5.2)
+
+if (NOT WIN32)
+	pkg_search_module (Lua REQUIRED lua>=5.2 lua5.3 lua-5.3 lua5.2 lua-5.2)
+else (NOT WIN32)
+	# For whatever reason this now seems to be required
+	set (LUA_INCLUDE_DIR "${WIN32_DEPENDS_PATH}/include")
+
+	# XXX: this seems to require CMake 3.0 ... include it in the project?
+	find_package (Lua REQUIRED)
+	if (LUA_VERSION_STRING VERSION_LESS "5.2")
+		message (FATAL_ERROR "Lua 5.2 not found")
+	endif (LUA_VERSION_STRING VERSION_LESS "5.2")
+	set (Lua_LIBRARIES ${LUA_LIBRARIES})
+	set (Lua_INCLUDE_DIRS ${LUA_INCLUDE_DIR})
+endif (NOT WIN32)
 
 # This actually fucks up MinGW cross-compilation if omitted
 link_directories (${GTK3_LIBRARY_DIRS})

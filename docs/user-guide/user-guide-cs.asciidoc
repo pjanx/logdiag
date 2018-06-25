@@ -1,0 +1,153 @@
+// TODO: nakonfigurovat v CMake asciidoctor-pdf, je potřeba pár `gem install`
+// https://github.com/asciidoctor/asciidoctor-pdf/blob/master/README.adoc
+// https://github.com/asciidoctor/asciidoctor-pdf/blob/master/docs/theming-guide.adoc
+
+logdiag: Průvodce uživatele
+===========================
+Přemysl Janouch <p@janouch.name>
+v0.2, 2018-06-25
+:toc: left
+:toc-title: Obsah
+:sectnums:
+:warning-caption: VAROVÁNÍ
+:xrefstyle: short
+:figure-caption: Obrázek
+
+image::logdiag-cs.png[]
+
+<<<
+
+Úvod
+----
+Tento dokument vás má za účel provést po aplikaci a pomoci vám se v ní
+zorientovat. Popis úkonů se přednostně vztahuje na operační systém Microsoft
+Windows, do jisté míry je však platný i pro jiné operační systémy.
+
+Získání aplikace
+----------------
+Nejnovější verzi aplikace je možné stáhnout na následující webové adrese:
+https://git.janouch.name/p/logdiag.
+
+// TODO: aktualizovat obrázek pro anglickou Gitea
+[[github-download]]
+.Nabídka pro stahování na GitHubu
+image::github.png[]
+
+Až se ocitnete na webu, vyhledejte v záhlaví záložku s nápisem ``Releases'' a
+klepněte na ni. Zobrazí se přehled vydání a pod hlavičkami ``Downloads''
+související soubory ke stažení. Instalační soubor pro Microsoft Windows nese
+název ve stylu ``logdiag-__verze__-Windows-x86.exe''.
+
+Instalace
+---------
+Proces instalace je velmi přímočarý. Po úvodní obrazovce je vyžadován souhlas s
+licencí. Pokud nerozumíte anglicky, její stručné shrnutí zní, že aplikaci smíte
+v nezměněné formě zcela volně používat a redistribuovat, ale nejsou vám
+poskytovány žádné záruky. Následuje výběr složky, do které chcete aplikaci
+nainstalovat, a složky pro umístění ve Start menu. V případě, že nenastala žádná
+náhlá chyba, už jen stačí potvrdit úspěšnou instalaci.
+
+WARNING: Pokud aplikaci instalujete do složky, kde se nachází již existující
+instalace, mohou nastat potíže. Ačkoliv je to možné, nepokoušejte se z těch
+samých příčin instalovat ani více kopií vedle sebe. Nejdříve stávající instalaci
+odstraňte, například pomocí zástupce umístěného ve Start menu.
+
+Operace s objekty
+-----------------
+
+////
+
+TODO: zkusit restrukturalizovat na:
+
+4. Operace s objekty
+   4.1 Základní operace
+       4.1.1 Výběr
+       4.1.2 Přesun
+       4.1.3 Odstranění
+   4.2 Značky
+       4.2.1 Vložení
+       4.2.2 Otáčení
+   4.3 Spojení
+       4.3.1 Tvorba
+
+////
+
+Každý diagram je tvořen z objektů, a s těmi se sdružují dále popsané operace.
+Budete-li chtít momentálně prováděnou operaci zrušit, můžete tak obvykle učinit
+stiskem klávesy Escape.
+
+Výběr objektů
+~~~~~~~~~~~~~
+Jednotlivé objekty můžete vybírat levým kliknutím myší. Ty se v reakci na to
+vyznačí červenou barvou. Chcete-li vybrat objektů více, držte během klikání
+stisknutou klávesu Shift.
+
+// XXX: nelze zarovnat obrázek na střed zároveň s caption
+[[select-objects]]
+.Výběr objektů v oblasti
+image::select-objects.png[]
+
+Alternativně můžete táhnout myší z volné oblasti diagramu do prostoru, viz
+<<select-objects>>. Vyberou se objekty obsažené ve vytvořeném obdélníku. Výběr
+lze zrušit klepnutím na prázdné místo.
+
+Přesun objektů
+~~~~~~~~~~~~~~
+Přesun objektů se provede tažením objektů myší na požadované místo. Pokud jsou
+tyto objekty součástí výběru, přesune se celý výběr. Ten lze též přesouvat
+pomocí kurzorových kláves.
+
+Odstranění objektů
+~~~~~~~~~~~~~~~~~~
+Objekty odstraníte stisknutím klávesy Delete, případně z menu aplikace.
+
+Vložení značky
+~~~~~~~~~~~~~~
+_Značky_ představují nejdůležitější druh objektů. Do diagramu je vložíte výběrem
+z nabídky značek umístěné po levé straně hlavního okna aplikace, viz
+<<select-symbol>>, a přetažením myší do diagramu na požadované umístění.
+
+[[select-symbol]]
+.Výběr značky z nabídky
+image::select-symbol.png[]
+
+Otáčení značek
+~~~~~~~~~~~~~~
+Otočit značku vloženou do diagramu můžete přes pravé tlačítko myši.
+
+Propojení terminálů
+~~~~~~~~~~~~~~~~~~~
+_Terminálem_ se nazývá bod určený pro tvorbu spojení mezi značkami nebo jinými
+spojeními. Abyste z něj spojení vyvedli, nejdříve na něj najeďte kurzorem myši
+tak, aby se viditelně vyznačil kroužkem. Pak stiskněte levé tlačítko myši a
+přetáhněte kurzor myši na místo, kde chcete, aby spojení končilo.
+
+// XXX: nelze sloučit do jedné figure
+[[create-connection]]
+.Propojení terminálů dvou značek
+image:create-connection-begin.png[]
+&nbsp;...&nbsp;
+image:create-connection-end.png[]
+
+Časté problémy
+--------------
+
+Nelze otevřít uložený diagram
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Při ukládání se ujistěte, že zadaný název souboru obsahuje příponu ``.ldd''. V
+opačném případě se nezobrazí v dialogu pro otevření diagramu. Pokud jste nějaký
+soubor již bez přípony uložili, napravíte to dodatečným přidáním přípony k jeho
+názvu.
+
+Jak můžu diagram vytisknout?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Současná verze aplikace není schopná přímo tisknout. Pro vytištění vytvořeného
+diagramu můžete klávesou PrintScreen sejmout snímek obrazovky, vložit jej
+například do aplikace Malování, oříznout požadovanou část a vytisknout ji z
+tohoto grafického editoru.
+
+Schází mi popisky
+~~~~~~~~~~~~~~~~~
+Obdobně jako v předchozím případě tato funkcionalita zatím neexistuje, ale je
+možné tento nedostatek obejít přes běžný grafický editor.
+

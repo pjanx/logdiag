@@ -28,10 +28,9 @@ Získání aplikace
 Nejnovější verzi aplikace je možné stáhnout na následující webové adrese:
 https://git.janouch.name/p/logdiag.
 
-// TODO: aktualizovat obrázek pro anglickou Gitea
-[[github-download]]
-.Nabídka pro stahování na GitHubu
-image::github.png[]
+[[gitea-download]]
+.Nabídka pro stahování na stráncách projektu
+image::gitea.png[]
 
 Až se ocitnete na webu, vyhledejte v záhlaví záložku s nápisem ``Releases'' a
 klepněte na ni. Zobrazí se přehled vydání a pod hlavičkami ``Downloads''

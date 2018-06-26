@@ -26,13 +26,12 @@ Getting the application
 Download the newest version of the application at the following web address:
 https://git.janouch.name/p/logdiag.
 
-// TODO: aktualizovat obrázek pro anglickou Gitea
-[[github-download]]
-.The download menu at GitHub
-image::github.png[]
+[[gitea-download]]
+.The download menu on the project site
+image::gitea.png[]
 
-While on the web, look for a tab entitled ``Releases'' and click on it. A menu
-with versions will appear with files for download listed under ``Downloads''
+While on the web, look for a tab entitled ``Releases'' and click on it. A list
+of versions will appear with files for download listed under ``Downloads''
 headings.  The installation file for Microsoft Windows is named in the style of
 ``logdiag-__version__-Windows-x86.exe''.
 

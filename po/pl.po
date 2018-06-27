@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: logdiag\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-06-25 03:55+0200\n"
+"POT-Creation-Date: 2018-06-27 04:52+0200\n"
 "PO-Revision-Date: 2018-06-25 04:09+0200\n"
 "Last-Translator: Přemysl Janouch <p@janouch.name>\n"
 "Language-Team: Polish <pl@li.org>\n"
@@ -17,77 +17,110 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.0.8\n"
 
-#: ../src/ld-window-main.c:126
-msgid "_File"
-msgstr "_Plik"
+#: ../src/ld-window-main.c:931
+#, c-format
+msgid "%d%%"
+msgstr "%d%%"
 
-#: ../src/ld-window-main.c:127
-msgid "_New"
-msgstr "_Nowy"
+#: ../src/logdiag.c:146
+msgid "- Schematic editor"
+msgstr "- Edytor schematów"
+
+#: ../src/ld-window-main.c:855
+msgid "Close _without Saving"
+msgstr "Zamknąć _bez zapisu"
 
 #: ../src/ld-window-main.c:128
 msgid "Create a new diagram"
 msgstr "Stworzenie nowego wykresu"
 
-#: ../src/ld-window-main.c:130
-msgid "_Open..."
-msgstr "_Otwórz..."
+#: ../src/ld-window-main.c:161
+msgid "Delete the contents of the selection"
+msgstr "Usuń zawartość wyboru"
+
+#: ../src/ld-window-main.c:354
+msgid "Drag symbols from the library pane to add them to the diagram."
+msgstr "Przeciągnij symbole z panelu biblioteki, aby dodać je do diagramu."
+
+#: ../liblogdiag/ld-category-tree-view.c:138
+msgid "Empty"
+msgstr "Puste"
+
+#: ../src/ld-window-main.c:707
+#, c-format
+msgid "Failed to open file `%s': Invalid contents."
+msgstr "Nie można otworzyć pliku \"%s\": Niepoprawna zawartość."
+
+#: ../src/ld-window-main.c:698
+msgid "Failed to open the file"
+msgstr "Pliku nie da się otworzyć"
+
+#: ../src/ld-window-main.c:662
+msgid "Failed to save the diagram"
+msgstr "Nie udało się zapisać wykresu"
+
+#: ../src/ld-window-main.c:853
+msgid "If you don't save, changes will be permanently lost."
+msgstr "Jeżeli nie zapiszesz zmian, zostaną one trwale utracone"
+
+#: ../src/ld-window-main.c:738
+msgid "Logdiag Diagrams (*.ldd)"
+msgstr "Wykresy logdiag (*.ldd)"
 
 #: ../src/ld-window-main.c:131
 msgid "Open a diagram"
 msgstr "Otwórz wykres"
 
-#: ../src/ld-window-main.c:133
-msgid "_Save"
-msgstr "Z_apisz"
-
-#: ../src/ld-window-main.c:134
-msgid "Save the current diagram"
-msgstr "Zapisz aktywny wykres"
-
-#: ../src/ld-window-main.c:136
-msgid "Save _As..."
-msgstr "Zapisz _jako..."
-
-#: ../src/ld-window-main.c:137
-msgid "Save the current diagram with another name"
-msgstr "Zapisać aktywny wykres pod inną nazwą"
-
-#: ../src/ld-window-main.c:144
-msgid "_Quit"
-msgstr "_Zakończ"
+#: ../src/ld-window-main.c:759
+msgid "Open..."
+msgstr "Otworzyć..."
 
 #: ../src/ld-window-main.c:145
 msgid "Quit the application"
 msgstr "Zamknie aplikację"
 
-#: ../src/ld-window-main.c:148
-msgid "_Edit"
-msgstr "_Edycja"
-
-#: ../src/ld-window-main.c:149
-msgid "_Undo"
-msgstr "_Wróć"
-
-#: ../src/ld-window-main.c:150
-msgid "Undo the last action"
-msgstr "Cofnie ostatnią akcję"
-
-#: ../src/ld-window-main.c:152
-msgid "_Redo"
-msgstr "_Powtórz"
-
 #: ../src/ld-window-main.c:153
 msgid "Redo the last undone action"
 msgstr "Powtórzy ostatnio cofniętą akcję"
 
-#: ../src/ld-window-main.c:160
-msgid "_Delete"
-msgstr "_Usuń"
+#: ../src/ld-window-main.c:175
+msgid "Reset zoom level back to the default"
+msgstr "Przywróci poziom zbliżenia na poziom wyjściowy"
 
-#: ../src/ld-window-main.c:161
-msgid "Delete the contents of the selection"
-msgstr "Usuń zawartość wyboru"
+#: ../src/ld-window-main.c:790
+msgid "Save As..."
+msgstr "Zapisz jako..."
+
+#: ../src/ld-window-main.c:136
+msgid "Save _As..."
+msgstr "Zapisz _jako..."
+
+#: ../src/ld-window-main.c:623
+#, c-format
+msgid ""
+"Save the changes to diagram \"%s\" before closing it and creating a new one?"
+msgstr ""
+"Zapisać zmiany w wykresie \"%s\" przed jego zamknięciem i stworzeniem nowego?"
+
+#: ../src/ld-window-main.c:755
+#, c-format
+msgid ""
+"Save the changes to diagram \"%s\" before closing it and opening another one?"
+msgstr ""
+"Zapisać zmiany w wykresie \"%s\" przed jego zamknięciem i stworzeniem nowego?"
+
+#: ../src/ld-window-main.c:893
+#, c-format
+msgid "Save the changes to diagram \"%s\" before closing?"
+msgstr "Zapisać zmiany w wykresie \"%s\" przed jego zamknięciem?"
+
+#: ../src/ld-window-main.c:134
+msgid "Save the current diagram"
+msgstr "Zapisz aktywny wykres"
+
+#: ../src/ld-window-main.c:137
+msgid "Save the current diagram with another name"
+msgstr "Zapisać aktywny wykres pod inną nazwą"
 
 #: ../src/ld-window-main.c:163
 msgid "Select _All"
@@ -97,6 +130,110 @@ msgstr "Wybierz _wszystko"
 msgid "Select all objects in the diagram"
 msgstr "Wybierze wszystkie obietky w wykresie"
 
+#: ../src/ld-window-main.c:192
+msgid "Show _Grid"
+msgstr "Pokaż _Siatkę"
+
+#: ../src/ld-window-main.c:180
+msgid "Show a dialog about this application"
+msgstr "Pokaże informacje o tej aplikacji"
+
+#: ../src/ld-window-main.c:193
+msgid "Toggle displaying of the grid"
+msgstr "Przełączy pokazywanie siatki"
+
+#: ../src/ld-window-main.c:190
+msgid "Toggle displaying of the library pane"
+msgstr "Przełączy pokazywanie panelu biblioteki"
+
+#: ../src/ld-window-main.c:187
+msgid "Toggle displaying of the main toolbar"
+msgstr "Przełączy pokazywanie głównego panelu narzędzi"
+
+#: ../src/ld-window-main.c:665
+msgid "Try again or save it under another name."
+msgstr "Spróbuj ponownie, bądź zapisz pod inną nazwą."
+
+#: ../src/ld-window-main.c:150
+msgid "Undo the last action"
+msgstr "Cofnie ostatnią akcję"
+
+#: ../src/ld-window-main.c:591
+msgid "Unsaved Diagram"
+msgstr "Niezapisany Wykres"
+
+#: ../src/ld-window-main.c:171
+msgid "Zoom _Out"
+msgstr "_Oddalić widok"
+
+#: ../src/ld-window-main.c:169
+msgid "Zoom into the diagram"
+msgstr "Przybliżyć widok"
+
+#: ../src/ld-window-main.c:172
+msgid "Zoom out of the diagram"
+msgstr "Oddalić widok"
+
+#: ../src/logdiag.c:106
+msgid "[FILE...]"
+msgstr "[PLIK...]"
+
+#: ../src/ld-window-main.c:179
+msgid "_About"
+msgstr "_O programie"
+
+#: ../src/ld-window-main.c:160
+msgid "_Delete"
+msgstr "_Usuń"
+
+#: ../src/ld-window-main.c:148
+msgid "_Edit"
+msgstr "_Edycja"
+
+#: ../src/ld-window-main.c:126
+msgid "_File"
+msgstr "_Plik"
+
+#: ../src/ld-window-main.c:178
+msgid "_Help"
+msgstr "_Pomoc"
+
+#: ../src/ld-window-main.c:189
+msgid "_Library Pane"
+msgstr "Panel _biblioteki"
+
+#: ../src/ld-window-main.c:186
+msgid "_Main Toolbar"
+msgstr "_Główny panel narzędzi"
+
+#: ../src/ld-window-main.c:127
+msgid "_New"
+msgstr "_Nowy"
+
+#: ../src/ld-window-main.c:174
+msgid "_Normal Size"
+msgstr "_Normalna Wielkość"
+
+#: ../src/ld-window-main.c:130
+msgid "_Open..."
+msgstr "_Otwórz..."
+
+#: ../src/ld-window-main.c:144
+msgid "_Quit"
+msgstr "_Zakończ"
+
+#: ../src/ld-window-main.c:152
+msgid "_Redo"
+msgstr "_Powtórz"
+
+#: ../src/ld-window-main.c:133
+msgid "_Save"
+msgstr "Z_apisz"
+
+#: ../src/ld-window-main.c:149
+msgid "_Undo"
+msgstr "_Wróć"
+
 #: ../src/ld-window-main.c:167
 msgid "_View"
 msgstr "_Widok"
@@ -105,142 +242,9 @@ msgstr "_Widok"
 msgid "_Zoom In"
 msgstr "_Przybliżyć"
 
-#: ../src/ld-window-main.c:169
-msgid "Zoom into the diagram"
-msgstr "Przybliżyć widok"
-
-#: ../src/ld-window-main.c:171
-msgid "Zoom _Out"
-msgstr "_Oddalić widok"
-
-#: ../src/ld-window-main.c:172
-msgid "Zoom out of the diagram"
-msgstr "Oddalić widok"
-
-#: ../src/ld-window-main.c:174
-msgid "_Normal Size"
-msgstr "_Normalna Wielkość"
-
-#: ../src/ld-window-main.c:175
-msgid "Reset zoom level back to the default"
-msgstr "Przywróci poziom zbliżenia na poziom wyjściowy"
-
-#: ../src/ld-window-main.c:178
-msgid "_Help"
-msgstr "_Pomoc"
-
-#: ../src/ld-window-main.c:179
-msgid "_About"
-msgstr "_O programie"
-
-#: ../src/ld-window-main.c:180
-msgid "Show a dialog about this application"
-msgstr "Pokaże informacje o tej aplikacji"
-
-#: ../src/ld-window-main.c:186
-msgid "_Main Toolbar"
-msgstr "_Główny panel narzędzi"
-
-#: ../src/ld-window-main.c:187
-msgid "Toggle displaying of the main toolbar"
-msgstr "Przełączy pokazywanie głównego panelu narzędzi"
-
-#: ../src/ld-window-main.c:189
-msgid "_Library Pane"
-msgstr "Panel _biblioteki"
-
-#: ../src/ld-window-main.c:190
-msgid "Toggle displaying of the library pane"
-msgstr "Przełączy pokazywanie panelu biblioteki"
-
-#: ../src/ld-window-main.c:192
-msgid "Show _Grid"
-msgstr "Pokaż _Siatkę"
-
-#: ../src/ld-window-main.c:193
-msgid "Toggle displaying of the grid"
-msgstr "Przełączy pokazywanie siatki"
-
-#: ../src/ld-window-main.c:354
-msgid "Drag symbols from the library pane to add them to the diagram."
-msgstr "Przeciągnij symbole z panelu biblioteki, aby dodać je do diagramu."
-
-#: ../src/ld-window-main.c:591
-msgid "Unsaved Diagram"
-msgstr "Niezapisany Wykres"
-
-#: ../src/ld-window-main.c:623
-#, c-format
-msgid "Save the changes to diagram \"%s\" before closing it and creating a new one?"
-msgstr "Zapisać zmiany w wykresie \"%s\" przed jego zamknięciem i stworzeniem nowego?"
-
-#: ../src/ld-window-main.c:662
-msgid "Failed to save the diagram"
-msgstr "Nie udało się zapisać wykresu"
-
-#: ../src/ld-window-main.c:665
-msgid "Try again or save it under another name."
-msgstr "Spróbuj ponownie, bądź zapisz pod inną nazwą."
-
-#: ../src/ld-window-main.c:698
-msgid "Failed to open the file"
-msgstr "Pliku nie da się otworzyć"
-
-#: ../src/ld-window-main.c:707
-#, c-format
-msgid "Failed to open file `%s': Invalid contents."
-msgstr "Nie można otworzyć pliku \"%s\": Niepoprawna zawartość."
-
-#: ../src/ld-window-main.c:738
-msgid "Logdiag Diagrams (*.ldd)"
-msgstr "Wykresy logdiag (*.ldd)"
-
-#: ../src/ld-window-main.c:755
-#, c-format
-msgid "Save the changes to diagram \"%s\" before closing it and opening another one?"
-msgstr "Zapisać zmiany w wykresie \"%s\" przed jego zamknięciem i stworzeniem nowego?"
-
-#: ../src/ld-window-main.c:759
-msgid "Open..."
-msgstr "Otworzyć..."
-
-#: ../src/ld-window-main.c:790
-msgid "Save As..."
-msgstr "Zapisz jako..."
-
-#: ../src/ld-window-main.c:853
-msgid "If you don't save, changes will be permanently lost."
-msgstr "Jeżeli nie zapiszesz zmian, zostaną one trwale utracone"
-
-#: ../src/ld-window-main.c:855
-msgid "Close _without Saving"
-msgstr "Zamknąć _bez zapisu"
-
-#: ../src/ld-window-main.c:893
-#, c-format
-msgid "Save the changes to diagram \"%s\" before closing?"
-msgstr "Zapisać zmiany w wykresie \"%s\" przed jego zamknięciem?"
-
-#: ../src/ld-window-main.c:931
-#, c-format
-msgid "%d%%"
-msgstr "%d%%"
-
 #: ../src/ld-window-main.c:977
 msgid "translator-credits"
 msgstr "Robert Svoboda <ravath@gmail.com>"
-
-#: ../src/logdiag.c:105
-msgid "[FILE...]"
-msgstr "[PLIK...]"
-
-#: ../src/logdiag.c:145
-msgid "- Schematic editor"
-msgstr "- Edytor schematów"
-
-#: ../liblogdiag/ld-category-tree-view.c:138
-msgid "Empty"
-msgstr "Puste"
 
 #~ msgid "The file is probably corrupted."
 #~ msgstr "Plik jest prawdopodobnie uszkodzony."

@@ -18,7 +18,7 @@ set (project_VERSION "${project_VERSION_MAJOR}")
 set (project_VERSION "${project_VERSION}.${project_VERSION_MINOR}")
 set (project_VERSION "${project_VERSION}.${project_VERSION_PATCH}")
 
-set (project_URL "http://git.janouch.name/p/logdiag")
+set (project_URL "https://git.janouch.name/p/logdiag")
 
 # For custom modules
 set (CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
@@ -429,7 +429,7 @@ set (CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "
 	DeleteRegKey HKCR 'logdiag.Diagram'
 	System::Call 'shell32::SHChangeNotify(i,i,i,i) (0x08000000, 0x1000, 0, 0)'")
 
-string (REPLACE "http://" "http:\\\\\\\\" project_URL_NSIS "${project_URL}")
+string (REPLACE "https://" "https:\\\\\\\\" project_URL_NSIS "${project_URL}")
 set (CPACK_NSIS_URL_INFO_ABOUT "${project_URL_NSIS}")
 
 set (CPACK_DEBIAN_PACKAGE_DEPENDS

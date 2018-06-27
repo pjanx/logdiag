@@ -6,7 +6,7 @@ logdiag
 This software is considered to be of alpha quality and isn't recommended for
 regular usage.
 
-image::logdiag.png[align="center"]
+image::docs/user-guide/logdiag-en.png[align="center"]
 
 Packages
 --------

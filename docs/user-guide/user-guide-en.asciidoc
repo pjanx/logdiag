@@ -101,12 +101,8 @@ Inserting symbols
 ~~~~~~~~~~~~~~~~~
 _Symbols_ constitute the most important kind of objects. Insert them into the
 diagram by choosing one from the symbol menu located on the left side of the
-main application window, see <<select-symbol>>, and dragging it onto the diagram
-where you want the symbol to be placed.
-
-[[select-symbol]]
-.Choosing a symbol from the menu
-image::select-symbol.png[]
+main application window and dragging it onto the diagram where you want the
+symbol to be placed.
 
 Rotating symbols
 ~~~~~~~~~~~~~~~~

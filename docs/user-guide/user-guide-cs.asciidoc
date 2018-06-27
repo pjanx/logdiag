@@ -103,12 +103,8 @@ Objekty odstraníte stisknutím klávesy Delete, případně z menu aplikace.
 Vložení značky
 ~~~~~~~~~~~~~~
 _Značky_ představují nejdůležitější druh objektů. Do diagramu je vložíte výběrem
-z nabídky značek umístěné po levé straně hlavního okna aplikace, viz
-<<select-symbol>>, a přetažením myší do diagramu na požadované umístění.
-
-[[select-symbol]]
-.Výběr značky z nabídky
-image::select-symbol.png[]
+z nabídky značek umístěné po levé straně hlavního okna aplikace a přetažením
+myší do diagramu na požadované umístění.
 
 Otáčení značek
 ~~~~~~~~~~~~~~

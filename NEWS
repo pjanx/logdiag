@@ -1,18 +1,21 @@
-Version TBD
+Version 0.2.0
  - Added a library pane instead of a toolbar.
  - Added scrolling using the middle mouse button.
  - View menu settings are remembered.
  - Fixed command line parsing on Windows;
    it's not limited to the system ANSI codepage anymore.
- - Fixed checking for the shift key when selecting.
+ - Fixed checking for the Shift key when selecting.
  - Terminals are ignored when hovering the cursor above a selection.
  - Disallowed wheel zooming when holding mouse buttons.
  - Fixed the behaviour of saving.
  - Fixed rapid right-clicking rotating more than it should.
  - Symbol categories are also loaded from user-specific directories.
- - Show the current zoom in the statusbar.
+ - Show current zoom in the statusbar.
  - Ported to GTK+ 3 and Lua 5.2.
+ - This is the last version supporting Windows XP (we use an outdated GTK+
+   bundle, support for this operating system has been dropped in version 3.18).
  - Various unimportant fixes and changes.
+ - Known issues: Windows XP looks ugly now and there's little we can do.
 
 Version 0.1.2
  - Updated symbol library.

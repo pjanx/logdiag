@@ -5,7 +5,7 @@
 logdiag: User Guide
 ===================
 Přemysl Janouch <p@janouch.name>
-v0.2, 2018-06-25
+v0.2.0, 2018-06-27
 :toc: left
 :sectnums:
 :xrefstyle: short

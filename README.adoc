@@ -15,11 +15,11 @@ a package with the latest development version from Archlinux's AUR.
 
 Requirements
 ------------
-Runtime dependencies: GTK+ >= 3.8, json-glib >= 0.10.4, lua = 5.2 +
+Runtime dependencies: GTK+ >= 3.8, json-glib >= 0.10.4, lua >= 5.2 +
 Build dependencies: CMake >= 2.8
 
-Build from source on Unix-like
-------------------------------
+Build from source on Unix-like systems
+--------------------------------------
 First check that you have all the required dependencies installed, including
 development packages, if your distribution provides them.
 

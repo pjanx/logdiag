@@ -9,6 +9,7 @@
  */
 
 #include <gtk/gtk.h>
+#include <glib/gstdio.h>
 #include <locale.h>
 
 #include "config.h"

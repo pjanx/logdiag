@@ -164,6 +164,8 @@ msgstr "Gitter ein-/ausblenden"
 #: ../src/ld-window-main.c:354
 msgid "Drag symbols from the library pane to add them to the diagram."
 msgstr ""
+"Ziehen Sie Symbole aus dem Bibliotheksfenster, um sie dem Diagramm "
+"hinzuzufügen."
 
 #: ../src/ld-window-main.c:591
 msgid "Unsaved Diagram"
@@ -190,7 +192,7 @@ msgstr "Fehler beim Öffnen der Datei"
 #: ../src/ld-window-main.c:707
 #, c-format
 msgid "Failed to open file `%s': Invalid contents."
-msgstr ""
+msgstr "Fehler beim Öffnen der Datei \"%s\": Ungültiger Inhalt."
 
 #: ../src/ld-window-main.c:738
 msgid "Logdiag Diagrams (*.ldd)"

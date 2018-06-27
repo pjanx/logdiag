@@ -163,7 +163,7 @@ msgstr "Prepne zobrazovanie mriežky"
 
 #: ../src/ld-window-main.c:354
 msgid "Drag symbols from the library pane to add them to the diagram."
-msgstr ""
+msgstr "Pre pridanie symbolov do diagramu ich pretiahnite z panela knižnice."
 
 #: ../src/ld-window-main.c:591
 msgid "Unsaved Diagram"
@@ -189,7 +189,7 @@ msgstr "Nepodarilo sa otvoriť súbor"
 #: ../src/ld-window-main.c:707
 #, c-format
 msgid "Failed to open file `%s': Invalid contents."
-msgstr ""
+msgstr "Nepodarilo sa otvoriť súbor \"%s\": Neplatný obsah."
 
 #: ../src/ld-window-main.c:738
 msgid "Logdiag Diagrams (*.ldd)"

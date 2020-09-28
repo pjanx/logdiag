@@ -5,7 +5,7 @@
 #    LIBINTL_LIBRARIES
 
 #=============================================================================
-# Copyright Přemysl Janouch 2011
+# Copyright 2011 Přemysl Eric Janouch
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without

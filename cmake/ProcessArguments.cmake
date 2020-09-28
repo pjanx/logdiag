@@ -22,7 +22,7 @@
 #
 
 #=============================================================================
-# Copyright Přemysl Janouch 2010
+# Copyright 2010 Přemysl Eric Janouch
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without

@@ -32,5 +32,5 @@ fi
 # Finally make the template
 xgettext -LC -k_ -kN_ $SOURCES -o "$PACKAGE".pot \
 	--package-name="$PACKAGE" --package-version="$VERSION" \
-	--copyright-holder="Přemysl Janouch"
+	--copyright-holder="Přemysl Eric Janouch"
 

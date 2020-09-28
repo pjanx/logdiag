@@ -2,7 +2,7 @@
  * ld-window-main.c
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010, 2011, 2012
+ * Copyright 2010, 2011, 2012, 2015 Přemysl Eric Janouch
  *
  * See the file LICENSE for licensing information.
  *
@@ -975,7 +975,7 @@ on_action_about (GtkAction *action, LdWindowMain *self)
 		"logo-icon-name", PROJECT_NAME,
 		"version", PROJECT_VERSION,
 		"translator-credits", _("translator-credits"),
-		"copyright", "Copyright Přemysl Janouch 2010 - 2018",
+		"copyright", "Copyright 2010 - 2018 Přemysl Eric Janouch",
 		"website", PROJECT_URL,
 		NULL);
 }

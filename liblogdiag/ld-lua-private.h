@@ -2,7 +2,7 @@
  * ld-lua-private.h
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010
+ * Copyright 2010 Přemysl Eric Janouch
  *
  * See the file LICENSE for licensing information.
  *

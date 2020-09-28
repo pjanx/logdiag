@@ -4,7 +4,7 @@
 
 logdiag: Průvodce uživatele
 ===========================
-Přemysl Janouch <p@janouch.name>
+Přemysl Eric Janouch <p@janouch.name>
 v0.2.0, 2018-06-27
 :toc: left
 :toc-title: Obsah

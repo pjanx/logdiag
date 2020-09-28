@@ -2,7 +2,7 @@
  * ld-types.c
  *
  * This file is a part of logdiag.
- * Copyright Přemysl Janouch 2010, 2011
+ * Copyright 2010, 2011 Přemysl Eric Janouch
  *
  * See the file LICENSE for licensing information.
  *

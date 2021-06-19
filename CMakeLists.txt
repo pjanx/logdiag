@@ -1,8 +1,9 @@
 project (logdiag C)
-cmake_minimum_required (VERSION 2.8)
+# The last version with Windows XP support is 3.13, we want to keep that
+cmake_minimum_required (VERSION 2.8.12)
 
-# Default to 2.8 behaviour
-cmake_policy (VERSION 2.8)
+# Default to 2.8.12 behaviour
+cmake_policy (VERSION 2.8.12)
 
 # Options
 option (OPTION_USE_VERA "Use vera++ for source code style checks" OFF)

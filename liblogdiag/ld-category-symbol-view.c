@@ -47,6 +47,7 @@ SymbolData;
  * @path: path to the category within the library.
  * @layout: (element-type SymbolData *): current layout of symbols.
  * @preselected: currently preselected symbol.
+ * @dragged: currently dragged symbol.
  */
 struct _LdCategorySymbolViewPrivate
 {
@@ -54,6 +55,7 @@ struct _LdCategorySymbolViewPrivate
 	gchar *path;
 	GSList *layout;
 	SymbolData *preselected;
+	SymbolData *dragged;
 };
 
 enum
@@ -180,6 +182,7 @@ layout_destroy (LdCategorySymbolView *self)
 	g_slist_free (self->priv->layout);
 	self->priv->layout = NULL;
 	self->priv->preselected = NULL;
+	self->priv->dragged = NULL;
 }
 
 static GSList *
@@ -457,12 +460,12 @@ on_drag_data_get
 	LdCategorySymbolView *self;
 
 	self = LD_CATEGORY_SYMBOL_VIEW (widget);
-	g_return_if_fail (self->priv->preselected != NULL);
+	g_return_if_fail (self->priv->dragged != NULL);
 
 	gtk_selection_data_set (selection_data,
 		gtk_selection_data_get_target (selection_data),
-		8, (guchar *) self->priv->preselected->path,
-		strlen (self->priv->preselected->path));
+		8, (guchar *) self->priv->dragged->path,
+		strlen (self->priv->dragged->path));
 }
 
 static void
@@ -473,6 +476,9 @@ on_drag_begin (GtkWidget *widget, GdkDragContext *ctx, gpointer user_data)
 
 	self = LD_CATEGORY_SYMBOL_VIEW (widget);
 	g_return_if_fail (self->priv->preselected != NULL);
+
+	/* Working around a mysterious bug where we /sometimes/ get deselected. */
+	self->priv->dragged = self->priv->preselected;
 
 	/* Some of the larger previews didn't work, and we have to get rid of
 	 * the icon later when we're hovering above LdDiagramView anyway. */
@@ -485,7 +491,11 @@ on_drag_begin (GtkWidget *widget, GdkDragContext *ctx, gpointer user_data)
 static void
 on_drag_end (GtkWidget *widget, GdkDragContext *ctx, gpointer user_data)
 {
-	symbol_deselect (LD_CATEGORY_SYMBOL_VIEW (widget));
+	LdCategorySymbolView *self;
+
+	self = LD_CATEGORY_SYMBOL_VIEW (widget);
+	symbol_deselect (self);
+	self->priv->dragged = NULL;
 }
 
 static void

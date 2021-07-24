@@ -31,7 +31,7 @@ set (pkg_gtk_root "http://ftp.gnome.org/pub/gnome/binaries/win32")
 set (pkg_gtk_urls "${pkg_gtk_root}/dependencies/gettext-tools-0.17.zip")
 set (pkg_gtk_md5 "09baff956ebd1c391c7f71e9bd768edd")
 
-set (pkg_gtkalt_root "http://win32builder.gnome.org")
+set (pkg_gtkalt_root "https://download.geany.org/contrib/gtk")
 set (pkg_gtkalt_urls "${pkg_gtkalt_root}/gtk+-bundle_3.8.2-20131001_win32.zip")
 set (pkg_gtkalt_md5 "3f9b159207edf44937f209b4a5e6bb63")
 

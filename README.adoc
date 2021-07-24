@@ -3,8 +3,7 @@ logdiag
 
 'logdiag' is a simple multiplatform schematic editor written in GTK+.
 
-This software is considered to be of alpha quality and isn't recommended for
-regular usage.
+This software has never really been finished, and is no longer being worked on.
 
 image::docs/user-guide/logdiag-en.png[align="center"]
 
@@ -16,7 +15,7 @@ a package with the latest development version from Archlinux's AUR.
 Requirements
 ------------
 Runtime dependencies: GTK+ >= 3.8, json-glib >= 0.10.4, lua >= 5.2 +
-Build dependencies: CMake >= 2.8
+Build dependencies: CMake >= 2.8.12
 
 Build from source on Unix-like systems
 --------------------------------------
@@ -47,10 +46,8 @@ CMake offers DEB and RPM.
 
 After _cpack_ finishes making the package, install this file.
 
- $ fakeroot cpack -G DEB
+ $ cpack -G DEB
  # dpkg -i logdiag-version-system-arch.deb
-
-Leave out the fakeroot for CMake >= 2.8.9, it's been fixed since.
 
 Build from source on Windows
 ----------------------------
@@ -78,11 +75,11 @@ Let CMake prepare the build:
 Now you can generate a package with CPack. You may choose between:
 
 1. An NSIS-based installation package:
-
++
  > cpack -G NSIS
 
 2. A portable ZIP package:
-
++
  > cpack -G ZIP
 
 By default, that is if you specify no generator, both packages are built.

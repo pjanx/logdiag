@@ -137,6 +137,7 @@ main (int argc, char *argv[])
 
 #ifdef _WIN32
 	/* Don't be unneccessarily limited by the system ANSI codepage. */
+	/* g_win32_get_command_line() should replace this code for GLib >= 2.40. */
 	argv_overriden = get_utf8_args (&argc, &argv);
 	if (argv_overriden)
 		_putenv ("CHARSET=UTF-8");

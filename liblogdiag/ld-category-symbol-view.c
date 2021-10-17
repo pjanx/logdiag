@@ -353,7 +353,10 @@ on_draw (GtkWidget *widget, cairo_t *cr)
 		return FALSE;
 
 	context = gtk_widget_get_style_context (widget);
-	// FIXME: there have to be better means (though I can't find them)
+
+	// XXX: alternatively, we could use gtk_style_context_lookup_color()
+	//   with hardcoded colour names ("theme_*_color")--this is cleaner,
+	//   and unlike GtkStyle doesn't cause deprecation warnings
 	gtk_style_context_add_class (context, "gtkstyle-fallback");
 
 	gtk_style_context_get_background_color (context,

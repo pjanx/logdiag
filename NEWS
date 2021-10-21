@@ -15,7 +15,7 @@ Version 0.2.0
  - This is the last version supporting Windows XP (we use an outdated GTK+
    bundle, support for this operating system has been dropped in version 3.18).
  - Various unimportant fixes and changes.
- - Known issues: Windows XP looks ugly now and there's little we can do.
+ - Known issues: Windows XP looks ugly with the classic theme, little we can do.
 
 Version 0.1.2
  - Updated symbol library.

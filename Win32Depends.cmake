@@ -31,16 +31,14 @@ set (pkg_gtk_root "http://ftp.gnome.org/pub/gnome/binaries/win32")
 set (pkg_gtk_urls "${pkg_gtk_root}/dependencies/gettext-tools-0.17.zip")
 set (pkg_gtk_md5 "09baff956ebd1c391c7f71e9bd768edd")
 
+# https://sourceforge.net/projects/urlget/files
+# /GTK%2B%203%20binary%20for%20Windows/GTK%2B%203.16.6/
+# contains a binary bundle that may be more or less simply transplanted over,
+# due to ABI compatibility, however something is wrong with icons,
+# and it looks alien on Windows XP (use themes) for close to no improvement.
 set (pkg_gtkalt_root "https://download.geany.org/contrib/gtk")
 set (pkg_gtkalt_urls "${pkg_gtkalt_root}/gtk+-bundle_3.8.2-20131001_win32.zip")
 set (pkg_gtkalt_md5 "3f9b159207edf44937f209b4a5e6bb63")
-
-# Doesn't work, no gtk+-3.0.pc file present
-#set (pkg_gtkalt_urls "${pkg_gtkalt_root}/gtk+-bundle_3.10.4-20131202_win32.zip")
-#set (pkg_gtkalt_md5 "520bed70943974efdaeea2a1dbe48f84")
-# Too old
-#set (pkg_gtkalt_urls "${pkg_gtkalt_root}/gtk+-bundle_3.6.4-20130921_win32.zip")
-#set (pkg_gtkalt_md5 "9bcb87d917982a6e52a69141ade8bd56")
 
 set (pkg_winlibs_root "http://sourceforge.net/projects/winlibs/files")
 set (pkg_winlibs_urls "${pkg_winlibs_root}/GTK+/libjson-glib-1.0-1-mingw32.7z")

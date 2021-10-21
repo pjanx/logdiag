@@ -348,12 +348,16 @@ if (WIN32)
 		DESTINATION etc)
 	install (DIRECTORY
 		${WIN32_DEPENDS_PATH}/lib/gdk-pixbuf-2.0
-		DESTINATION lib)
+		DESTINATION lib
+		FILES_MATCHING PATTERN "*" PATTERN "*.a" EXCLUDE)
 	install (DIRECTORY
 		${WIN32_DEPENDS_PATH}/share/glib-2.0/schemas
 		DESTINATION share/glib-2.0
 		FILES_MATCHING PATTERN "org.gtk.Settings.*")
 
+	install (DIRECTORY
+		${WIN32_DEPENDS_PATH}/share/icons/Adwaita
+		DESTINATION share/icons OPTIONAL)
 	install (FILES
 		${WIN32_DEPENDS_PATH}/share/icons/hicolor/index.theme
 		DESTINATION share/icons/hicolor)

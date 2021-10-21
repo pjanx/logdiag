@@ -100,12 +100,9 @@ Just install MinGW-w64 and let automation take care of the rest.
 Alternatively, for an unnecessarily bloated MSYS2-based 64-bit build:
 
  $ sh Win64Depends.cmake
- $ mkdir build
- $ cd build
- $ cmake .. \
-   -DCMAKE_TOOLCHAIN_FILE=../ToolchainCrossWin64.cmake \
-   -DCMAKE_BUILD_TYPE=Release
- $ cpack
+ $ cmake -DCMAKE_TOOLCHAIN_FILE=ToolchainCrossWin64.cmake \
+   -DCMAKE_BUILD_TYPE=Release -B build
+ $ cmake --build build -- package
 
 Contributing and Support
 ------------------------

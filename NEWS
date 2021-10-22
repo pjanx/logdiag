@@ -1,3 +1,9 @@
+Version 0.2.1
+ - Set up grounds for 64-bit Windows builds using the latest GTK+ 3.
+ - Made the Windows installer ask to uninstall previous versions first.
+ - Worked around a mysterious recent GTK+ bug with symbol dragging.
+ - Put a default filename in the save dialog, ensuring a file extension.
+
 Version 0.2.0
  - Added a library pane instead of a toolbar.
  - Added scrolling using the middle mouse button.

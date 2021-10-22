@@ -1,6 +1,6 @@
 # The last version with Windows XP support is 3.13, we want to keep that
 cmake_minimum_required (VERSION 3.9)
-project (logdiag VERSION 0.2.0 LANGUAGES C)
+project (logdiag VERSION 0.2.1 LANGUAGES C)
 
 # Options
 option (OPTION_USE_VERA "Use vera++ for source code style checks" OFF)

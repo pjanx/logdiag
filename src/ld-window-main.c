@@ -2,7 +2,7 @@
  * ld-window-main.c
  *
  * This file is a part of logdiag.
- * Copyright 2010, 2011, 2012, 2015 Přemysl Eric Janouch
+ * Copyright 2010 - 2021 Přemysl Eric Janouch
  *
  * See the file LICENSE for licensing information.
  *
@@ -784,6 +784,8 @@ static void
 diagram_show_save_as_dialog (LdWindowMain *self)
 {
 	GtkWidget *dialog;
+	GtkFileChooser *file_chooser;
+	gchar *filename;
 
 	g_return_if_fail (LD_IS_WINDOW_MAIN (self));
 
@@ -796,15 +798,19 @@ diagram_show_save_as_dialog (LdWindowMain *self)
 	gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog),
 		diagram_get_file_filter ());
 
+	file_chooser = GTK_FILE_CHOOSER (dialog);
 	if (self->priv->filename)
-		gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (dialog),
-			self->priv->filename);
+		gtk_file_chooser_set_filename (file_chooser, self->priv->filename);
+	else
+	{
+		filename = g_strdup_printf ("%s.ldd", _("Untitled diagram"));
+		gtk_file_chooser_set_current_name (file_chooser, filename);
+		g_free (filename);
+	}
 
 	while (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
 	{
-		gchar *filename;
-
-		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+		filename = gtk_file_chooser_get_filename (file_chooser);
 		if (diagram_save (self, GTK_WINDOW (dialog), filename))
 		{
 			diagram_set_filename (self, filename);
@@ -975,7 +981,7 @@ on_action_about (GtkAction *action, LdWindowMain *self)
 		"logo-icon-name", PROJECT_NAME,
 		"version", PROJECT_VERSION,
 		"translator-credits", _("translator-credits"),
-		"copyright", "Copyright 2010 - 2018 Přemysl Eric Janouch",
+		"copyright", "Copyright 2010 - 2021 Přemysl Eric Janouch",
 		"website", PROJECT_URL,
 		NULL);
 }

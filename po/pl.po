@@ -6,8 +6,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: logdiag\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-06-27 04:52+0200\n"
+"Report-Msgid-Bugs-To: https://git.janouch.name/p/logdiag/issues\n"
+"POT-Creation-Date: 2021-10-22 22:16+0200\n"
 "PO-Revision-Date: 2018-06-25 04:09+0200\n"
 "Last-Translator: Přemysl Eric Janouch <p@janouch.name>\n"
 "Language-Team: Polish <pl@li.org>\n"
@@ -17,16 +17,16 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.0.8\n"
 
-#: ../src/ld-window-main.c:931
+#: ../src/ld-window-main.c:937
 #, c-format
 msgid "%d%%"
 msgstr "%d%%"
 
-#: ../src/logdiag.c:146
+#: ../src/logdiag.c:147
 msgid "- Schematic editor"
 msgstr "- Edytor schematów"
 
-#: ../src/ld-window-main.c:855
+#: ../src/ld-window-main.c:861
 msgid "Close _without Saving"
 msgstr "Zamknąć _bez zapisu"
 
@@ -59,7 +59,7 @@ msgstr "Pliku nie da się otworzyć"
 msgid "Failed to save the diagram"
 msgstr "Nie udało się zapisać wykresu"
 
-#: ../src/ld-window-main.c:853
+#: ../src/ld-window-main.c:859
 msgid "If you don't save, changes will be permanently lost."
 msgstr "Jeżeli nie zapiszesz zmian, zostaną one trwale utracone"
 
@@ -87,7 +87,7 @@ msgstr "Powtórzy ostatnio cofniętą akcję"
 msgid "Reset zoom level back to the default"
 msgstr "Przywróci poziom zbliżenia na poziom wyjściowy"
 
-#: ../src/ld-window-main.c:790
+#: ../src/ld-window-main.c:792
 msgid "Save As..."
 msgstr "Zapisz jako..."
 
@@ -109,7 +109,7 @@ msgid ""
 msgstr ""
 "Zapisać zmiany w wykresie \"%s\" przed jego zamknięciem i stworzeniem nowego?"
 
-#: ../src/ld-window-main.c:893
+#: ../src/ld-window-main.c:899
 #, c-format
 msgid "Save the changes to diagram \"%s\" before closing?"
 msgstr "Zapisać zmiany w wykresie \"%s\" przed jego zamknięciem?"
@@ -160,6 +160,11 @@ msgstr "Cofnie ostatnią akcję"
 
 #: ../src/ld-window-main.c:591
 msgid "Unsaved Diagram"
+msgstr "Niezapisany Wykres"
+
+#: ../src/ld-window-main.c:806
+#, fuzzy
+msgid "Untitled diagram"
 msgstr "Niezapisany Wykres"
 
 #: ../src/ld-window-main.c:171
@@ -242,7 +247,7 @@ msgstr "_Widok"
 msgid "_Zoom In"
 msgstr "_Przybliżyć"
 
-#: ../src/ld-window-main.c:977
+#: ../src/ld-window-main.c:983
 msgid "translator-credits"
 msgstr "Robert Svoboda <ravath@gmail.com>"
 

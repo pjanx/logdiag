@@ -1,5 +1,5 @@
 <schemalist>
-	<schema id="org.logdiag" path="/apps/logdiag/" gettext-domain="logdiag">
+	<schema id="org.logdiag" path="/org/logdiag/" gettext-domain="logdiag">
 		<key name="show-main-toolbar" type="b">
 			<default>true</default>
 			<summary>Whether to show the main toolbar</summary>

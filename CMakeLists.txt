@@ -1,9 +1,6 @@
-project (logdiag C)
 # The last version with Windows XP support is 3.13, we want to keep that
-cmake_minimum_required (VERSION 2.8.12)
-
-# Default to 2.8.12 behaviour
-cmake_policy (VERSION 2.8.12)
+cmake_minimum_required (VERSION 3.9)
+project (logdiag VERSION 0.2.0 LANGUAGES C)
 
 # Options
 option (OPTION_USE_VERA "Use vera++ for source code style checks" OFF)
@@ -11,14 +8,6 @@ option (OPTION_NOINSTALL "Only for developers; work without installing" OFF)
 option (BUILD_TESTING "Build tests" OFF)
 
 # Project information
-set (project_VERSION_MAJOR "0")
-set (project_VERSION_MINOR "2")
-set (project_VERSION_PATCH "0")
-
-set (project_VERSION "${project_VERSION_MAJOR}")
-set (project_VERSION "${project_VERSION}.${project_VERSION_MINOR}")
-set (project_VERSION "${project_VERSION}.${project_VERSION_PATCH}")
-
 set (project_URL "https://git.janouch.name/p/logdiag")
 
 # For custom modules
@@ -91,7 +80,6 @@ else (NOT WIN32)
 	# For whatever reason this now seems to be required
 	set (LUA_INCLUDE_DIR "${WIN32_DEPENDS_PATH}/include")
 
-	# XXX: this seems to require CMake 3.0 ... include it in the project?
 	find_package (Lua REQUIRED)
 	if (LUA_VERSION_STRING VERSION_LESS "5.2")
 		message (FATAL_ERROR "Lua 5.2 not found")
@@ -115,7 +103,7 @@ foreach (file ${project_PO_FILES})
 	list (APPEND project_TRANSLATIONS "${translation}")
 endforeach (file)
 
-# Documentation
+# Documentation--gtk-doc 1.25 is required
 find_package (GtkDoc 1.25)
 set (project_DOC_DIR "${PROJECT_BINARY_DIR}/liblogdiag")
 
@@ -251,9 +239,13 @@ if (BUILD_TESTING)
 	foreach (name ${logdiag_TESTS})
 		add_executable (test-${name} tests/${name}.c)
 		target_link_libraries (test-${name} liblogdiag ${logdiag_LIBS})
-
-		add_test (test-${name} test-${name})
+		add_test (NAME test-${name} COMMAND test-${name})
+		list (APPEND logdiag_TEST_TARGETS test-${name})
 	endforeach (name)
+	if (WIN32 AND NOT CMAKE_CROSSCOMPILING)
+		set_tests_properties (${logdiag_TEST_TARGETS}
+			PROPERTIES ENVIRONMENT "PATH=${WIN32_DEPENDS_PATH}/bin")
+	endif ()
 endif (BUILD_TESTING)
 
 # Generate documentation
@@ -385,25 +377,20 @@ else (WIN32)
 	install (FILES LICENSE NEWS DESTINATION share/doc/${PROJECT_NAME})
 endif (WIN32)
 
-install (FILES ${GSETTINGS_SCHEMAS}
-	DESTINATION share/glib-2.0/schemas)
+install (DIRECTORY share/gui share/library DESTINATION share/${PROJECT_NAME})
+install (FILES ${GSETTINGS_SCHEMAS} DESTINATION share/glib-2.0/schemas)
 install (CODE " # DESTDIR is not in use on Windows
 	if (WIN32 OR \"\$ENV{DESTDIR}\" STREQUAL \"\")
-		execute_process (COMMAND ${GLIB_COMPILE_SCHEMAS_EXECUTABLE}
+		execute_process (COMMAND \"${GLIB_COMPILE_SCHEMAS_EXECUTABLE}\"
 			\"\${CMAKE_INSTALL_PREFIX}/share/glib-2.0/schemas\")
 	endif (WIN32 OR \"\$ENV{DESTDIR}\" STREQUAL \"\")")
-
-install (DIRECTORY share/gui share/library
-	DESTINATION share/${PROJECT_NAME})
 
 # CPack
 set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Schematic editor")
 set (CPACK_PACKAGE_VENDOR "Premysl Eric Janouch")
 set (CPACK_PACKAGE_CONTACT "Přemysl Eric Janouch <p@janouch.name>")
 set (CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
-set (CPACK_PACKAGE_VERSION_MAJOR ${project_VERSION_MAJOR})
-set (CPACK_PACKAGE_VERSION_MINOR ${project_VERSION_MINOR})
-set (CPACK_PACKAGE_VERSION_PATCH ${project_VERSION_PATCH})
+set (CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 
 if (WIN32)
 	set (CPACK_GENERATOR "NSIS;ZIP")
@@ -413,11 +400,13 @@ else (WIN32)
 endif (WIN32)
 
 set (CPACK_PACKAGE_FILE_NAME
-	"${PROJECT_NAME}-${project_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
-set (CPACK_PACKAGE_INSTALL_DIRECTORY
-	"${PROJECT_NAME} ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}")
+	"${PROJECT_NAME}-${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+set (CPACK_PACKAGE_INSTALL_DIRECTORY "${PROJECT_NAME} ${CPACK_PACKAGE_VERSION}")
 
-# FIXME: It is possible to install multiple copies. Everything screws up then.
+# XXX: It is still possible to install multiple copies, making commands collide.
+set (CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+set (CPACK_PACKAGE_INSTALL_REGISTRY_KEY "${PROJECT_NAME}")
+
 set (CPACK_PACKAGE_ICON "${PROJECT_SOURCE_DIR}/share\\\\header.bmp")
 set (CPACK_NSIS_INSTALLED_ICON_NAME "logdiag.exe")
 set (CPACK_NSIS_CREATE_ICONS_EXTRA "
@@ -451,7 +440,7 @@ set (CPACK_RPM_PACKAGE_URL "${project_URL}")
 
 set (CPACK_SOURCE_GENERATOR "TGZ;ZIP")
 set (CPACK_SOURCE_IGNORE_FILES "/\\\\.git;/build;/CMakeLists.txt.user;/win32-depends;/liblogdiag/ld-marshal.[ch]")
-set (CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_NAME}-${project_VERSION}")
+set (CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}")
 
 include (CPack)
 

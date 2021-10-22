@@ -28,8 +28,12 @@ set (pkg_7za_urls "${pkg_7za_root}/7-Zip/9.20/7za920.zip")
 set (pkg_7za_md5 "2fac454a90ae96021f4ffc607d4c00f8")
 
 set (pkg_gtk_root "http://ftp.gnome.org/pub/gnome/binaries/win32")
-set (pkg_gtk_urls "${pkg_gtk_root}/dependencies/gettext-tools-0.17.zip")
-set (pkg_gtk_md5 "09baff956ebd1c391c7f71e9bd768edd")
+set (pkg_gtk_urls
+	"${pkg_gtk_root}/dependencies/gettext-tools-0.17.zip"
+	"${pkg_gtk_root}/dependencies/gettext-runtime-0.17-1.zip")
+set (pkg_gtk_md5
+	"09baff956ebd1c391c7f71e9bd768edd"
+	"110394b4b1e0a50cd440f1e8729d159c")
 
 # https://sourceforge.net/projects/urlget/files
 # /GTK%2B%203%20binary%20for%20Windows/GTK%2B%203.16.6/

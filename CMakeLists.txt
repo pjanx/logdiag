@@ -1,5 +1,5 @@
 # The last version with Windows XP support is 3.13, we want to keep that
-cmake_minimum_required (VERSION 3.9)
+cmake_minimum_required (VERSION 3.10)
 project (logdiag VERSION 0.2.1 LANGUAGES C)
 
 # Options
@@ -333,8 +333,7 @@ if (WIN32)
 	install (DIRECTORY
 		${WIN32_DEPENDS_PATH}/bin/
 		DESTINATION .
-		FILES_MATCHING PATTERN "*.dll"
-		PATTERN "libgettext*" EXCLUDE)
+		FILES_MATCHING PATTERN "*.dll")
 	install (DIRECTORY
 		${WIN32_DEPENDS_PATH}/etc/
 		DESTINATION etc)
@@ -366,6 +365,8 @@ if (WIN32)
 				DESTINATION share/locale)
 		endif (translation_found GREATER -1)
 	endforeach (locale)
+
+	install (SCRIPT Win32Cleanup.cmake)
 else (WIN32)
 	install (TARGETS logdiag DESTINATION bin)
 	install (FILES share/logdiag.desktop DESTINATION share/applications)

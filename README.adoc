@@ -3,7 +3,8 @@ logdiag
 
 'logdiag' is a simple multiplatform schematic editor written in GTK+.
 
-This software has never really been finished, and is no longer being worked on.
+This software has never really been finished, and is no longer being worked on,
+although I strive to keep it building on Windows XP and elsewhere.
 
 image::docs/user-guide/logdiag-en.png[align="center"]
 
@@ -53,28 +54,22 @@ Build from source on Windows
 ----------------------------
 _Note that with the current method we're stuck with GTK+ 3.8.2._
 
-First install CMake and MinGW. Add both to your system path. If you want
-to build an installation package, also install NSIS. If you want to build within
-a path containing spaces, fix your FindPkgConfig.cmake to say:
+First install CMake and MinGW.  Add both to your system path.  If you want
+to build an installation package, also install NSIS.  If you want to build
+within a path containing spaces, fix your FindPkgConfig.cmake to say (#22396):
 
  separate_arguments(_pkgconfig_invoke_result UNIX_COMMAND "${_pkgconfig_invoke_result}")
 
 Run the following command in the directory with source files to automatically
-fetch and setup all dependencies (contact me if the script becomes obsolete,
-it's easy to fix but I usually update it only just a short while before
-releasing a new version in order to resolve compatibility issues):
+fetch and set up all dependencies (note that Windows XP is no longer able to
+download from HTTPS sources):
 
  > cmake -P Win32Depends.cmake
 
-Note that Windows XP is no longer able to reliably download from HTTPS sources.
-
-Reserve a directory for an out-of-source build:
+Reserve a directory for an out-of-source build and let CMake prepare the build:
 
  > mkdir build
  > cd build
-
-Let CMake prepare the build:
-
  > cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
 
 Now you can generate a package with CPack. You may choose between:

@@ -6,7 +6,6 @@ cmake_minimum_required (VERSION 3.9)
 # Directories
 set (working_dir ${CMAKE_CURRENT_BINARY_DIR}/win32-depends)
 set (pkg_dir ${working_dir}/packages)
-set (tmp_dir ${working_dir}/tmp)
 file (MAKE_DIRECTORY ${working_dir})
 file (MAKE_DIRECTORY ${pkg_dir})
 
@@ -93,23 +92,11 @@ foreach (pkg_set ${pkg_list})
 	foreach (url ${pkg_${pkg_set}_urls})
 		get_filename_component (filename ${url} NAME)
 		message (STATUS "Extracting ${filename}...")
-		set (extract_command ${CMAKE_COMMAND} -E tar xf)
 
 		set (filename ${pkg_dir}/${filename})
-		if (pkg_${pkg_set}_strip)
-			file (MAKE_DIRECTORY ${tmp_dir})
-			execute_process (COMMAND ${extract_command} ${filename}
-				WORKING_DIRECTORY ${tmp_dir}
-				RESULT_VARIABLE status)
-			file (COPY ${tmp_dir}/${pkg_${pkg_set}_strip}/
-				DESTINATION ${working_dir})
-			file (REMOVE_RECURSE ${tmp_dir})
-		else ()
-			execute_process (COMMAND ${extract_command} ${filename}
-				WORKING_DIRECTORY ${working_dir}
-				RESULT_VARIABLE status)
-		endif ()
-
+		execute_process (COMMAND ${CMAKE_COMMAND} -E tar xf ${filename}
+			WORKING_DIRECTORY ${working_dir}
+			RESULT_VARIABLE status)
 		if (status)
 			message (FATAL_ERROR "Extraction failed: ${status}")
 		endif ()

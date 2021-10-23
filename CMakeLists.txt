@@ -379,11 +379,11 @@ endif (WIN32)
 
 install (DIRECTORY share/gui share/library DESTINATION share/${PROJECT_NAME})
 install (FILES ${GSETTINGS_SCHEMAS} DESTINATION share/glib-2.0/schemas)
-install (CODE " # DESTDIR is not in use on Windows
+install (CODE " # DESTDIR is not in use on Windows (WIN32 is only native here!)
 	if (WIN32 OR \"\$ENV{DESTDIR}\" STREQUAL \"\")
 		execute_process (COMMAND \"${GLIB_COMPILE_SCHEMAS_EXECUTABLE}\"
 			\"\${CMAKE_INSTALL_PREFIX}/share/glib-2.0/schemas\")
-	endif (WIN32 OR \"\$ENV{DESTDIR}\" STREQUAL \"\")")
+	endif ()")
 
 # CPack
 set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Schematic editor")
@@ -409,19 +409,23 @@ set (CPACK_PACKAGE_INSTALL_REGISTRY_KEY "${PROJECT_NAME}")
 
 set (CPACK_PACKAGE_ICON "${PROJECT_SOURCE_DIR}/share\\\\header.bmp")
 set (CPACK_NSIS_INSTALLED_ICON_NAME "logdiag.exe")
-set (CPACK_NSIS_CREATE_ICONS_EXTRA "
-	CreateShortCut '\$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\logdiag.lnk' '\$INSTDIR\\\\logdiag.exe'")
-set (CPACK_NSIS_DELETE_ICONS_EXTRA "
-	Delete '\$SMPROGRAMS\\\\$MUI_TEMP\\\\logdiag.lnk'")
-set (CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
+set (CPACK_NSIS_CREATE_ICONS_EXTRA [[
+	CreateShortCut '$SMPROGRAMS\\$STARTMENU_FOLDER\\logdiag.lnk' '$INSTDIR\\logdiag.exe'
+]])
+set (CPACK_NSIS_DELETE_ICONS_EXTRA [[
+	Delete '$SMPROGRAMS\\$MUI_TEMP\\logdiag.lnk'
+]])
+set (CPACK_NSIS_EXTRA_INSTALL_COMMANDS [[
 	WriteRegStr HKCR '.ldd' '' 'logdiag.Diagram'
 	WriteRegStr HKCR 'logdiag.Diagram' '' 'logdiag Diagram'
-	WriteRegStr HKCR 'logdiag.Diagram\\\\shell\\\\open\\\\command' '' '\\\"\$INSTDIR\\\\logdiag.exe\\\" \\\"%1\\\"'
-	WriteRegStr HKCR 'logdiag.Diagram\\\\shell\\\\edit\\\\command' '' '\\\"\$INSTDIR\\\\logdiag.exe\\\" \\\"%1\\\"'
-	System::Call 'shell32::SHChangeNotify(i,i,i,i) (0x08000000, 0x1000, 0, 0)'")
-set (CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "
+	WriteRegStr HKCR 'logdiag.Diagram\\shell\\open\\command' '' '\"$INSTDIR\\logdiag.exe\" \"%1\"'
+	WriteRegStr HKCR 'logdiag.Diagram\\shell\\edit\\command' '' '\"$INSTDIR\\logdiag.exe\" \"%1\"'
+	System::Call 'shell32::SHChangeNotify(i,i,i,i) (0x08000000, 0x1000, 0, 0)'
+]])
+set (CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS [[
 	DeleteRegKey HKCR 'logdiag.Diagram'
-	System::Call 'shell32::SHChangeNotify(i,i,i,i) (0x08000000, 0x1000, 0, 0)'")
+	System::Call 'shell32::SHChangeNotify(i,i,i,i) (0x08000000, 0x1000, 0, 0)'
+]])
 
 string (REPLACE "https://" "https:\\\\\\\\" project_URL_NSIS "${project_URL}")
 set (CPACK_NSIS_URL_INFO_ABOUT "${project_URL_NSIS}")

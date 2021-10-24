@@ -100,6 +100,7 @@ static void on_action_open (GtkAction *action, LdWindowMain *self);
 static void on_action_save (GtkAction *action, LdWindowMain *self);
 static void on_action_save_as (GtkAction *action, LdWindowMain *self);
 static void on_action_quit (GtkAction *action, LdWindowMain *self);
+static void on_action_user_guide (GtkAction *action, LdWindowMain *self);
 static void on_action_about (GtkAction *action, LdWindowMain *self);
 
 static void on_action_undo (GtkAction *action, LdWindowMain *self);
@@ -176,6 +177,9 @@ static GtkActionEntry wm_action_entries[] =
 			G_CALLBACK (on_action_normal_size)},
 
 	{"HelpMenu", NULL, N_("_Help"), NULL, NULL, NULL},
+		{"UserGuide", GTK_STOCK_HELP, N_("_User Guide"), NULL,
+			N_("Open the manual"),
+			G_CALLBACK (on_action_user_guide)},
 		{"About", GTK_STOCK_ABOUT, N_("_About"), NULL,
 			N_("Show a dialog about this application"),
 			G_CALLBACK (on_action_about)}
@@ -971,6 +975,79 @@ on_action_quit (GtkAction *action, LdWindowMain *self)
 {
 	if (may_quit (self))
 		gtk_widget_destroy (GTK_WIDGET (self));
+}
+
+static GFile *
+user_guide_path (const gchar *language)
+{
+	gchar *filename, *path;
+	GFile *file;
+
+	filename = g_strdup_printf ("user-guide-%s.html", language);
+	path = g_build_filename (PROJECT_DOC_DIR, "user-guide", filename, NULL);
+	g_free (filename);
+	file = g_file_new_for_path (path);
+	g_free (path);
+	return file;
+}
+
+static gboolean
+open_file (GFile *file, GdkScreen *screen, GError **error)
+{
+	GdkDisplay *display;
+	GAppInfo *app_info;
+	GdkAppLaunchContext *context;
+	GList link;
+	gboolean success;
+
+	/* GLib 2.36.1 prevents us from using gtk_show_uri() on Windows XP. */
+	if (!(app_info = g_file_query_default_handler (file, NULL, error)))
+		return FALSE;
+
+	link.next = link.prev = NULL;
+	link.data = file;
+
+	display = gdk_screen_get_display (screen);
+	context = gdk_display_get_app_launch_context (display);
+	gdk_app_launch_context_set_screen (context, screen);
+	success = g_app_info_launch (app_info,
+		&link, G_APP_LAUNCH_CONTEXT (context), error);
+	g_object_unref (context);
+	return success;
+}
+
+static void
+on_action_user_guide (GtkAction *action, LdWindowMain *self)
+{
+	const gchar *const *iter;
+	GFile *file;
+	GError *error = NULL;
+
+	/* Look for a usable language variant, or fall back to the lingua franca. */
+	for (iter = g_get_language_names (); *iter; iter++)
+	{
+		if (g_file_query_exists ((file = user_guide_path (*iter)), NULL))
+			break;
+		g_object_unref (file);
+	}
+	if (!*iter)
+		file = user_guide_path ("en");
+
+	if (!open_file (file, gtk_window_get_screen (GTK_WINDOW (self)), &error))
+	{
+		GtkWidget *message_dialog;
+
+		message_dialog = gtk_message_dialog_new (GTK_WINDOW (self),
+			GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+			_("Failed to open the user guide"));
+		gtk_message_dialog_format_secondary_text
+			(GTK_MESSAGE_DIALOG (message_dialog), "%s", error->message);
+		g_error_free (error);
+
+		gtk_dialog_run (GTK_DIALOG (message_dialog));
+		gtk_widget_destroy (message_dialog);
+	}
+	g_object_unref (file);
 }
 
 static void

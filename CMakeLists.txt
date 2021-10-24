@@ -390,6 +390,7 @@ else (WIN32)
 	install (FILES LICENSE NEWS DESTINATION share/doc/${PROJECT_NAME})
 endif (WIN32)
 
+install (DIRECTORY docs/user-guide DESTINATION share/doc/${PROJECT_NAME})
 install (DIRECTORY share/gui share/library DESTINATION share/${PROJECT_NAME})
 install (FILES ${GSETTINGS_SCHEMAS} DESTINATION share/glib-2.0/schemas)
 install (CODE " # DESTDIR is not in use on Windows (WIN32 is only native here!)

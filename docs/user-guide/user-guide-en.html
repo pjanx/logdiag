@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>logdiag: User Guide</title>
+<link rel="stylesheet" href="stylesheet.css">
+<style>
+q:lang(en):before { content: "‘"; }
+q:lang(en):after { content: "’"; }
+</style>
+</head>
+<body>
+
+<h1>logdiag: User Guide</h1>
+
+<p class="details">
+<span id="author">Přemysl Eric Janouch</span><br>
+<span id="email"><a href="mailto:p@janouch.name">p@janouch.name</a></span><br>
+<span id="revnumber">version 0.2.0,</span>
+<span id="revdate">2018-06-27</span>
+
+<p class="figure"><img src="logdiag-en.png" alt="logdiag program window">
+
+<h2>Introduction</h2>
+<p>This document will guide you through the application and help to familiarize
+you with it. The description of tasks mainly targets the Microsoft Windows
+operating system, though it’s also valid for other operating systems to
+a certain extent.
+
+<h2>Getting the application</h2>
+<p>Download the newest version of the application at the following web address:
+<a href="https://git.janouch.name/p/logdiag">https://git.janouch.name/p/logdiag</a>.
+
+<p class="figure"><img src="gitea.png" alt="Gitea">
+<br>Figure 1: The download menu on the project site
+
+<p>While on the web, look for a tab entitled <q>Releases</q> and click on it.
+A list of versions will appear with files for download listed under
+<q>Downloads</q> headings.  The installation file for Microsoft Windows is named
+in the style of <q>logdiag-<i>version</i>-Windows-x86.exe</q>.
+
+<h2>Installation</h2>
+<p>The installation process is quite straight-forward. After the initial screen
+a license agreement is required. Next, choose a folder in which to install
+the application and another one for placement in the Start menu. So long as
+no unexpected errors have occurred, all that’s left is confirming a successful
+installation.
+
+<p><b>Warning</b>: If the application is installed into a folder where
+a previous installation is already located, problems may arise. Although it is
+possible to do so, don’t try to install multiple copies parallely either, for
+the same reasons. Remove the current installation first, for example by using
+the shortcut located in the Start menu.
+
+<h2>Operations with objects</h2>
+<p>Each diagram consists of objects, and these are accompanied by the operations
+described below. To cancel any current operation, press the Escape key.
+
+<!-- TODO: see the Czech version -->
+
+<h3>Selecting objects</h3>
+<p>Select single objects by left-clicking on them. They will get highlighted
+with red color in reaction to this. To select multiple objects, hold the Shift
+key while clicking.
+
+<p class="figure" id="select-objects">
+<img src="select-objects.png" alt="select objects">
+<br>Figure 2: Selecting objects inside an area
+
+<p>Alternatively drag the mouse from free space within the diagram into
+the area, see <a href="#select-objects">Figure 2</a>. Objects contained in this
+rectangle will be selected. The selection may later be dismissed by just
+clicking into free space.
+
+<h3>Moving objects</h3>
+<p>Moving of objects is done by dragging them with the mouse onto the desired
+place. If these objects form a part of the current selection, the whole
+selection is moved. The selection may also be moved using cursor keys.
+
+<h3>Removing objects</h3>
+<p>Remove objects either by pressing the Delete key or from the application
+menu.
+
+<h3>Inserting symbols</h3>
+<p><i>Symbols</i> constitute the most important kind of objects. Insert them
+into the diagram by choosing one from the symbol menu located on the left side
+of the main application window and dragging it onto the diagram where you want
+the symbol to be placed.
+
+<h3>Rotating symbols</h3>
+<p>Rotate a symbol inserted into the diagram by right-clicking on it.
+
+<h3>Connecting terminals</h3>
+<p>A point intended for creation of connections between symbols or other
+connections is called a <i>terminal</i>. To lead a connection out of it, first
+hover it with the mouse pointer, so it gets visibly highlighted with a circle.
+Then press the left mouse button and drag the pointer onto the place where you
+want the connection to end.
+
+<p class="figure" id="create-connection">
+<img src="create-connection-begin.png" alt="Start of operation" align="center">
+&nbsp;&#8230;&nbsp;
+<img src="create-connection-end.png" alt="End of operation" align="center">
+<br>Figure 3: Interconnecting terminals of two symbols
+
+<h2>Frequent problems</h2>
+<h3>Can’t open a saved diagram</h3>
+<p>When saving, ensure that the filename you’ve typed in contains the
+<q>.ldd</q> suffix. If not, it won’t show up in the dialog for opening diagrams.
+In case you’ve already saved a file without an extension, you may fix this
+situation by adding the suffix to its name.
+
+<h3>How do I print a diagram?</h3>
+<p>The current version of application is not able to print directly. To print
+out a created diagram, you may use the PrintScreen key to capture a screenshot,
+then insert it to, for example, Paint, and print it from inside the graphics
+editor.
+
+<h3>I miss labels</h3>
+<p>Similarly to the previous case, this functionality doesn’t exist yet, but it
+is possible to get around this limitation using a graphics editor.
+
+<script>
+var toc = '', all = document.querySelectorAll('h2')
+for (var i = 0; i < all.length; i++) {
+	var name = all[i].innerHTML.replace(/[^0-9a-z]/ig, '-')
+	toc += '<li><p><a href="#' + name + '">' + all[i].innerHTML + '</a></li>'
+	all[i].id = name
+	all[i].innerHTML = (i + 1) + '. ' + all[i].innerHTML
+}
+all[0].insertAdjacentHTML('beforebegin',
+	'<h2>Table of Contents</h2><ol>' + toc + '</ol>')
+</script>

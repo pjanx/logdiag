@@ -105,7 +105,7 @@ static void uninstall_object (LdDiagramObject *object, LdDiagram *self);
 static void ld_diagram_unselect_all_internal (LdDiagram *self);
 
 
-G_DEFINE_TYPE (LdDiagram, ld_diagram, G_TYPE_OBJECT);
+G_DEFINE_TYPE (LdDiagram, ld_diagram, G_TYPE_OBJECT)
 
 static void
 ld_diagram_class_init (LdDiagramClass *klass)

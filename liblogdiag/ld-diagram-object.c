@@ -69,7 +69,7 @@ static void on_set_param_redo (gpointer user_data);
 static void on_set_param_destroy (gpointer user_data);
 
 
-G_DEFINE_TYPE (LdDiagramObject, ld_diagram_object, G_TYPE_OBJECT);
+G_DEFINE_TYPE (LdDiagramObject, ld_diagram_object, G_TYPE_OBJECT)
 
 static void
 ld_diagram_object_class_init (LdDiagramObjectClass *klass)

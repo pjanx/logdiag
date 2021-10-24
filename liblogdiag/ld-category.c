@@ -55,7 +55,7 @@ static void on_category_notify_name (LdCategory *category,
 	GParamSpec *pspec, gpointer user_data);
 
 
-G_DEFINE_TYPE (LdCategory, ld_category, G_TYPE_OBJECT);
+G_DEFINE_TYPE (LdCategory, ld_category, G_TYPE_OBJECT)
 
 static void
 ld_category_class_init (LdCategoryClass *klass)

@@ -38,7 +38,7 @@ static void ld_symbol_set_property (GObject *object, guint property_id,
 	const GValue *value, GParamSpec *pspec);
 
 
-G_DEFINE_ABSTRACT_TYPE (LdSymbol, ld_symbol, G_TYPE_OBJECT);
+G_DEFINE_ABSTRACT_TYPE (LdSymbol, ld_symbol, G_TYPE_OBJECT)
 
 static void
 ld_symbol_class_init (LdSymbolClass *klass)

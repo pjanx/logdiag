@@ -150,7 +150,7 @@ static luaL_Reg ld_lua_cairo_table[] =
 
 /* ===== Generic =========================================================== */
 
-G_DEFINE_TYPE (LdLua, ld_lua, G_TYPE_OBJECT);
+G_DEFINE_TYPE (LdLua, ld_lua, G_TYPE_OBJECT)
 
 static void
 ld_lua_class_init (LdLuaClass *klass)

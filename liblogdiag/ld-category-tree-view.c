@@ -58,7 +58,7 @@ ld_category_view_init (LdCategoryViewInterface *iface)
 
 G_DEFINE_TYPE_WITH_CODE (LdCategoryTreeView,
 	ld_category_tree_view, GTK_TYPE_BOX,
-	G_IMPLEMENT_INTERFACE (LD_TYPE_CATEGORY_VIEW, ld_category_view_init));
+	G_IMPLEMENT_INTERFACE (LD_TYPE_CATEGORY_VIEW, ld_category_view_init))
 
 static void
 ld_category_tree_view_class_init (LdCategoryTreeViewClass *klass)

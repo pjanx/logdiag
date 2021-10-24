@@ -215,7 +215,7 @@ ld_window_main_new (const gchar *filename)
 	return self;
 }
 
-G_DEFINE_TYPE (LdWindowMain, ld_window_main, GTK_TYPE_WINDOW);
+G_DEFINE_TYPE (LdWindowMain, ld_window_main, GTK_TYPE_WINDOW)
 
 static void
 ld_window_main_class_init (LdWindowMainClass *klass)

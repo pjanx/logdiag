@@ -32,7 +32,7 @@ static const LdPointArray *ld_lua_symbol_real_get_terminals (LdSymbol *symbol);
 static void ld_lua_symbol_real_draw (LdSymbol *symbol, cairo_t *cr);
 
 
-G_DEFINE_TYPE (LdLuaSymbol, ld_lua_symbol, LD_TYPE_SYMBOL);
+G_DEFINE_TYPE (LdLuaSymbol, ld_lua_symbol, LD_TYPE_SYMBOL)
 
 static void
 ld_lua_symbol_class_init (LdLuaSymbolClass *klass)

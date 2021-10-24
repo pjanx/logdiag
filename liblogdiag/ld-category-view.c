@@ -21,7 +21,7 @@
  * hierarchies.
  */
 
-G_DEFINE_INTERFACE (LdCategoryView, ld_category_view, 0);
+G_DEFINE_INTERFACE (LdCategoryView, ld_category_view, 0)
 
 static void
 ld_category_view_default_init (LdCategoryViewInterface *iface)

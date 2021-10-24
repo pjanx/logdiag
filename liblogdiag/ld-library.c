@@ -50,7 +50,7 @@ static gboolean foreach_dir (const gchar *path,
 	gpointer userdata, GError **error);
 
 
-G_DEFINE_TYPE (LdLibrary, ld_library, G_TYPE_OBJECT);
+G_DEFINE_TYPE (LdLibrary, ld_library, G_TYPE_OBJECT)
 
 static void
 ld_library_class_init (LdLibraryClass *klass)

@@ -57,7 +57,7 @@ static void on_set_points_destroy (gpointer user_data);
 
 
 G_DEFINE_TYPE (LdDiagramConnection, ld_diagram_connection,
-	LD_TYPE_DIAGRAM_OBJECT);
+	LD_TYPE_DIAGRAM_OBJECT)
 
 static void
 ld_diagram_connection_class_init (LdDiagramConnectionClass *klass)

@@ -33,7 +33,7 @@ static void ld_diagram_symbol_set_property (GObject *object, guint property_id,
 	const GValue *value, GParamSpec *pspec);
 
 
-G_DEFINE_TYPE (LdDiagramSymbol, ld_diagram_symbol, LD_TYPE_DIAGRAM_OBJECT);
+G_DEFINE_TYPE (LdDiagramSymbol, ld_diagram_symbol, LD_TYPE_DIAGRAM_OBJECT)
 
 static void
 ld_diagram_symbol_class_init (LdDiagramSymbolClass *klass)

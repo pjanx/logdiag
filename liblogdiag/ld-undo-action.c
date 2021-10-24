@@ -40,7 +40,7 @@ struct _LdUndoActionPrivate
 static void ld_undo_action_finalize (GObject *gobject);
 
 
-G_DEFINE_TYPE (LdUndoAction, ld_undo_action, G_TYPE_OBJECT);
+G_DEFINE_TYPE (LdUndoAction, ld_undo_action, G_TYPE_OBJECT)
 
 static void
 ld_undo_action_class_init (LdUndoActionClass *klass)

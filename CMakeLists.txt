@@ -4,7 +4,8 @@ project (logdiag VERSION 0.2.1 LANGUAGES C)
 
 # Options
 option (OPTION_USE_VERA "Use vera++ for source code style checks" OFF)
-option (OPTION_NOINSTALL "Only for developers; work without installing" OFF)
+option (OPTION_NOINSTALL "For developers only--work without installing" OFF)
+option (OPTION_GTKDOC "For developers only--enable use of gtk-doc" OFF)
 option (BUILD_TESTING "Build tests" OFF)
 
 # Project information
@@ -249,7 +250,7 @@ if (BUILD_TESTING)
 endif (BUILD_TESTING)
 
 # Generate documentation
-if (GTKDOC_FOUND)
+if (OPTION_GTKDOC AND GTKDOC_FOUND)
 	# Extracted LDFLAGS didn't contain -l in CMake 3.21.3 and gtk-doc 1.33.2,
 	# pass them explicitly and work around insanity; CMake still exits with
 	# an error and gtk-doc produces empty HTML documentation

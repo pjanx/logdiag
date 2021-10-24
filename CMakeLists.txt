@@ -175,6 +175,8 @@ if (WIN32)
 endif (WIN32)
 
 # Generate a configure file
+add_definitions (-DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_36)
+add_definitions (-DGLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_36)
 configure_file (${PROJECT_SOURCE_DIR}/config.h.in
 	${PROJECT_BINARY_DIR}/config.h)
 include_directories (${PROJECT_BINARY_DIR})

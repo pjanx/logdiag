@@ -250,13 +250,22 @@ endif (BUILD_TESTING)
 
 # Generate documentation
 if (GTKDOC_FOUND)
-	# FIXME: not our bug but xml/gtkdocentities.ent cannot be passed
-	target_link_libraries (liblogdiag ${logdiag_LIBS})
+	# Extracted LDFLAGS didn't contain -l in CMake 3.21.3 and gtk-doc 1.33.2,
+	# pass them explicitly and work around insanity; CMake still exits with
+	# an error and gtk-doc produces empty HTML documentation
+	string (REGEX REPLACE "(;)([^-])" "\\1-l\\2" xldflags "${logdiag_LIBS}")
+	set_target_properties (liblogdiag PROPERTIES LINK_LIBRARIES "")
+
+	# The "official" module wants an XML file I don't want to give it
+	file (WRITE ${PROJECT_BINARY_DIR}/liblogdiag-docs-dummy.xml "<book/>")
+
+	# XXX: not our bug but xml/gtkdocentities.ent cannot be passed
+	# XXX: this causes `make clean` to remove the entire build directory,
+	# because it marks CMAKE_CURRENT_BINARY_DIR as an output
 	gtk_doc_add_module (liblogdiag
 		SOURCE ${PROJECT_SOURCE_DIR}/liblogdiag
-		SUFFIXES c h
-		# The "official" module wants an XML file I don't want to give it
-		XML ${PROJECT_BINARY_DIR}/liblogdiag/liblogdiag-docs.xml
+		SUFFIXES c h LDFLAGS "-l${xldflags}"
+		XML ${PROJECT_BINARY_DIR}/liblogdiag-docs-dummy.xml
 		LIBRARIES liblogdiag)
 endif ()
 

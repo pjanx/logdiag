@@ -13,6 +13,9 @@ Packages
 Regular releases are sporadic.  git master should be stable enough.  You can get
 a package with the latest development version from Archlinux's AUR.
 
+Windows installers can be downloaded from
+https://git.janouch.name/p/logdiag/releases[the Releases page on Gitea].
+
 Requirements
 ------------
 Runtime dependencies: GTK+ >= 3.8, json-glib >= 0.10.4, lua >= 5.2 +
@@ -33,20 +36,19 @@ application to be installed. The default is _/usr/local_.
 
  $ cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
 
-Now you have two basic choices of installing the application.
+Now you have two basic choices of installing the application:
 
-Using _make install_
-~~~~~~~~~~~~~~~~~~~~
-
+1. Using _make install_:
++
  # make install
 
-Using _cpack_
-~~~~~~~~~~~~~
+2. Using _cpack_:
++
 You have to choose a package format understood by your system package manager.
 CMake offers DEB and RPM.
-
++
 After _cpack_ finishes making the package, install this file.
-
++
  $ cpack -G DEB
  # dpkg -i logdiag-version-system-arch.deb
 

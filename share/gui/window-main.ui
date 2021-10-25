@@ -6,10 +6,8 @@
 			<menuitem action="Save" />
 			<menuitem action="SaveAs" />
 			<separator />
-<!--
-			<menuitem action="Export" />
+			<menuitem action="Print" />
 			<separator />
--->
 			<menuitem action="Quit" />
 		</menu>
 		<menu action="EditMenu">

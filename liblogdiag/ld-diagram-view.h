@@ -2,7 +2,7 @@
  * ld-diagram-view.h
  *
  * This file is a part of logdiag.
- * Copyright 2010, 2011 Přemysl Eric Janouch
+ * Copyright 2010 - 2021 Přemysl Eric Janouch
  *
  * See the file LICENSE for licensing information.
  *
@@ -95,6 +95,11 @@ void ld_diagram_view_set_show_grid (LdDiagramView *self, gboolean show_grid);
 
 void ld_diagram_view_add_object_begin (LdDiagramView *self,
 	LdDiagramObject *object);
+
+gdouble ld_diagram_view_get_export_bounds (LdDiagramView *self,
+	LdRectangle *rect);
+void ld_diagram_view_export (LdDiagramView *self,
+	cairo_t *cr, const LdRectangle *clip);
 
 
 G_END_DECLS

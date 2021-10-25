@@ -2,7 +2,7 @@
  * ld-diagram-view.c
  *
  * This file is a part of logdiag.
- * Copyright 2010, 2011, 2012, 2015 Přemysl Eric Janouch
+ * Copyright 2010 - 2021 Přemysl Eric Janouch
  *
  * See the file LICENSE for licensing information.
  *
@@ -335,7 +335,7 @@ static void oper_select_begin (LdDiagramView *self, const LdPoint *point);
 static void oper_select_end (LdDiagramView *self);
 static void oper_select_get_rectangle (LdDiagramView *self, LdRectangle *rect);
 static void oper_select_queue_draw (LdDiagramView *self);
-static void oper_select_draw (GtkWidget *widget, DrawData *data);
+static void oper_select_draw (DrawData *data);
 static void oper_select_motion (LdDiagramView *self, const LdPoint *point);
 
 static void oper_move_selection_begin (LdDiagramView *self,
@@ -374,12 +374,18 @@ static void on_drag_leave (GtkWidget *widget, GdkDragContext *drag_ctx,
 	guint time, gpointer user_data);
 
 static gboolean on_draw (GtkWidget *widget, cairo_t *cr, gpointer user_data);
-static void draw_grid (GtkWidget *widget, DrawData *data);
-static void draw_diagram (GtkWidget *widget, DrawData *data);
-static void draw_terminal (GtkWidget *widget, DrawData *data);
+static void draw_grid (DrawData *data);
+static void draw_diagram (DrawData *data);
+static void draw_terminal (DrawData *data);
 static void draw_object (LdDiagramObject *diagram_object, DrawData *data);
 static void draw_symbol (LdDiagramSymbol *diagram_symbol, DrawData *data);
 static void draw_connection (LdDiagramConnection *connection, DrawData *data);
+
+/* Export. */
+
+static void get_diagram_bounds (LdDiagramView *self, LdRectangle *rect);
+static gboolean get_object_bounds (LdDiagramView *self, LdDiagramObject *object,
+	LdRectangle *rect);
 
 
 G_DEFINE_TYPE_WITH_CODE (LdDiagramView, ld_diagram_view, GTK_TYPE_DRAWING_AREA,
@@ -1045,6 +1051,27 @@ ld_diagram_view_diagram_to_widget_coords (LdDiagramView *self,
 	*wy = scale * (dy - self->priv->y) + 0.5 * allocation.height;
 }
 
+static void
+ld_diagram_view_diagram_to_widget_coords_rect (LdDiagramView *self,
+	const LdRectangle *area, LdRectangle *rect)
+{
+	gdouble x1, x2, y1, y2;
+
+	ld_diagram_view_diagram_to_widget_coords (self,
+		area->x,
+		area->y,
+		&x1, &y1);
+	ld_diagram_view_diagram_to_widget_coords (self,
+		area->x + area->width,
+		area->y + area->height,
+		&x2, &y2);
+
+	rect->x = floor (x1);
+	rect->y = floor (y1);
+	rect->width  = ceil (x2) - rect->x;
+	rect->height = ceil (y2) - rect->y;
+}
+
 /**
  * ld_diagram_view_get_x:
  * @self: an #LdDiagramView object.
@@ -1612,14 +1639,12 @@ get_symbol_clip_area (LdDiagramView *self,
 }
 
 static gboolean
-get_symbol_area (LdDiagramView *self, LdDiagramSymbol *symbol,
+get_symbol_area_in_diagram_units (LdDiagramView *self, LdDiagramSymbol *symbol,
 	LdRectangle *rect)
 {
 	gdouble object_x, object_y;
 	LdSymbol *library_symbol;
 	LdRectangle area;
-	gdouble x1, x2;
-	gdouble y1, y2;
 	gint rotation;
 
 	g_object_get (symbol, "x", &object_x, "y", &object_y,
@@ -1633,24 +1658,23 @@ get_symbol_area (LdDiagramView *self, LdDiagramSymbol *symbol,
 
 	rotate_symbol_area (&area, rotation);
 
-	ld_diagram_view_diagram_to_widget_coords (self,
-		object_x + area.x,
-		object_y + area.y,
-		&x1, &y1);
-	ld_diagram_view_diagram_to_widget_coords (self,
-		object_x + area.x + area.width,
-		object_y + area.y + area.height,
-		&x2, &y2);
+	rect->x = object_x + area.x;
+	rect->y = object_y + area.y;
+	rect->width  = (rect->x + area.width)  - rect->x;
+	rect->height = (rect->y + area.height) - rect->y;
+	return TRUE;
+}
 
-	x1 = floor (x1);
-	y1 = floor (y1);
-	x2 = ceil (x2);
-	y2 = ceil (y2);
+static gboolean
+get_symbol_area (LdDiagramView *self, LdDiagramSymbol *symbol,
+	LdRectangle *rect)
+{
+	LdRectangle intermediate;
 
-	rect->x = x1;
-	rect->y = y1;
-	rect->width  = x2 - x1;
-	rect->height = y2 - y1;
+	if (!get_symbol_area_in_diagram_units (self, symbol, &intermediate))
+		return FALSE;
+
+	ld_diagram_view_diagram_to_widget_coords_rect (self, &intermediate, rect);
 	return TRUE;
 }
 
@@ -1782,7 +1806,7 @@ get_connection_clip_area (LdDiagramView *self,
 }
 
 static gboolean
-get_connection_area (LdDiagramView *self,
+get_connection_area_in_diagram_units (LdDiagramView *self,
 	LdDiagramConnection *connection, LdRectangle *rect)
 {
 	gdouble x_origin, y_origin;
@@ -1799,20 +1823,13 @@ get_connection_area (LdDiagramView *self,
 
 	g_object_get (connection, "x", &x_origin, "y", &y_origin, NULL);
 
-	ld_diagram_view_diagram_to_widget_coords (self,
-		x_origin + points->points[0].x,
-		y_origin + points->points[0].y,
-		&x, &y);
-
-	x_max = x_min = x;
-	y_max = y_min = y;
+	x_max = x_min = x_origin + points->points[0].x;
+	y_max = y_min = y_origin + points->points[0].y;
 
 	for (i = 1; i < points->length; i++)
 	{
-		ld_diagram_view_diagram_to_widget_coords (self,
-			x_origin + points->points[i].x,
-			y_origin + points->points[i].y,
-			&x, &y);
+		x = x_origin + points->points[i].x;
+		y = y_origin + points->points[i].y;
 
 		if (x < x_min)
 			x_min = x;
@@ -1831,6 +1848,19 @@ get_connection_area (LdDiagramView *self,
 	rect->height = y_max - y_min;
 
 	ld_point_array_free (points);
+	return TRUE;
+}
+
+static gboolean
+get_connection_area (LdDiagramView *self,
+	LdDiagramConnection *connection, LdRectangle *rect)
+{
+	LdRectangle intermediate;
+
+	if (!get_connection_area_in_diagram_units (self, connection, &intermediate))
+		return FALSE;
+
+	ld_diagram_view_diagram_to_widget_coords_rect (self, &intermediate, rect);
 	return TRUE;
 }
 
@@ -2101,7 +2131,7 @@ oper_select_queue_draw (LdDiagramView *self)
 }
 
 static void
-oper_select_draw (GtkWidget *widget, DrawData *data)
+oper_select_draw (DrawData *data)
 {
 	static const double dashes[] = {3, 5};
 	SelectData *select_data;
@@ -2664,19 +2694,19 @@ on_draw (GtkWidget *widget, cairo_t *cr, gpointer user_data)
 	cairo_paint (data.cr);
 
 	if (data.self->priv->show_grid)
-		draw_grid (widget, &data);
+		draw_grid (&data);
 
-	draw_diagram (widget, &data);
-	draw_terminal (widget, &data);
+	draw_diagram (&data);
+	draw_terminal (&data);
 
 	if (data.self->priv->operation == OPER_SELECT)
-		oper_select_draw (widget, &data);
+		oper_select_draw (&data);
 
 	return FALSE;
 }
 
 static void
-draw_grid (GtkWidget *widget, DrawData *data)
+draw_grid (DrawData *data)
 {
 	gdouble grid_step;
 	gint grid_factor;
@@ -2738,7 +2768,7 @@ draw_grid (GtkWidget *widget, DrawData *data)
 }
 
 static void
-draw_terminal (GtkWidget *widget, DrawData *data)
+draw_terminal (DrawData *data)
 {
 	LdDiagramViewPrivate *priv;
 	LdPoint widget_coords;
@@ -2760,7 +2790,7 @@ draw_terminal (GtkWidget *widget, DrawData *data)
 }
 
 static void
-draw_diagram (GtkWidget *widget, DrawData *data)
+draw_diagram (DrawData *data)
 {
 	GList *objects, *iter;
 
@@ -2905,5 +2935,98 @@ draw_connection (LdDiagramConnection *connection, DrawData *data)
 
 draw_connection_end:
 	ld_point_array_free (points);
-	return;
+}
+
+
+/* ===== Export ============================================================ */
+
+static void
+get_diagram_bounds (LdDiagramView *self, LdRectangle *rect)
+{
+	GList *objects;
+	gboolean initialized = FALSE;
+	LdRectangle partial;
+	gdouble x2, y2;
+
+	g_return_if_fail (LD_IS_DIAGRAM_VIEW (self));
+	g_return_if_fail (rect != NULL);
+
+	memset (rect, 0, sizeof *rect);
+	objects = (GList *) ld_diagram_get_objects (self->priv->diagram);
+	for (; objects != NULL; objects = objects->next)
+	{
+		if (!get_object_bounds (self, objects->data, &partial))
+			continue;
+
+		if (!initialized)
+		{
+			*rect = partial;
+			initialized = TRUE;
+			continue;
+		}
+
+		x2 = MAX (partial.x + partial.width,  rect->x + rect->width);
+		y2 = MAX (partial.y + partial.height, rect->y + rect->height);
+		rect->x = MIN (rect->x, partial.x);
+		rect->y = MIN (rect->y, partial.y);
+		rect->width  = x2 - rect->x;
+		rect->height = y2 - rect->y;
+	}
+}
+
+static gboolean
+get_object_bounds (LdDiagramView *self, LdDiagramObject *object,
+	LdRectangle *rect)
+{
+	if (LD_IS_DIAGRAM_SYMBOL (object))
+		return get_symbol_area_in_diagram_units (self,
+			LD_DIAGRAM_SYMBOL (object), rect);
+	if (LD_IS_DIAGRAM_CONNECTION (object))
+		return get_connection_area_in_diagram_units (self,
+			LD_DIAGRAM_CONNECTION (object), rect);
+	return FALSE;
+}
+
+/**
+ * ld_diagram_view_get_export_bounds:
+ * @self: an #LdDiagramView object.
+ * @rect: (out): diagram boundaries.
+ *
+ * Get the smallest rectangular area containing all objects in the diagram.
+ * The diagram object itself doesn't have any idea of how symbols are rendered.
+ *
+ * Return value: export units per diagram unit.
+ */
+gdouble
+ld_diagram_view_get_export_bounds (LdDiagramView *self, LdRectangle *rect)
+{
+	LdRectangle intermediate;
+
+	get_diagram_bounds (self, &intermediate);
+	ld_diagram_view_diagram_to_widget_coords_rect (self, &intermediate, rect);
+	return ld_diagram_view_get_scale_in_px (self);
+}
+
+/**
+ * ld_diagram_view_export:
+ * @self: an #LdDiagramView object.
+ * @cr: Cairo context to draw on.
+ * @clip: the clip area (the function itself does not clip).
+ *
+ * Get the smallest rectangular area containing all objects in the diagram.
+ * The diagram object itself doesn't have any idea of how symbols are rendered.
+ */
+void
+ld_diagram_view_export (LdDiagramView *self, cairo_t *cr,
+	const LdRectangle *clip)
+{
+	DrawData data;
+
+	data.cr = cr;
+	data.self = self;
+	/* FIXME: Various functions call this directly, this export is a hack. */
+	data.scale = ld_diagram_view_get_scale_in_px (data.self);
+	data.exposed_rect = *clip;
+
+	draw_diagram (&data);
 }

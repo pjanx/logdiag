@@ -106,6 +106,9 @@ static void on_action_new (GtkAction *action, LdWindowMain *self);
 static void on_action_open (GtkAction *action, LdWindowMain *self);
 static void on_action_save (GtkAction *action, LdWindowMain *self);
 static void on_action_save_as (GtkAction *action, LdWindowMain *self);
+static void on_action_print (GtkAction *action, LdWindowMain *self);
+static void on_action_print_draw_page (GtkPrintOperation *operation,
+	GtkPrintContext *context, int page_nr, LdWindowMain *self);
 static void on_action_quit (GtkAction *action, LdWindowMain *self);
 static void on_action_user_guide (GtkAction *action, LdWindowMain *self);
 static void on_action_about (GtkAction *action, LdWindowMain *self);
@@ -146,11 +149,11 @@ static GtkActionEntry wm_action_entries[] =
 		{"SaveAs", GTK_STOCK_SAVE_AS, N_("Save _As..."), "<Shift><Ctrl>S",
 			N_("Save the current diagram with another name"),
 			G_CALLBACK (on_action_save_as)},
-/*
- *		{"Export", NULL, N_("_Export"), NULL,
- *			N_("Export the diagram"),
- *			NULL},
- */
+
+		{"Print", GTK_STOCK_PRINT, N_("_Print"), "<Ctrl>P",
+			N_("Print the diagram"),
+			G_CALLBACK (on_action_print)},
+
 		{"Quit", GTK_STOCK_QUIT, N_("_Quit"), "<Ctrl>Q",
 			N_("Quit the application"),
 			G_CALLBACK (on_action_quit)},
@@ -992,6 +995,87 @@ static void
 on_action_save_as (GtkAction *action, LdWindowMain *self)
 {
 	diagram_show_save_as_dialog (self);
+}
+
+static void
+on_action_print (GtkAction *action, LdWindowMain *self)
+{
+	static GtkPrintSettings *settings = NULL;
+	GError *error = NULL;
+	GtkPrintOperation *print;
+	GtkPrintOperationResult res;
+	gchar *name;
+
+	print = gtk_print_operation_new ();
+	gtk_print_operation_set_n_pages (print, 1);
+	gtk_print_operation_set_embed_page_setup (print, TRUE);
+	gtk_print_operation_set_unit (print, GTK_UNIT_MM);
+
+	name = diagram_get_name (self);
+	gtk_print_operation_set_job_name (print, name);
+	g_free (name);
+
+	if (settings != NULL)
+		gtk_print_operation_set_print_settings (print, settings);
+	g_signal_connect (print, "draw-page",
+		G_CALLBACK (on_action_print_draw_page), self);
+
+	/* On Windows, it is not possible to get a print preview from the system
+	 * print dialog.  But in Windows XP previews do not work at all--unreadable
+	 * EMFs come out.  Windows 10 errors out with "A sharing violation occurred
+	 * while accessing" the temporary EMF file on our first run of
+	 * GtkPrintOperation, and following that it opens the previews up in
+	 * fucking Paint, so there is no point in trying.  It lacks a stage
+	 * or controls for setting up page parameters anyway.
+	 */
+	res = gtk_print_operation_run (print,
+		GTK_PRINT_OPERATION_ACTION_PRINT_DIALOG,
+		GTK_WINDOW (self), &error);
+	if (res == GTK_PRINT_OPERATION_RESULT_APPLY)
+	{
+		if (settings != NULL)
+			g_object_unref (settings);
+		settings
+			= g_object_ref (gtk_print_operation_get_print_settings (print));
+	}
+	if (error)
+		display_and_free_error (self, _("Error"), error);
+
+	g_object_unref (print);
+}
+
+static void
+on_action_print_draw_page (GtkPrintOperation *operation,
+	GtkPrintContext *context, int page_nr, LdWindowMain *self)
+{
+	cairo_t *cr;
+	LdDiagramView *view;
+	gdouble area_width_mm, area_height_mm;
+	gdouble diagram_width_mm, diagram_height_mm;
+	gdouble diagram_to_export_units, scale;
+	LdRectangle bounds;
+
+	cr = gtk_print_context_get_cairo_context (context);
+	view = self->priv->view;
+
+	area_width_mm = gtk_print_context_get_width (context);
+	area_height_mm = gtk_print_context_get_height (context);
+	diagram_to_export_units = ld_diagram_view_get_export_bounds (view, &bounds);
+
+	/* Scale for the view's constant, measured in milimetres. */
+	scale = 1 / diagram_to_export_units * LD_DIAGRAM_VIEW_BASE_UNIT_LENGTH;
+	diagram_width_mm = bounds.width * scale;
+	diagram_height_mm = bounds.height * scale;
+
+	/* Scale to fit the paper. */
+	if (area_width_mm < diagram_width_mm)
+		scale *= area_width_mm / diagram_width_mm;
+	if (area_height_mm < diagram_height_mm)
+		scale *= area_height_mm / diagram_height_mm;
+
+	cairo_scale (cr, scale, scale);
+	cairo_translate (cr, -bounds.x, -bounds.y);
+	ld_diagram_view_export (view, cr, &bounds);
 }
 
 static void

@@ -15,16 +15,18 @@ G_BEGIN_DECLS
 
 
 #define LD_TYPE_DIAGRAM_VIEW (ld_diagram_view_get_type ())
-#define LD_DIAGRAM_VIEW(obj) (G_TYPE_CHECK_INSTANCE_CAST \
-	((obj), LD_TYPE_DIAGRAM_VIEW, LdDiagramView))
-#define LD_DIAGRAM_VIEW_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST \
-	((klass), LD_TYPE_DIAGRAM_VIEW, LdDiagramViewClass))
-#define LD_IS_DIAGRAM_VIEW(obj) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((obj), LD_TYPE_DIAGRAM_VIEW))
-#define LD_IS_DIAGRAM_VIEW_CLASS(klass) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((klass), LD_TYPE_DIAGRAM_VIEW))
-#define LD_DIAGRAM_VIEW_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS \
-	((obj), LD_DIAGRAM_VIEW, LdDiagramViewClass))
+#define LD_DIAGRAM_VIEW(obj) \
+	(G_TYPE_CHECK_INSTANCE_CAST ((obj), LD_TYPE_DIAGRAM_VIEW, LdDiagramView))
+#define LD_DIAGRAM_VIEW_CLASS(klass) \
+	(G_TYPE_CHECK_CLASS_CAST ((klass), \
+		LD_TYPE_DIAGRAM_VIEW, \
+		LdDiagramViewClass))
+#define LD_IS_DIAGRAM_VIEW(obj) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((obj), LD_TYPE_DIAGRAM_VIEW))
+#define LD_IS_DIAGRAM_VIEW_CLASS(klass) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((klass), LD_TYPE_DIAGRAM_VIEW))
+#define LD_DIAGRAM_VIEW_GET_CLASS(obj) \
+	(G_TYPE_INSTANCE_GET_CLASS ((obj), LD_DIAGRAM_VIEW, LdDiagramViewClass))
 
 typedef struct _LdDiagramView LdDiagramView;
 typedef struct _LdDiagramViewPrivate LdDiagramViewPrivate;

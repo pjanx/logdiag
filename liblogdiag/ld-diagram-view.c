@@ -1390,8 +1390,8 @@ move_selection (LdDiagramView *self, gdouble dx, gdouble dy)
 static gboolean
 is_object_selected (LdDiagramView *self, LdDiagramObject *object)
 {
-	return g_list_find (ld_diagram_get_selection (self->priv->diagram),
-		object) != NULL;
+	return g_list_find (ld_diagram_get_selection (self->priv->diagram), object)
+		!= NULL;
 }
 
 static void

@@ -256,7 +256,8 @@ ld_point_array_remove (LdPointArray *self, gint pos, guint length)
  *
  * Change size of the array.
  */
-void ld_point_array_set_size (LdPointArray *self, guint size)
+void
+ld_point_array_set_size (LdPointArray *self, guint size)
 {
 	g_return_if_fail (self != NULL);
 

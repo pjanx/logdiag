@@ -84,9 +84,8 @@ ld_undo_action_finalize (GObject *gobject)
  * Return value: a new #LdUndoAction object.
  */
 LdUndoAction *
-ld_undo_action_new (LdUndoActionFunc undo_func,
-	LdUndoActionFunc redo_func, LdUndoActionFunc destroy_func,
-	gpointer user_data)
+ld_undo_action_new (LdUndoActionFunc undo_func, LdUndoActionFunc redo_func,
+	LdUndoActionFunc destroy_func, gpointer user_data)
 {
 	LdUndoAction *self;
 

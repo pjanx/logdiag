@@ -427,4 +427,3 @@ ld_library_get_root (LdLibrary *self)
 	g_return_val_if_fail (LD_IS_LIBRARY (self), NULL);
 	return self->priv->root;
 }
-

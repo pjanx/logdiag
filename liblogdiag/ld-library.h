@@ -15,16 +15,15 @@ G_BEGIN_DECLS
 
 
 #define LD_TYPE_LIBRARY (ld_library_get_type ())
-#define LD_LIBRARY(obj) (G_TYPE_CHECK_INSTANCE_CAST \
-	((obj), LD_TYPE_LIBRARY, LdLibrary))
-#define LD_LIBRARY_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST \
-	((klass), LD_TYPE_LIBRARY, LdLibraryClass))
-#define LD_IS_LIBRARY(obj) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((obj), LD_TYPE_LIBRARY))
-#define LD_IS_LIBRARY_CLASS(klass) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((klass), LD_TYPE_LIBRARY))
-#define LD_LIBRARY_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS \
-	((obj), LD_LIBRARY, LdLibraryClass))
+#define LD_LIBRARY(obj) \
+	(G_TYPE_CHECK_INSTANCE_CAST ((obj), LD_TYPE_LIBRARY, LdLibrary))
+#define LD_LIBRARY_CLASS(klass) \
+	(G_TYPE_CHECK_CLASS_CAST ((klass), LD_TYPE_LIBRARY, LdLibraryClass))
+#define LD_IS_LIBRARY(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), LD_TYPE_LIBRARY))
+#define LD_IS_LIBRARY_CLASS(klass) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((klass), LD_TYPE_LIBRARY))
+#define LD_LIBRARY_GET_CLASS(obj) \
+	(G_TYPE_INSTANCE_GET_CLASS ((obj), LD_LIBRARY, LdLibraryClass))
 
 typedef struct _LdLibrary LdLibrary;
 typedef struct _LdLibraryPrivate LdLibraryPrivate;
@@ -66,4 +65,3 @@ LdCategory *ld_library_get_root (LdLibrary *self);
 G_END_DECLS
 
 #endif /* ! __LD_LIBRARY_H__ */
-

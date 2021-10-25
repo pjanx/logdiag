@@ -15,16 +15,16 @@ G_BEGIN_DECLS
 
 
 #define LD_TYPE_UNDO_ACTION (ld_undo_action_get_type ())
-#define LD_UNDO_ACTION(obj) (G_TYPE_CHECK_INSTANCE_CAST \
-	((obj), LD_TYPE_UNDO_ACTION, LdUndoAction))
-#define LD_UNDO_ACTION_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST \
-	((klass), LD_TYPE_UNDO_ACTION, LdUndoActionClass))
-#define LD_IS_UNDO_ACTION(obj) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((obj), LD_TYPE_UNDO_ACTION))
-#define LD_IS_UNDO_ACTION_CLASS(klass) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((klass), LD_TYPE_UNDO_ACTION))
-#define LD_UNDO_ACTION_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS \
-	((obj), LD_UNDO_ACTION, LdUndoActionClass))
+#define LD_UNDO_ACTION(obj) \
+	(G_TYPE_CHECK_INSTANCE_CAST ((obj), LD_TYPE_UNDO_ACTION, LdUndoAction))
+#define LD_UNDO_ACTION_CLASS(klass) \
+	(G_TYPE_CHECK_CLASS_CAST ((klass), LD_TYPE_UNDO_ACTION, LdUndoActionClass))
+#define LD_IS_UNDO_ACTION(obj) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((obj), LD_TYPE_UNDO_ACTION))
+#define LD_IS_UNDO_ACTION_CLASS(klass) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((klass), LD_TYPE_UNDO_ACTION))
+#define LD_UNDO_ACTION_GET_CLASS(obj) \
+	(G_TYPE_INSTANCE_GET_CLASS ((obj), LD_UNDO_ACTION, LdUndoActionClass))
 
 typedef struct _LdUndoAction LdUndoAction;
 typedef struct _LdUndoActionPrivate LdUndoActionPrivate;
@@ -73,4 +73,3 @@ void ld_undo_action_redo (LdUndoAction *self);
 G_END_DECLS
 
 #endif /* ! __LD_UNDO_ACTION_H__ */
-

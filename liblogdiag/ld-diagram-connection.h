@@ -15,16 +15,22 @@ G_BEGIN_DECLS
 
 
 #define LD_TYPE_DIAGRAM_CONNECTION (ld_diagram_connection_get_type ())
-#define LD_DIAGRAM_CONNECTION(obj) (G_TYPE_CHECK_INSTANCE_CAST \
-	((obj), LD_TYPE_DIAGRAM_CONNECTION, LdDiagramConnection))
-#define LD_DIAGRAM_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST \
-	((klass), LD_TYPE_DIAGRAM_CONNECTION, LdDiagramConnectionClass))
-#define LD_IS_DIAGRAM_CONNECTION(obj) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((obj), LD_TYPE_DIAGRAM_CONNECTION))
-#define LD_IS_DIAGRAM_CONNECTION_CLASS(klass) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((klass), LD_TYPE_DIAGRAM_CONNECTION))
-#define LD_DIAGRAM_CONNECTION_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS \
-	((obj), LD_DIAGRAM_CONNECTION, LdDiagramConnectionClass))
+#define LD_DIAGRAM_CONNECTION(obj) \
+	(G_TYPE_CHECK_INSTANCE_CAST ((obj), \
+		LD_TYPE_DIAGRAM_CONNECTION, \
+		LdDiagramConnection))
+#define LD_DIAGRAM_CONNECTION_CLASS(klass) \
+	(G_TYPE_CHECK_CLASS_CAST ((klass), \
+		LD_TYPE_DIAGRAM_CONNECTION, \
+		LdDiagramConnectionClass))
+#define LD_IS_DIAGRAM_CONNECTION(obj) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((obj), LD_TYPE_DIAGRAM_CONNECTION))
+#define LD_IS_DIAGRAM_CONNECTION_CLASS(klass) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((klass), LD_TYPE_DIAGRAM_CONNECTION))
+#define LD_DIAGRAM_CONNECTION_GET_CLASS(obj) \
+	(G_TYPE_INSTANCE_GET_CLASS ((obj), \
+		LD_DIAGRAM_CONNECTION, \
+		LdDiagramConnectionClass))
 
 typedef struct _LdDiagramConnection LdDiagramConnection;
 typedef struct _LdDiagramConnectionPrivate LdDiagramConnectionPrivate;
@@ -61,4 +67,3 @@ void ld_diagram_connection_set_points (LdDiagramConnection *self,
 G_END_DECLS
 
 #endif /* ! __LD_DIAGRAM_CONNECTION_H__ */
-

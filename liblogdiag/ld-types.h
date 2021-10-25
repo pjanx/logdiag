@@ -14,9 +14,9 @@
 G_BEGIN_DECLS
 
 
-#define LD_TYPE_POINT (ld_point_get_type ())
+#define LD_TYPE_POINT       (ld_point_get_type ())
 #define LD_TYPE_POINT_ARRAY (ld_point_array_get_type ())
-#define LD_TYPE_RECTANGLE (ld_rectangle_get_type ())
+#define LD_TYPE_RECTANGLE   (ld_rectangle_get_type ())
 
 
 /**
@@ -99,4 +99,3 @@ void ld_rectangle_extend (LdRectangle *self, gdouble border);
 G_END_DECLS
 
 #endif /* ! __LD_TYPES_H__ */
-

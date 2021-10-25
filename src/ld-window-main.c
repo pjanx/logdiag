@@ -182,7 +182,7 @@ static GtkActionEntry wm_action_entries[] =
 			G_CALLBACK (on_action_user_guide)},
 		{"About", GTK_STOCK_ABOUT, N_("_About"), NULL,
 			N_("Show a dialog about this application"),
-			G_CALLBACK (on_action_about)}
+			G_CALLBACK (on_action_about)},
 };
 
 static GtkToggleActionEntry wm_toggle_action_entries[] =

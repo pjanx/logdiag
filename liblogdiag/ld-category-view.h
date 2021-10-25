@@ -15,12 +15,14 @@ G_BEGIN_DECLS
 
 
 #define LD_TYPE_CATEGORY_VIEW (ld_category_view_get_type ())
-#define LD_CATEGORY_VIEW(obj) (G_TYPE_CHECK_INSTANCE_CAST \
-	((obj), LD_TYPE_CATEGORY_VIEW, LdCategoryView))
-#define LD_IS_CATEGORY_VIEW(obj) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((obj), LD_TYPE_CATEGORY_VIEW))
-#define LD_CATEGORY_VIEW_GET_INTERFACE(inst) (G_TYPE_INSTANCE_GET_INTERFACE \
-	((inst), LD_TYPE_CATEGORY_VIEW, LdCategoryViewInterface))
+#define LD_CATEGORY_VIEW(obj) \
+	(G_TYPE_CHECK_INSTANCE_CAST ((obj), LD_TYPE_CATEGORY_VIEW, LdCategoryView))
+#define LD_IS_CATEGORY_VIEW(obj) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((obj), LD_TYPE_CATEGORY_VIEW))
+#define LD_CATEGORY_VIEW_GET_INTERFACE(inst) \
+	(G_TYPE_INSTANCE_GET_INTERFACE ((inst), \
+		LD_TYPE_CATEGORY_VIEW, \
+		LdCategoryViewInterface))
 
 typedef struct _LdCategoryView LdCategoryView;
 typedef struct _LdCategoryViewInterface LdCategoryViewInterface;
@@ -48,8 +50,7 @@ struct _LdCategoryViewInterface
 
 GType ld_category_view_get_type (void) G_GNUC_CONST;
 
-void ld_category_view_set_category (LdCategoryView *self,
-	LdCategory *category);
+void ld_category_view_set_category (LdCategoryView *self, LdCategory *category);
 LdCategory *ld_category_view_get_category (LdCategoryView *self);
 
 

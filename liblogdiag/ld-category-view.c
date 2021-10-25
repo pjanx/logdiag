@@ -77,8 +77,7 @@ ld_category_view_default_init (LdCategoryViewInterface *iface)
  * Assign an #LdCategory object to the view.
  */
 void
-ld_category_view_set_category (LdCategoryView *self,
-	LdCategory *category)
+ld_category_view_set_category (LdCategoryView *self, LdCategory *category)
 {
 	g_return_if_fail (LD_IS_CATEGORY_VIEW (self));
 	LD_CATEGORY_VIEW_GET_INTERFACE (self)->set_category (self, category);

@@ -15,16 +15,15 @@ G_BEGIN_DECLS
 
 
 #define LD_TYPE_SYMBOL (ld_symbol_get_type ())
-#define LD_SYMBOL(obj) (G_TYPE_CHECK_INSTANCE_CAST \
-	((obj), LD_TYPE_SYMBOL, LdSymbol))
-#define LD_SYMBOL_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST \
-	((klass), LD_TYPE_SYMBOL, LdSymbolClass))
-#define LD_IS_SYMBOL(obj) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((obj), LD_TYPE_SYMBOL))
-#define LD_IS_SYMBOL_CLASS(klass) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((klass), LD_TYPE_SYMBOL))
-#define LD_SYMBOL_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS \
-	((obj), LD_SYMBOL, LdSymbolClass))
+#define LD_SYMBOL(obj) \
+	(G_TYPE_CHECK_INSTANCE_CAST ((obj), LD_TYPE_SYMBOL, LdSymbol))
+#define LD_SYMBOL_CLASS(klass) \
+	(G_TYPE_CHECK_CLASS_CAST ((klass), LD_TYPE_SYMBOL, LdSymbolClass))
+#define LD_IS_SYMBOL(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), LD_TYPE_SYMBOL))
+#define LD_IS_SYMBOL_CLASS(klass) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((klass), LD_TYPE_SYMBOL))
+#define LD_SYMBOL_GET_CLASS(obj) \
+	(G_TYPE_INSTANCE_GET_CLASS ((obj), LD_SYMBOL, LdSymbolClass))
 
 typedef struct _LdSymbol LdSymbol;
 typedef struct _LdSymbolPrivate LdSymbolPrivate;
@@ -72,4 +71,3 @@ void ld_symbol_draw (LdSymbol *self, cairo_t *cr);
 G_END_DECLS
 
 #endif /* ! __LD_SYMBOL_H__ */
-

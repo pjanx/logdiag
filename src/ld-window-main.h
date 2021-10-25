@@ -15,16 +15,16 @@ G_BEGIN_DECLS
 
 
 #define LD_TYPE_WINDOW_MAIN (ld_window_main_get_type ())
-#define LD_WINDOW_MAIN(obj) (G_TYPE_CHECK_INSTANCE_CAST \
-	((obj), LD_TYPE_WINDOW_MAIN, LdWindowMain))
-#define LD_WINDOW_MAIN_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST \
-	((klass), LD_TYPE_WINDOW_MAIN, LdWindowMainClass))
-#define LD_IS_WINDOW_MAIN(obj) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((obj), LD_TYPE_WINDOW_MAIN))
-#define LD_IS_WINDOW_MAIN_CLASS(klass) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((klass), LD_TYPE_WINDOW_MAIN))
-#define LD_WINDOW_MAIN_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS \
-	((obj), LD_WINDOW_MAIN, LdWindowMainClass))
+#define LD_WINDOW_MAIN(obj) \
+	(G_TYPE_CHECK_INSTANCE_CAST ((obj), LD_TYPE_WINDOW_MAIN, LdWindowMain))
+#define LD_WINDOW_MAIN_CLASS(klass) \
+	(G_TYPE_CHECK_CLASS_CAST ((klass), LD_TYPE_WINDOW_MAIN, LdWindowMainClass))
+#define LD_IS_WINDOW_MAIN(obj) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((obj), LD_TYPE_WINDOW_MAIN))
+#define LD_IS_WINDOW_MAIN_CLASS(klass) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((klass), LD_TYPE_WINDOW_MAIN))
+#define LD_WINDOW_MAIN_GET_CLASS(obj) \
+	(G_TYPE_INSTANCE_GET_CLASS ((obj), LD_WINDOW_MAIN, LdWindowMainClass))
 
 typedef struct _LdWindowMain LdWindowMain;
 typedef struct _LdWindowMainPrivate LdWindowMainPrivate;
@@ -53,4 +53,3 @@ GtkWidget *ld_window_main_new (const gchar *filename);
 G_END_DECLS
 
 #endif /* ! __LD_WINDOW_MAIN_H__ */
-

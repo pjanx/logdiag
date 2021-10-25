@@ -332,4 +332,3 @@ on_set_points_destroy (gpointer user_data)
 		json_node_free (data->new_node);
 	g_slice_free (SetPointsActionData, data);
 }
-

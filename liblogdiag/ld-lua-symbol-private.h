@@ -37,4 +37,3 @@ struct _LdLuaSymbolPrivate
 G_END_DECLS
 
 #endif /* ! __LD_LUA_SYMBOL_PRIVATE_H__ */
-

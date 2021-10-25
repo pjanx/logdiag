@@ -456,9 +456,9 @@ on_leave_notify (GtkWidget *widget, GdkEventCrossing *event, gpointer user_data)
 }
 
 static void
-on_drag_data_get
-(GtkWidget *widget, GdkDragContext *ctx, GtkSelectionData *selection_data,
-	guint target_type, guint time, gpointer user_data)
+on_drag_data_get (GtkWidget *widget, GdkDragContext *ctx,
+	GtkSelectionData *selection_data, guint target_type, guint time,
+	gpointer user_data)
 {
 	LdCategorySymbolView *self;
 

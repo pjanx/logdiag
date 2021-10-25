@@ -15,16 +15,14 @@ G_BEGIN_DECLS
 
 
 #define LD_TYPE_LUA (ld_lua_get_type ())
-#define LD_LUA(obj) (G_TYPE_CHECK_INSTANCE_CAST \
-	((obj), LD_TYPE_LUA, LdLua))
-#define LD_LUA_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST \
-	((klass), LD_TYPE_LUA, LdLuaClass))
-#define LD_IS_LUA(obj) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((obj), LD_TYPE_LUA))
-#define LD_IS_LUA_CLASS(klass) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((klass), LD_TYPE_LUA))
-#define LD_LUA_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS \
-	((obj), LD_LUA, LdLuaClass))
+#define LD_LUA(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), LD_TYPE_LUA, LdLua))
+#define LD_LUA_CLASS(klass) \
+	(G_TYPE_CHECK_CLASS_CAST ((klass), LD_TYPE_LUA, LdLuaClass))
+#define LD_IS_LUA(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), LD_TYPE_LUA))
+#define LD_IS_LUA_CLASS(klass) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((klass), LD_TYPE_LUA))
+#define LD_LUA_GET_CLASS(obj) \
+	(G_TYPE_INSTANCE_GET_CLASS ((obj), LD_LUA, LdLuaClass))
 
 typedef struct _LdLua LdLua;
 typedef struct _LdLuaPrivate LdLuaPrivate;
@@ -67,4 +65,3 @@ gboolean ld_lua_load_file (LdLua *self, const gchar *filename,
 G_END_DECLS
 
 #endif /* ! __LD_LUA_H__ */
-

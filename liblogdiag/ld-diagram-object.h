@@ -15,16 +15,20 @@ G_BEGIN_DECLS
 
 
 #define LD_TYPE_DIAGRAM_OBJECT (ld_diagram_object_get_type ())
-#define LD_DIAGRAM_OBJECT(obj) (G_TYPE_CHECK_INSTANCE_CAST \
-	((obj), LD_TYPE_DIAGRAM_OBJECT, LdDiagramObject))
-#define LD_DIAGRAM_OBJECT_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST \
-	((klass), LD_TYPE_DIAGRAM_OBJECT, LdDiagramObjectClass))
-#define LD_IS_DIAGRAM_OBJECT(obj) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((obj), LD_TYPE_DIAGRAM_OBJECT))
-#define LD_IS_DIAGRAM_OBJECT_CLASS(klass) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((klass), LD_TYPE_DIAGRAM_OBJECT))
-#define LD_DIAGRAM_OBJECT_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS \
-	((obj), LD_DIAGRAM_OBJECT, LdDiagramObjectClass))
+#define LD_DIAGRAM_OBJECT(obj) \
+	(G_TYPE_CHECK_INSTANCE_CAST ((obj), \
+		LD_TYPE_DIAGRAM_OBJECT, \
+		LdDiagramObject))
+#define LD_DIAGRAM_OBJECT_CLASS(klass) \
+	(G_TYPE_CHECK_CLASS_CAST ((klass), \
+		LD_TYPE_DIAGRAM_OBJECT, \
+		LdDiagramObjectClass))
+#define LD_IS_DIAGRAM_OBJECT(obj) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((obj), LD_TYPE_DIAGRAM_OBJECT))
+#define LD_IS_DIAGRAM_OBJECT_CLASS(klass) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((klass), LD_TYPE_DIAGRAM_OBJECT))
+#define LD_DIAGRAM_OBJECT_GET_CLASS(obj) \
+	(G_TYPE_INSTANCE_GET_CLASS ((obj), LD_DIAGRAM_OBJECT, LdDiagramObjectClass))
 
 typedef struct _LdDiagramObject LdDiagramObject;
 typedef struct _LdDiagramObjectPrivate LdDiagramObjectPrivate;
@@ -74,4 +78,3 @@ void ld_diagram_object_set_y (LdDiagramObject *self, gdouble y);
 G_END_DECLS
 
 #endif /* ! __LD_DIAGRAM_OBJECT_H__ */
-

@@ -187,8 +187,7 @@ ld_lua_init (LdLua *self)
 	lua_State *L;
 	LdLuaData *ud;
 
-	self->priv = G_TYPE_INSTANCE_GET_PRIVATE
-		(self, LD_TYPE_LUA, LdLuaPrivate);
+	self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, LD_TYPE_LUA, LdLuaPrivate);
 
 	L = self->priv->L = lua_newstate (ld_lua_alloc, NULL);
 	g_return_if_fail (L != NULL);
@@ -465,8 +464,7 @@ ld_lua_logdiag_register (lua_State *L)
 		lua_insert (L, -2);
 		lua_concat (L, 2);
 
-		g_warning ("Lua symbol registration failed: %s",
-			lua_tostring (L, -1));
+		g_warning ("Lua symbol registration failed: %s", lua_tostring (L, -1));
 		lua_pushboolean (L, FALSE);
 	}
 	else
@@ -861,4 +859,3 @@ LD_LUA_CAIRO_BEGIN (show_text)
 
 	g_object_unref (layout);
 LD_LUA_CAIRO_END (0)
-

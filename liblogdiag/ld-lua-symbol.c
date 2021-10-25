@@ -135,4 +135,3 @@ ld_lua_symbol_real_draw (LdSymbol *symbol, cairo_t *cr)
 	ld_lua_private_draw (self->priv->lua, self, cr);
 	cairo_restore (cr);
 }
-

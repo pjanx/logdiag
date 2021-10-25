@@ -561,4 +561,3 @@ ld_category_get_children (LdCategory *self)
 	g_return_val_if_fail (LD_IS_CATEGORY (self), NULL);
 	return self->priv->subcategories;
 }
-

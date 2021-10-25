@@ -15,16 +15,16 @@ G_BEGIN_DECLS
 
 
 #define LD_TYPE_CATEGORY (ld_category_get_type ())
-#define LD_CATEGORY(obj) (G_TYPE_CHECK_INSTANCE_CAST \
-	((obj), LD_TYPE_CATEGORY, LdCategory))
-#define LD_CATEGORY_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST \
-	((klass), LD_TYPE_CATEGORY, LdCategoryClass))
-#define LD_IS_CATEGORY(obj) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((obj), LD_TYPE_CATEGORY))
-#define LD_IS_CATEGORY_CLASS(klass) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((klass), LD_TYPE_CATEGORY))
-#define LD_CATEGORY_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS \
-	((obj), LD_CATEGORY, LdCategoryClass))
+#define LD_CATEGORY(obj) \
+	(G_TYPE_CHECK_INSTANCE_CAST ((obj), LD_TYPE_CATEGORY, LdCategory))
+#define LD_CATEGORY_CLASS(klass) \
+	(G_TYPE_CHECK_CLASS_CAST ((klass), LD_TYPE_CATEGORY, LdCategoryClass))
+#define LD_IS_CATEGORY(obj) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((obj), LD_TYPE_CATEGORY))
+#define LD_IS_CATEGORY_CLASS(klass) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((klass), LD_TYPE_CATEGORY))
+#define LD_CATEGORY_GET_CLASS(obj) \
+	(G_TYPE_INSTANCE_GET_CLASS ((obj), LD_CATEGORY, LdCategoryClass))
 
 typedef struct _LdCategory LdCategory;
 typedef struct _LdCategoryPrivate LdCategoryPrivate;
@@ -77,4 +77,3 @@ const GSList *ld_category_get_children (LdCategory *self);
 G_END_DECLS
 
 #endif /* ! __LD_CATEGORY_H__ */
-

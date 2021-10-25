@@ -23,4 +23,3 @@ void ld_lua_private_draw (LdLua *self, LdLuaSymbol *symbol, cairo_t *cr);
 G_END_DECLS
 
 #endif /* ! __LD_LUA_PRIVATE_H__ */
-

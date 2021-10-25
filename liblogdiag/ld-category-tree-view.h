@@ -15,16 +15,22 @@ G_BEGIN_DECLS
 
 
 #define LD_TYPE_CATEGORY_TREE_VIEW (ld_category_tree_view_get_type ())
-#define LD_CATEGORY_TREE_VIEW(obj) (G_TYPE_CHECK_INSTANCE_CAST \
-	((obj), LD_TYPE_CATEGORY_TREE_VIEW, LdCategoryTreeView))
-#define LD_CATEGORY_TREE_VIEW_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST \
-	((klass), LD_TYPE_CATEGORY_TREE_VIEW, LdCategoryTreeViewClass))
-#define LD_IS_CATEGORY_TREE_VIEW(obj) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((obj), LD_TYPE_CATEGORY_TREE_VIEW))
-#define LD_IS_CATEGORY_TREE_VIEW_CLASS(klass) (G_TYPE_CHECK_INSTANCE_TYPE \
-	((klass), LD_TYPE_CATEGORY_TREE_VIEW))
-#define LD_CATEGORY_TREE_VIEW_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS \
-	((obj), LD_CATEGORY_TREE_VIEW, LdCategoryTreeViewClass))
+#define LD_CATEGORY_TREE_VIEW(obj) \
+	(G_TYPE_CHECK_INSTANCE_CAST ((obj), \
+		LD_TYPE_CATEGORY_TREE_VIEW, \
+		LdCategoryTreeView))
+#define LD_CATEGORY_TREE_VIEW_CLASS(klass) \
+	(G_TYPE_CHECK_CLASS_CAST ((klass), \
+		LD_TYPE_CATEGORY_TREE_VIEW, \
+		LdCategoryTreeViewClass))
+#define LD_IS_CATEGORY_TREE_VIEW(obj) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((obj), LD_TYPE_CATEGORY_TREE_VIEW))
+#define LD_IS_CATEGORY_TREE_VIEW_CLASS(klass) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((klass), LD_TYPE_CATEGORY_TREE_VIEW))
+#define LD_CATEGORY_TREE_VIEW_GET_CLASS(obj) \
+	(G_TYPE_INSTANCE_GET_CLASS ((obj), \
+		LD_CATEGORY_TREE_VIEW, \
+		LdCategoryTreeViewClass))
 
 typedef struct _LdCategoryTreeView LdCategoryTreeView;
 typedef struct _LdCategoryTreeViewPrivate LdCategoryTreeViewPrivate;

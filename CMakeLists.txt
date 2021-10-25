@@ -345,7 +345,7 @@ if (WIN32)
 	install (DIRECTORY
 		${WIN32_DEPENDS_PATH}/bin/
 		DESTINATION .
-		FILES_MATCHING PATTERN "*.dll")
+		FILES_MATCHING PATTERN "*.dll" PATTERN "gspawn-*-helper.exe")
 	install (DIRECTORY
 		${WIN32_DEPENDS_PATH}/etc/
 		DESTINATION etc)

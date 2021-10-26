@@ -104,10 +104,6 @@ foreach (file ${project_PO_FILES})
 	list (APPEND project_TRANSLATIONS "${translation}")
 endforeach (file)
 
-# Documentation--gtk-doc 1.25 is required
-find_package (GtkDoc 1.25)
-set (project_DOC_DIR "${PROJECT_BINARY_DIR}/liblogdiag")
-
 # Project source files
 set (liblogdiag_SOURCES
 	liblogdiag/ld-marshal.c
@@ -252,7 +248,10 @@ if (BUILD_TESTING)
 endif (BUILD_TESTING)
 
 # Generate documentation
-if (OPTION_GTKDOC AND GTKDOC_FOUND)
+if (OPTION_GTKDOC)
+	find_package (GtkDoc 1.25 REQUIRED)
+	set (project_DOC_DIR "${PROJECT_BINARY_DIR}/liblogdiag")
+
 	# Extracted LDFLAGS didn't contain -l in CMake 3.21.3 and gtk-doc 1.33.2,
 	# pass them explicitly and work around insanity; CMake still exits with
 	# an error and gtk-doc produces empty HTML documentation

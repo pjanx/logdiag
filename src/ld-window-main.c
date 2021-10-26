@@ -13,6 +13,11 @@
 
 #include "ld-window-main.h"
 
+#ifdef G_OS_WIN32
+#include <gdk/gdkwin32.h>
+#include <shellapi.h>
+#endif
+
 
 struct _LdWindowMainPrivate
 {
@@ -1050,10 +1055,37 @@ on_action_user_guide (GtkAction *action, LdWindowMain *self)
 	g_object_unref (file);
 }
 
+static gboolean
+on_action_about_activate_link (GtkAboutDialog *dialog, gchar *uri,
+	LdWindowMain *self)
+{
+	GdkWindow *window;
+
+	window = gtk_widget_get_window (GTK_WIDGET (self));
+
+#ifdef G_OS_WIN32
+	/* gtk_show_uri() on Windows XP fails, due to trying to establish
+	 * an SSL connection, so let's first try to not do that on Windows.
+	 * `cmd.exe /c start "" ...` would pop up a command line window,
+	 * so use SHELL32.DLL directly.  rundll does not cover this.
+	 * There doesn't seem to be anything better directly in GIO/GLib.
+	 *
+	 * When we fail here, we fall back to normal processing.
+	 */
+	if ((INT_PTR) ShellExecute (gdk_win32_window_get_handle (window),
+		"open", uri, NULL, NULL, SW_SHOWNORMAL) > 32)
+		return TRUE;
+#endif /* G_OS_WIN32 */
+
+	return FALSE;
+}
+
 static void
 on_action_about (GtkAction *action, LdWindowMain *self)
 {
-	gtk_show_about_dialog (GTK_WINDOW (self),
+	GtkWidget *about_dialog;
+
+	about_dialog = g_object_new (GTK_TYPE_ABOUT_DIALOG,
 		"program-name", PROJECT_NAME,
 		"logo-icon-name", PROJECT_NAME,
 		"version", PROJECT_VERSION,
@@ -1061,6 +1093,15 @@ on_action_about (GtkAction *action, LdWindowMain *self)
 		"copyright", "Copyright 2010 - 2021 Přemysl Eric Janouch",
 		"website", PROJECT_URL,
 		NULL);
+
+	g_signal_connect (about_dialog, "activate-link",
+		G_CALLBACK (on_action_about_activate_link), self);
+
+	gtk_window_set_transient_for (GTK_WINDOW (about_dialog), GTK_WINDOW (self));
+	gtk_window_set_modal (GTK_WINDOW (about_dialog), TRUE);
+	gtk_window_set_destroy_with_parent (GTK_WINDOW (about_dialog), TRUE);
+	gtk_dialog_run (GTK_DIALOG (about_dialog));
+	gtk_widget_destroy (about_dialog);
 }
 
 static void

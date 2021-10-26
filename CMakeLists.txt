@@ -224,7 +224,7 @@ set (logdiag_LIBS ${GTK3_LIBRARIES} ${Lua_LIBRARIES} m)
 
 if (WIN32)
 	find_package (LibIntl REQUIRED)
-	list (APPEND logdiag_LIBS ${LIBINTL_LIBRARIES})
+	list (APPEND logdiag_LIBS ${LIBINTL_LIBRARIES} shell32)
 endif (WIN32)
 
 # Build the library

@@ -161,6 +161,11 @@ main (int argc, char *argv[])
 	}
 #endif
 
+#ifdef OPTION_NOINSTALL
+	gtk_icon_theme_prepend_search_path (gtk_icon_theme_get_default (),
+		PROJECT_SHARE_DIR "icons");
+#endif
+
 	gtk_window_set_default_icon_name (PROJECT_NAME);
 
 	if (files)

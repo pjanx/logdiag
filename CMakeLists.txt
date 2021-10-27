@@ -422,12 +422,10 @@ set (CPACK_PACKAGE_INSTALL_REGISTRY_KEY "${PROJECT_NAME}")
 
 set (CPACK_PACKAGE_ICON "${PROJECT_SOURCE_DIR}/share\\\\header.bmp")
 set (CPACK_NSIS_INSTALLED_ICON_NAME "logdiag.exe")
-set (CPACK_NSIS_CREATE_ICONS_EXTRA [[
-	CreateShortCut '$SMPROGRAMS\\$STARTMENU_FOLDER\\logdiag.lnk' '$INSTDIR\\logdiag.exe'
-]])
-set (CPACK_NSIS_DELETE_ICONS_EXTRA [[
-	Delete '$SMPROGRAMS\\$MUI_TEMP\\logdiag.lnk'
-]])
+set (CPACK_NSIS_URL_INFO_ABOUT "${project_URL}")
+set (CPACK_NSIS_HELP_LINK "${project_URL}")
+# Or CPACK_NSIS_EXECUTABLES_DIRECTORY needs to be changed from "bin"
+set (CPACK_NSIS_MENU_LINKS "logdiag.exe" ${PROJECT_NAME})
 set (CPACK_NSIS_EXTRA_INSTALL_COMMANDS [[
 	WriteRegStr HKCR '.ldd' '' 'logdiag.Diagram'
 	WriteRegStr HKCR 'logdiag.Diagram' '' 'logdiag Diagram'
@@ -439,9 +437,6 @@ set (CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS [[
 	DeleteRegKey HKCR 'logdiag.Diagram'
 	System::Call 'shell32::SHChangeNotify(i,i,i,i) (0x08000000, 0x1000, 0, 0)'
 ]])
-
-string (REPLACE "https://" "https:\\\\\\\\" project_URL_NSIS "${project_URL}")
-set (CPACK_NSIS_URL_INFO_ABOUT "${project_URL_NSIS}")
 
 set (CPACK_DEBIAN_PACKAGE_DEPENDS
 	"libgtk3.0-0 (>= 3.8), libjson-glib-1.0-0 (>= 0.10.4), liblua5.2-0")
@@ -460,4 +455,3 @@ set (CPACK_SOURCE_IGNORE_FILES "/\\\\.git;/build;/CMakeLists.txt.user;/win32-dep
 set (CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}")
 
 include (CPack)
-

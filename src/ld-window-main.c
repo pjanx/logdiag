@@ -198,7 +198,7 @@ static GtkToggleActionEntry wm_toggle_action_entries[] =
 	{"LibraryPane", NULL, N_("_Library Pane"), NULL,
 		N_("Toggle displaying of the library pane"),
 		G_CALLBACK (on_action_library_pane), TRUE},
-	{"ShowGrid", NULL, N_("Show _Grid"), NULL,
+	{"ShowGrid", NULL, N_("Show _Grid"), "numbersign",
 		N_("Toggle displaying of the grid"),
 		G_CALLBACK (on_action_grid), TRUE}
 };

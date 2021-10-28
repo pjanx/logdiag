@@ -56,6 +56,8 @@ struct _LdWindowMainPrivate
 
 static void ld_window_main_finalize (GObject *gobject);
 static void load_library_directories (LdLibrary *library);
+static void display_and_free_error (LdWindowMain *self, const gchar *title,
+	GError *error);
 
 static void on_ui_proxy_connected (GtkUIManager *ui, GtkAction *action,
 	GtkWidget *proxy, LdWindowMain *window);
@@ -107,6 +109,8 @@ static void on_action_save_as (GtkAction *action, LdWindowMain *self);
 static void on_action_quit (GtkAction *action, LdWindowMain *self);
 static void on_action_user_guide (GtkAction *action, LdWindowMain *self);
 static void on_action_about (GtkAction *action, LdWindowMain *self);
+static gboolean on_action_about_activate_link (GtkAboutDialog *dialog,
+	gchar *uri, LdWindowMain *self);
 
 static void on_action_undo (GtkAction *action, LdWindowMain *self);
 static void on_action_redo (GtkAction *action, LdWindowMain *self);
@@ -442,6 +446,21 @@ load_library_directories (LdLibrary *library)
 	g_object_unref (file_program);
 
 	g_free (user_dir);
+}
+
+static void
+display_and_free_error (LdWindowMain *self, const gchar *title, GError *error)
+{
+	GtkWidget *message_dialog;
+
+	message_dialog = gtk_message_dialog_new (GTK_WINDOW (self),
+		GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "%s", title);
+	gtk_message_dialog_format_secondary_text
+		(GTK_MESSAGE_DIALOG (message_dialog), "%s", error->message);
+	g_error_free (error);
+
+	gtk_dialog_run (GTK_DIALOG (message_dialog));
+	gtk_widget_destroy (message_dialog);
 }
 
 /*
@@ -1040,19 +1059,34 @@ on_action_user_guide (GtkAction *action, LdWindowMain *self)
 
 	if (!open_file (file, gtk_window_get_screen (GTK_WINDOW (self)), &error))
 	{
-		GtkWidget *message_dialog;
-
-		message_dialog = gtk_message_dialog_new (GTK_WINDOW (self),
-			GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-			_("Failed to open the user guide"));
-		gtk_message_dialog_format_secondary_text
-			(GTK_MESSAGE_DIALOG (message_dialog), "%s", error->message);
-		g_error_free (error);
-
-		gtk_dialog_run (GTK_DIALOG (message_dialog));
-		gtk_widget_destroy (message_dialog);
+		display_and_free_error (self,
+			_("Failed to open the user guide"), error);
 	}
 	g_object_unref (file);
+}
+
+static void
+on_action_about (GtkAction *action, LdWindowMain *self)
+{
+	GtkWidget *about_dialog;
+
+	about_dialog = g_object_new (GTK_TYPE_ABOUT_DIALOG,
+		"program-name", PROJECT_NAME,
+		"logo-icon-name", PROJECT_NAME,
+		"version", PROJECT_VERSION,
+		"translator-credits", _("translator-credits"),
+		"copyright", "Copyright 2010 - 2021 Přemysl Eric Janouch",
+		"website", PROJECT_URL,
+		NULL);
+
+	g_signal_connect (about_dialog, "activate-link",
+		G_CALLBACK (on_action_about_activate_link), self);
+
+	gtk_window_set_transient_for (GTK_WINDOW (about_dialog), GTK_WINDOW (self));
+	gtk_window_set_modal (GTK_WINDOW (about_dialog), TRUE);
+	gtk_window_set_destroy_with_parent (GTK_WINDOW (about_dialog), TRUE);
+	gtk_dialog_run (GTK_DIALOG (about_dialog));
+	gtk_widget_destroy (about_dialog);
 }
 
 static gboolean
@@ -1078,30 +1112,6 @@ on_action_about_activate_link (GtkAboutDialog *dialog, gchar *uri,
 #endif /* G_OS_WIN32 */
 
 	return FALSE;
-}
-
-static void
-on_action_about (GtkAction *action, LdWindowMain *self)
-{
-	GtkWidget *about_dialog;
-
-	about_dialog = g_object_new (GTK_TYPE_ABOUT_DIALOG,
-		"program-name", PROJECT_NAME,
-		"logo-icon-name", PROJECT_NAME,
-		"version", PROJECT_VERSION,
-		"translator-credits", _("translator-credits"),
-		"copyright", "Copyright 2010 - 2021 Přemysl Eric Janouch",
-		"website", PROJECT_URL,
-		NULL);
-
-	g_signal_connect (about_dialog, "activate-link",
-		G_CALLBACK (on_action_about_activate_link), self);
-
-	gtk_window_set_transient_for (GTK_WINDOW (about_dialog), GTK_WINDOW (self));
-	gtk_window_set_modal (GTK_WINDOW (about_dialog), TRUE);
-	gtk_window_set_destroy_with_parent (GTK_WINDOW (about_dialog), TRUE);
-	gtk_dialog_run (GTK_DIALOG (about_dialog));
-	gtk_widget_destroy (about_dialog);
 }
 
 static void

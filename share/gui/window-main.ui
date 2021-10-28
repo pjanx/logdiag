@@ -1,6 +1,6 @@
 <ui>
 	<menubar name="MenuBar">
-		<menu name="FileMenu" action="FileMenu">
+		<menu action="FileMenu">
 			<menuitem action="New" />
 			<menuitem action="Open" />
 			<menuitem action="Save" />
@@ -12,7 +12,7 @@
 -->
 			<menuitem action="Quit" />
 		</menu>
-		<menu name="EditMenu" action="EditMenu">
+		<menu action="EditMenu">
 			<menuitem action="Undo" />
 			<menuitem action="Redo" />
 			<separator />
@@ -25,7 +25,7 @@
 			<separator />
 			<menuitem action="SelectAll" />
 		</menu>
-		<menu name="ViewMenu" action="ViewMenu">
+		<menu action="ViewMenu">
 			<menuitem action="MainToolbar" />
 			<menuitem action="LibraryPane" />
 			<separator />
@@ -35,7 +35,7 @@
 			<menuitem action="ZoomOut" />
 			<menuitem action="NormalSize" />
 		</menu>
-		<menu name="HelpMenu" action="HelpMenu">
+		<menu action="HelpMenu">
 			<menuitem action="UserGuide" />
 			<menuitem action="About" />
 		</menu>

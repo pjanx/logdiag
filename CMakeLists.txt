@@ -155,19 +155,10 @@ set (logdiag_HEADERS
 	${liblogdiag_HEADERS}
 	src/ld-window-main.h)
 
-# Resource compilation for MinGW
-if (MINGW)
-	set (CMAKE_RC_COMPILER_INIT windres)
-	enable_language (RC)
-	set (CMAKE_RC_FLAGS "-O coff")
-	set (CMAKE_RC_COMPILE_OBJECT
-		"<CMAKE_RC_COMPILER> <FLAGS> <DEFINES> -o <OBJECT> <SOURCE>")
-endif (MINGW)
-
+# Resource compilation for Windows
 if (WIN32)
-	set (logdiag_SOURCES
-		${logdiag_SOURCES}
-		share/logdiag.rc)
+	# The file isn't scanned for dependencies, but they will only rarely change
+	list (APPEND logdiag_SOURCES share/logdiag.rc)
 endif (WIN32)
 
 # Generate a configure file

@@ -49,6 +49,8 @@ static gboolean foreach_dir (const gchar *path,
 	gboolean (*callback) (const gchar *, const gchar *, gpointer),
 	gpointer userdata, GError **error);
 
+static LdSymbol *traverse_path (LdCategory *category, gchar **path);
+
 
 G_DEFINE_TYPE (LdLibrary, ld_library, G_TYPE_OBJECT)
 
@@ -356,62 +358,51 @@ ld_library_load (LdLibrary *self, const gchar *directory)
 LdSymbol *
 ld_library_find_symbol (LdLibrary *self, const gchar *identifier)
 {
-	gchar **id_el_start, **id_el;
-	const GSList *list, *list_el;
-	LdCategory *cat;
+	gchar **path;
+	LdSymbol *symbol = NULL;
 
 	g_return_val_if_fail (LD_IS_LIBRARY (self), NULL);
 	g_return_val_if_fail (identifier != NULL, NULL);
 
-	id_el_start = g_strsplit (identifier, LD_LIBRARY_IDENTIFIER_SEPARATOR, 0);
-	if (!id_el_start)
-		return NULL;
-
-	/* We need at least one category name plus the symbol name. */
-	id_el = id_el_start;
-	if (!id_el[0] || !id_el[1])
-		goto ld_library_find_symbol_error;
-
-	/* Find the category where the symbol is in. */
-	cat = self->priv->root;
-	while (1)
+	path = g_strsplit (identifier, LD_LIBRARY_IDENTIFIER_SEPARATOR, 0);
+	if (path)
 	{
-		gboolean found = FALSE;
+		symbol = traverse_path (self->priv->root, path);
+		g_strfreev (path);
+	}
+	return symbol;
+}
 
-		list = ld_category_get_children (cat);
-		for (list_el = list; list_el; list_el = g_slist_next (list_el))
+static LdSymbol *
+traverse_path (LdCategory *category, gchar **path)
+{
+	const GSList *list, *iter;
+	LdSymbol *symbol;
+
+	g_return_val_if_fail (*path != NULL, NULL);
+
+	/* Walk the category tree to where the symbol is supposed to be. */
+	for (; path[1]; path++)
+	{
+		list = ld_category_get_children (category);
+		for (iter = list; iter; iter = g_slist_next (iter))
 		{
-			cat = LD_CATEGORY (list_el->data);
-			if (!strcmp (*id_el, ld_category_get_name (cat)))
-			{
-				found = TRUE;
+			category = LD_CATEGORY (iter->data);
+			if (!strcmp (*path, ld_category_get_name (category)))
 				break;
-			}
 		}
-
-		if (!found)
-			goto ld_library_find_symbol_error;
-
-		if (!(id_el++)[2])
-			break;
+		if (!iter)
+			return NULL;
 	}
 
-	/* And then the actual symbol. */
-	list = ld_category_get_symbols (cat);
-	for (list_el = list; list_el; list_el = g_slist_next (list_el))
+	/* And look up the actual symbol at the leaf. */
+	list = ld_category_get_symbols (category);
+	for (iter = list; iter; iter = g_slist_next (iter))
 	{
-		LdSymbol *symbol;
-
-		symbol = LD_SYMBOL (list_el->data);
-		if (!strcmp (*id_el, ld_symbol_get_name (symbol)))
-		{
-			g_strfreev (id_el_start);
+		symbol = LD_SYMBOL (iter->data);
+		if (!strcmp (*path, ld_symbol_get_name (symbol)))
 			return symbol;
-		}
 	}
-
-ld_library_find_symbol_error:
-	g_strfreev (id_el_start);
 	return NULL;
 }
 

@@ -150,7 +150,7 @@ static GtkActionEntry wm_action_entries[] =
 			N_("Save the current diagram with another name"),
 			G_CALLBACK (on_action_save_as)},
 
-		{"Print", GTK_STOCK_PRINT, N_("_Print"), "<Ctrl>P",
+		{"Print", GTK_STOCK_PRINT, N_("_Print..."), "<Ctrl>P",
 			N_("Print the diagram"),
 			G_CALLBACK (on_action_print)},
 

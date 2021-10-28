@@ -618,8 +618,8 @@ diagram_get_name (LdWindowMain *self)
 
 	if (self->priv->filename)
 		return g_filename_display_basename (self->priv->filename);
-	else
-		return g_strdup (_("Unsaved Diagram"));
+
+	return g_strdup (_("Unsaved Diagram"));
 }
 
 /*
@@ -698,12 +698,10 @@ diagram_save (LdWindowMain *self, GtkWindow *dialog_parent,
 		gtk_widget_destroy (message_dialog);
 		return FALSE;
 	}
-	else
-	{
-		ld_diagram_set_modified (self->priv->diagram, FALSE);
-		update_title (self);
-		return TRUE;
-	}
+
+	ld_diagram_set_modified (self->priv->diagram, FALSE);
+	update_title (self);
+	return TRUE;
 }
 
 /*
@@ -1179,11 +1177,11 @@ static gboolean
 on_action_about_activate_link (GtkAboutDialog *dialog, gchar *uri,
 	LdWindowMain *self)
 {
+#ifdef G_OS_WIN32
 	GdkWindow *window;
 
 	window = gtk_widget_get_window (GTK_WIDGET (self));
 
-#ifdef G_OS_WIN32
 	/* gtk_show_uri() on Windows XP fails, due to trying to establish
 	 * an SSL connection, so let's first try to not do that on Windows.
 	 * `cmd.exe /c start "" ...` would pop up a command line window,

@@ -250,8 +250,7 @@ ld_lua_alloc (void *ud, void *ptr, size_t osize, size_t nsize)
 		g_free (ptr);
 		return NULL;
 	}
-	else
-		return g_try_realloc (ptr, nsize);
+	return g_try_realloc (ptr, nsize);
 }
 
 /**

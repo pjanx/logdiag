@@ -1315,7 +1315,7 @@ point_to_line_segment_distance
 	/* The projection is beyond the line segment. */
 	if (u < 0.)
 		return ld_point_distance (point, p1->x, p1->y);
-	else if (u > 1.)
+	if (u > 1.)
 		return ld_point_distance (point, p2->x, p2->y);
 
 	/* The projection is on the line segment. */

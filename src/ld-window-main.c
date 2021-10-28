@@ -1052,7 +1052,7 @@ on_action_print_draw_page (GtkPrintOperation *operation,
 	LdDiagramView *view;
 	gdouble area_width_mm, area_height_mm;
 	gdouble diagram_width_mm, diagram_height_mm;
-	gdouble diagram_to_export_units, scale;
+	gdouble diagram_to_export_units, scale, width_fit, height_fit;
 	LdRectangle bounds;
 
 	cr = gtk_print_context_get_cairo_context (context);
@@ -1067,11 +1067,13 @@ on_action_print_draw_page (GtkPrintOperation *operation,
 	diagram_width_mm = bounds.width * scale;
 	diagram_height_mm = bounds.height * scale;
 
-	/* Scale to fit the paper. */
-	if (area_width_mm < diagram_width_mm)
-		scale *= area_width_mm / diagram_width_mm;
-	if (area_height_mm < diagram_height_mm)
-		scale *= area_height_mm / diagram_height_mm;
+	/* Scale to fit the paper, taking care to not divide by zero. */
+	width_fit = (area_width_mm < diagram_width_mm)
+		? area_width_mm / diagram_width_mm : 1;
+	height_fit = (area_height_mm < diagram_height_mm)
+		? area_height_mm / diagram_height_mm : 1;
+
+	scale *= MIN (width_fit, height_fit);
 
 	cairo_scale (cr, scale, scale);
 	cairo_translate (cr, -bounds.x, -bounds.y);

@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.10)
 project (logdiag VERSION 0.2.1 LANGUAGES C)
 
 # Options
-option (OPTION_USE_VERA "Use vera++ for source code style checks" OFF)
+option (OPTION_CLANG_TIDY "Enable use of clang-tidy" OFF)
 option (OPTION_NOINSTALL "For developers only--work without installing" OFF)
 option (OPTION_GTKDOC "For developers only--enable use of gtk-doc" OFF)
 option (BUILD_TESTING "Build tests" OFF)
@@ -266,42 +266,38 @@ find_package (CppCheck)
 GENERATE_CPPCHECK (SOURCES liblogdiag src tests ENABLE_IDS all
 	TARGET_NAME ${PROJECT_NAME}_cppcheck INCLUDES ${PROJECT_BINARY_DIR})
 
-if (OPTION_USE_VERA)
-	# Force this off, we don't need it
-	option (VERA_LUA "" OFF)
+# Various clang-based diagnostics, loads of fake positives and spam
+if (OPTION_CLANG_TIDY)
+	set (clang_tidy_checks
+		clang-analyzer-* bugprone-* misc-* readability-* performance-*
+		-bugprone-reserved-identifier          # GObject
+		-performance-no-int-to-ptr             # GObject
+		-bugprone-narrowing-conversions
+		-bugprone-macro-parentheses            # too coarse-grained
+		-readability-braces-around-statements  # fine by me
+		-readability-isolate-declaration       # fine by me
+		-readability-magic-numbers             # too coarse-grained
+		-misc-unused-parameters)               # fine by me
 
-	# Make it build within the same build tree
-	get_directory_property (backup_includes INCLUDE_DIRECTORIES)
-	set_directory_properties (PROPERTIES INCLUDE_DIRECTORIES "")
-	set (backup_source_dir "${CMAKE_SOURCE_DIR}")
-	set (CMAKE_SOURCE_DIR "${CMAKE_SOURCE_DIR}/vera++")
+	string (REPLACE ";" "," clang_tidy_checks "${clang_tidy_checks}")
+	set (clang_tidy_config "{
+		Checks: '${clang_tidy_checks}',
+		CheckOptions: [{
+			key: readability-function-cognitive-complexity.Threshold,
+			value: '30'
+		}]}")
 
-	add_subdirectory ("vera++")
+	string (REPLACE "\n" " " clang_tidy_config "${clang_tidy_config}")
 
-	set_directory_properties (PROPERTIES INCLUDE_DIRECTORIES "${backup_includes}")
-	set (CMAKE_SOURCE_DIR "${backup_source_dir}")
-
-	# Check the sources
-	# XXX: maybe do it per source file and not all at once
-	set (vera_srcs ${liblogdiag_SOURCES} ${logdiag_SOURCES} ${logdiag_HEADERS})
-	set (vera_output ${PROJECT_BINARY_DIR}/vera.log)
-	add_custom_command (OUTPUT ${vera_output}
-		COMMAND vera
-			-R F001 -R L001 -R T001 -R T004 -R T005 -R T006
-			-R T007 -R T009 -R T010 -R T015 -R T017 -R T018
-			-R L004 -P max-line-length=80
-			-R L005 -P max-consecutive-empty-lines=2
-			--root ${CMAKE_SOURCE_DIR}/vera++
-			--std-report=-
-			--std-report=${vera_output}
-			--warning -s
-			${vera_srcs}
-		DEPENDS ${vera_srcs}
-		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-		COMMENT "Checking style for logdiag")
-
-	add_custom_target (logdiag_vera ALL DEPENDS ${vera_output})
-endif (OPTION_USE_VERA)
+	set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
+	set (clang_tidy_sources ${liblogdiag_SOURCES} ${logdiag_SOURCES})
+	add_custom_target (${PROJECT_NAME}_clang_tidy
+		COMMAND clang-tidy --quiet -p ${PROJECT_BINARY_DIR}
+			"--config=${clang_tidy_config}" ${clang_tidy_sources}
+			| sh -c "cat 1>&2"
+		DEPENDS ${clang_tidy_sources} VERBATIM
+		USES_TERMINAL WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+endif ()
 
 # GSettings
 find_program (GLIB_COMPILE_SCHEMAS_EXECUTABLE glib-compile-schemas)

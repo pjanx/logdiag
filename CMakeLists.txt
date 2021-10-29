@@ -23,7 +23,7 @@ if (WIN32)
 
 	if (CMAKE_CROSSCOMPILING)
 		list (APPEND CMAKE_FIND_ROOT_PATH ${WIN32_DEPENDS_PATH})
-	endif (CMAKE_CROSSCOMPILING)
+	endif ()
 
 	set (PKG_CONFIG_USE_CMAKE_PREFIX_PATH FALSE)
 	# Seems like there is a regression setting this to two paths in one,
@@ -35,7 +35,7 @@ if (WIN32)
 		WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 	add_custom_target (win32-depends-clean COMMAND ${CMAKE_COMMAND} -E
 		remove_directory ${WIN32_DEPENDS_PATH})
-endif (WIN32)
+endif ()
 
 # Generate icons
 find_program (CONVERT_EXECUTABLE convert)
@@ -62,14 +62,14 @@ if (CONVERT_EXECUTABLE AND NOT WIN32)
 			DEPENDS ${icon_svg} VERBATIM)
 		set_source_files_properties (${icon_symbolic}
 			PROPERTIES SYMBOLIC TRUE)
-	endforeach (icon_size)
+	endforeach ()
 
 	set (icon_ico ${PROJECT_SOURCE_DIR}/share/logdiag.ico)
 	add_custom_target (${PROJECT_NAME}_icons
 		DEPENDS ${icon_symbolic_list}
 		COMMAND ${CONVERT_EXECUTABLE} ${icon_png_list} ${icon_ico}
 		COMMENT "Generating logdiag.ico" VERBATIM)
-endif (CONVERT_EXECUTABLE AND NOT WIN32)
+endif ()
 
 # Dependencies
 find_package (PkgConfig REQUIRED)
@@ -77,17 +77,17 @@ pkg_check_modules (GTK3 REQUIRED gtk+-3.0 json-glib-1.0)
 
 if (NOT WIN32)
 	pkg_search_module (Lua REQUIRED lua>=5.2 lua5.3 lua-5.3 lua5.2 lua-5.2)
-else (NOT WIN32)
+else ()
 	# For whatever reason this now seems to be required
 	set (LUA_INCLUDE_DIR "${WIN32_DEPENDS_PATH}/include")
 
 	find_package (Lua REQUIRED)
 	if (LUA_VERSION_STRING VERSION_LESS "5.2")
 		message (FATAL_ERROR "Lua 5.2 not found")
-	endif (LUA_VERSION_STRING VERSION_LESS "5.2")
+	endif ()
 	set (Lua_LIBRARIES ${LUA_LIBRARIES})
 	set (Lua_INCLUDE_DIRS ${LUA_INCLUDE_DIR})
-endif (NOT WIN32)
+endif ()
 
 # This actually fucks up MinGW cross-compilation if omitted
 link_directories (${GTK3_LIBRARY_DIRS})
@@ -102,7 +102,7 @@ GETTEXT_CREATE_TRANSLATIONS (
 foreach (file ${project_PO_FILES})
 	get_filename_component (translation "${file}" NAME_WE)
 	list (APPEND project_TRANSLATIONS "${translation}")
-endforeach (file)
+endforeach ()
 
 # Project source files
 set (liblogdiag_SOURCES
@@ -159,7 +159,7 @@ set (logdiag_HEADERS
 if (WIN32)
 	# The file isn't scanned for dependencies, but they will only rarely change
 	list (APPEND logdiag_SOURCES share/logdiag.rc)
-endif (WIN32)
+endif ()
 
 # Generate a configure file
 add_definitions (-DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_36)
@@ -172,7 +172,7 @@ include_directories (${PROJECT_BINARY_DIR})
 find_program (GLIB_GENMARSHAL_EXECUTABLE glib-genmarshal)
 if (NOT GLIB_GENMARSHAL_EXECUTABLE)
 	message (FATAL_ERROR "glib-genmarshal not found")
-endif (NOT GLIB_GENMARSHAL_EXECUTABLE)
+endif ()
 
 function (glib_genmarshal base prefix)
 	get_filename_component (base_path "${base}" PATH)
@@ -187,7 +187,7 @@ function (glib_genmarshal base prefix)
 	if (WIN32 AND "${base_path}" MATCHES "^.:[/\\\\]")
 		string (SUBSTRING "${base_path}" 0 2 base_drive)
 		set (command_base "${base_drive}" && "${command_base}")
-	endif (WIN32 AND "${base_path}" MATCHES "^.:[/\\\\]")
+	endif ()
 
 	# NOTE: VERBATIM would cause problems, so it is not used here
 	add_custom_command (OUTPUT ${base}.c
@@ -200,7 +200,7 @@ function (glib_genmarshal base prefix)
 		DEPENDS "${base}.list"
 		WORKING_DIRECTORY "${base_path}"
 		COMMENT "Generating marshallers header file")
-endfunction (glib_genmarshal)
+endfunction ()
 
 glib_genmarshal (${PROJECT_SOURCE_DIR}/liblogdiag/ld-marshal
 	ld_marshal)
@@ -212,7 +212,7 @@ set (logdiag_LIBS ${GTK3_LIBRARIES} ${Lua_LIBRARIES} m)
 if (WIN32)
 	find_package (LibIntl REQUIRED)
 	list (APPEND logdiag_LIBS ${LIBINTL_LIBRARIES} shell32)
-endif (WIN32)
+endif ()
 
 # Build the library
 add_library (liblogdiag STATIC ${liblogdiag_SOURCES} ${liblogdiag_HEADERS})
@@ -231,12 +231,12 @@ if (BUILD_TESTING)
 		target_link_libraries (test-${name} liblogdiag ${logdiag_LIBS})
 		add_test (NAME test-${name} COMMAND test-${name})
 		list (APPEND logdiag_TEST_TARGETS test-${name})
-	endforeach (name)
+	endforeach ()
 	if (WIN32 AND NOT CMAKE_CROSSCOMPILING)
 		set_tests_properties (${logdiag_TEST_TARGETS}
 			PROPERTIES ENVIRONMENT "PATH=${WIN32_DEPENDS_PATH}/bin")
 	endif ()
-endif (BUILD_TESTING)
+endif ()
 
 # Generate documentation
 if (OPTION_GTKDOC)
@@ -303,7 +303,7 @@ endif ()
 find_program (GLIB_COMPILE_SCHEMAS_EXECUTABLE glib-compile-schemas)
 if (NOT GLIB_COMPILE_SCHEMAS_EXECUTABLE)
 	message (FATAL_ERROR "glib-compile-schemas not found")
-endif (NOT GLIB_COMPILE_SCHEMAS_EXECUTABLE)
+endif ()
 
 set (GSETTINGS_DIR "${PROJECT_SOURCE_DIR}/share")
 set (GSETTINGS_SCHEMAS "${GSETTINGS_DIR}/org.logdiag.gschema.xml")
@@ -323,7 +323,7 @@ if (OPTION_NOINSTALL)
 		COMMENT "Compiling GSettings schema files" VERBATIM)
 	add_custom_target (${PROJECT_NAME}_gschema ALL
 		DEPENDS "${GSETTINGS_COMPILED_SCHEMA}")
-endif (OPTION_NOINSTALL)
+endif ()
 
 # Installation
 if (WIN32)
@@ -361,11 +361,11 @@ if (WIN32)
 			install (DIRECTORY
 				${WIN32_DEPENDS_PATH}/share/locale/${translation}
 				DESTINATION share/locale)
-		endif (translation_found GREATER -1)
-	endforeach (locale)
+		endif ()
+	endforeach ()
 
 	install (SCRIPT Win32Cleanup.cmake)
-else (WIN32)
+else ()
 	install (TARGETS logdiag DESTINATION bin)
 	install (FILES share/logdiag.desktop DESTINATION share/applications)
 	install (FILES share/logdiag.xml DESTINATION share/mime/packages)
@@ -374,7 +374,7 @@ else (WIN32)
 #	install (DIRECTORY "${project_DOC_DIR}/html/"
 #		DESTINATION share/gtk-doc/html/${PROJECT_NAME})
 	install (FILES LICENSE NEWS DESTINATION share/doc/${PROJECT_NAME})
-endif (WIN32)
+endif ()
 
 install (DIRECTORY docs/user-guide DESTINATION share/doc/${PROJECT_NAME})
 install (DIRECTORY share/gui share/library DESTINATION share/${PROJECT_NAME})
@@ -394,10 +394,10 @@ set (CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 
 if (WIN32)
 	set (CPACK_GENERATOR "NSIS;ZIP")
-else (WIN32)
+else ()
 	set (CPACK_GENERATOR "TGZ;ZIP")
 	set (CPACK_SET_DESTDIR TRUE)
-endif (WIN32)
+endif ()
 
 set (CPACK_PACKAGE_FILE_NAME
 	"${PROJECT_NAME}-${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")

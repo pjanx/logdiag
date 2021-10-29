@@ -15,7 +15,7 @@ file (GLOB files ${working_dir}/*)
 list (REMOVE_ITEM files ${pkg_dir})
 if (files)
 	file (REMOVE_RECURSE ${files})
-endif (files)
+endif ()
 
 # Packages
 set (pkg_list "geany" "winlibs" "mingw_lua")
@@ -73,16 +73,16 @@ foreach (pkg_set ${pkg_list})
 			if (status_errno)
 				file (REMOVE ${filename})
 				message (FATAL_ERROR "Download failed: ${status_msg}")
-			endif (status_errno)
+			endif ()
 		elseif (pkg_md5_sum)
 			execute_process (COMMAND ${CMAKE_COMMAND} -E md5sum ${filename}
 				OUTPUT_VARIABLE output)
 			if (NOT output MATCHES "^${pkg_md5_sum}")
 				message (FATAL_ERROR "MD5 mismatch for ${basename}")
-			endif (NOT output MATCHES "^${pkg_md5_sum}")
+			endif ()
 		endif ()
-	endforeach (url)
-endforeach (pkg_set)
+	endforeach ()
+endforeach ()
 
 # Stage 2: extract the rest of packages
 foreach (pkg_set ${pkg_list})
@@ -97,8 +97,8 @@ foreach (pkg_set ${pkg_list})
 		if (status)
 			message (FATAL_ERROR "Extraction failed: ${status}")
 		endif ()
-	endforeach (url)
-endforeach (pkg_set)
+	endforeach ()
+endforeach ()
 
 # Stage 3: final touches
 # We have to fix the prefix path as it is completely wrong everywhere
@@ -109,4 +109,4 @@ foreach (file ${files})
 	string (REGEX REPLACE "prefix=[^\r\n]*(.*)" "prefix=${working_dir}\\1"
 		file_content_fixed "${file_content}")
 	file (WRITE ${file} "${file_content_fixed}")
-endforeach (file)
+endforeach ()

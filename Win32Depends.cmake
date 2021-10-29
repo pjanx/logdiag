@@ -18,29 +18,24 @@ if (files)
 endif (files)
 
 # Packages
-set (pkg_list "gtk" "gtkalt" "winlibs" "mingw_lua")
-
-set (pkg_gtk_root "http://ftp.gnome.org/pub/gnome/binaries/win32")
-set (pkg_gtk_urls
-	"${pkg_gtk_root}/dependencies/gettext-tools-0.17.zip"
-	"${pkg_gtk_root}/dependencies/gettext-runtime-0.17-1.zip")
-set (pkg_gtk_md5
-	"09baff956ebd1c391c7f71e9bd768edd"
-	"110394b4b1e0a50cd440f1e8729d159c")
+set (pkg_list "geany" "winlibs" "mingw_lua")
 
 # https://sourceforge.net/projects/urlget/files
 # /GTK%2B%203%20binary%20for%20Windows/GTK%2B%203.16.6/
 # contains a binary bundle that may be more or less simply transplanted over,
 # due to ABI compatibility, however something is wrong with icons,
 # and it looks alien on Windows XP (use themes) for close to no improvement.
-set (pkg_gtkalt_root "https://download.geany.org/contrib/gtk")
-set (pkg_gtkalt_urls "${pkg_gtkalt_root}/gtk+-bundle_3.8.2-20131001_win32.zip")
-set (pkg_gtkalt_md5 "3f9b159207edf44937f209b4a5e6bb63")
+set (pkg_geany_root "https://download.geany.org/contrib/gtk")
+set (pkg_geany_urls "${pkg_geany_root}/gtk+-bundle_3.8.2-20131001_win32.zip")
+set (pkg_geany_md5 "3f9b159207edf44937f209b4a5e6bb63")
 
 set (pkg_winlibs_root "http://sourceforge.net/projects/winlibs/files")
 set (pkg_winlibs_urls "${pkg_winlibs_root}/GTK+/libjson-glib-1.0-1-mingw32.7z")
 set (pkg_winlibs_md5 "f06e42c5998dae5fb6245fecc96a403e")
 
+# With luabinaries MinGW-W64 builds the .dll/.a need to be moved to bin/lib
+# manually, and note that CMake 3.10.0 FindLua.cmake can't find Lua 5.4;
+# in any case there is no pkg-config file
 set (pkg_mingw_lua_root "http://sourceforge.net/projects/mingw/files/MinGW/Extension")
 set (pkg_mingw_lua_urls
 	"${pkg_mingw_lua_root}/lua/lua-5.2.0-1/lua-5.2.0-1-mingw32-dll-52.tar.xz"

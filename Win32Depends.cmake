@@ -64,6 +64,8 @@ foreach (pkg_set ${pkg_list})
 
 		if (NOT EXISTS ${filename})
 			message (STATUS "Downloading ${url}...")
+			# TODO: on Windows XP, we can't download https://curl.se/windows/
+			# but it would be somewhat nice to be able to detect it in PATH
 			file (DOWNLOAD ${url} ${filename} STATUS status ${pkg_md5_param})
 
 			list (GET status 0 status_errno)

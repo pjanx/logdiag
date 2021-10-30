@@ -16,6 +16,7 @@ AlignOperands: DontAlign
 AlignConsecutiveMacros: Consecutive
 AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
+IndentGotoLabels: false
 Cpp11BracedListStyle: true
 MaxEmptyLinesToKeep: 2
 

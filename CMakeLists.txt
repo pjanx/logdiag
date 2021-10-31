@@ -1,6 +1,6 @@
 # The last version with Windows XP support is 3.13, we want to keep that
 cmake_minimum_required (VERSION 3.10)
-project (logdiag VERSION 0.2.1 LANGUAGES C)
+project (logdiag VERSION 0.2.1 DESCRIPTION "Schematic editor" LANGUAGES C)
 
 # Options
 option (OPTION_CLANG_TIDY "Enable use of clang-tidy" OFF)
@@ -164,8 +164,7 @@ endif ()
 # Generate a configure file
 add_definitions (-DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_36)
 add_definitions (-DGLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_36)
-configure_file (${PROJECT_SOURCE_DIR}/config.h.in
-	${PROJECT_BINARY_DIR}/config.h)
+configure_file (config.h.in ${PROJECT_BINARY_DIR}/config.h)
 include_directories (${PROJECT_BINARY_DIR})
 
 # Generate marshallers
@@ -210,8 +209,8 @@ include_directories (${GTK3_INCLUDE_DIRS} ${Lua_INCLUDE_DIRS})
 set (logdiag_LIBS ${GTK3_LIBRARIES} ${Lua_LIBRARIES} m)
 
 if (WIN32)
-	find_package (LibIntl REQUIRED)
-	list (APPEND logdiag_LIBS ${LIBINTL_LIBRARIES} shell32)
+	find_package (Intl REQUIRED)
+	list (APPEND logdiag_LIBS ${Intl_LIBRARIES} shell32)
 endif ()
 
 # Build the library
@@ -386,7 +385,6 @@ install (CODE " # DESTDIR is not in use on Windows (WIN32 is only native here!)
 	endif ()")
 
 # CPack
-set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Schematic editor")
 set (CPACK_PACKAGE_VENDOR "Premysl Eric Janouch")
 set (CPACK_PACKAGE_CONTACT "Přemysl Eric Janouch <p@janouch.name>")
 set (CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")

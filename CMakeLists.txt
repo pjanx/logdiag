@@ -202,7 +202,6 @@ function (glib_compile_resources xml target)
 		--generate-source --target ${target} "${xml}" DEPENDS "${xml}"
 		WORKING_DIRECTORY "${_xml_path}" COMMENT "Compiling resources")
 
-	# This refuses to accept drive changes, but it also needn't succeed
 	execute_process (COMMAND ${GLIB_COMPILE_RESOURCES_EXECUTABLE}
 		--generate-dependencies "${xml}"
 		WORKING_DIRECTORY "${_xml_path}" OUTPUT_VARIABLE _deps)

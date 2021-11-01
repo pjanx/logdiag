@@ -29,12 +29,6 @@ if (WIN32)
 	# Seems like there is a regression setting this to two paths in one,
 	# setting the path manually
 	set (ENV{PKG_CONFIG_PATH} "${WIN32_DEPENDS_PATH}/lib/pkgconfig")
-
-	add_custom_target (win32-depends COMMAND ${CMAKE_COMMAND} -P
-		${PROJECT_SOURCE_DIR}/Win32Depends.cmake
-		WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-	add_custom_target (win32-depends-clean COMMAND ${CMAKE_COMMAND} -E
-		remove_directory ${WIN32_DEPENDS_PATH})
 endif ()
 
 # Generate icons

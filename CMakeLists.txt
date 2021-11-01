@@ -221,9 +221,32 @@ set_target_properties (liblogdiag PROPERTIES OUTPUT_NAME logdiag)
 add_executable (logdiag WIN32 ${logdiag_SOURCES} ${logdiag_HEADERS})
 target_link_libraries (logdiag liblogdiag ${logdiag_LIBS})
 
+# GSettings
+find_program (GLIB_COMPILE_SCHEMAS_EXECUTABLE glib-compile-schemas)
+if (NOT GLIB_COMPILE_SCHEMAS_EXECUTABLE)
+	message (FATAL_ERROR "glib-compile-schemas not found")
+endif ()
+
+set (GSETTINGS_DIR "${PROJECT_SOURCE_DIR}/share")
+set (GSETTINGS_SCHEMAS "${GSETTINGS_DIR}/org.logdiag.gschema.xml")
+
+if (OPTION_NOINSTALL)
+	set (GSETTINGS_COMPILED_SCHEMA "${PROJECT_BINARY_DIR}/gschemas.compiled")
+	add_custom_command (OUTPUT "${GSETTINGS_COMPILED_SCHEMA}"
+		COMMAND ${GLIB_COMPILE_SCHEMAS_EXECUTABLE}
+			"--targetdir=${PROJECT_BINARY_DIR}" "${GSETTINGS_DIR}"
+		DEPENDS "${GSETTINGS_SCHEMAS}"
+		COMMENT "Compiling GSettings schema files" VERBATIM)
+	add_custom_target (${PROJECT_NAME}-gschema ALL
+		DEPENDS "${GSETTINGS_COMPILED_SCHEMA}")
+endif ()
+
 # Testing
 if (BUILD_TESTING)
 	enable_testing ()
+
+	add_test (NAME test-gschema-${PROJECT_NAME}
+		COMMAND ${GLIB_COMPILE_SCHEMAS_EXECUTABLE} --dry-run "${GSETTINGS_DIR}")
 
 	foreach (name ${logdiag_TESTS})
 		add_executable (test-${name} tests/${name}.c)
@@ -296,32 +319,6 @@ if (OPTION_CLANG_TIDY)
 			| sh -c "cat 1>&2"
 		DEPENDS ${clang_tidy_sources} VERBATIM
 		USES_TERMINAL WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-endif ()
-
-# GSettings
-find_program (GLIB_COMPILE_SCHEMAS_EXECUTABLE glib-compile-schemas)
-if (NOT GLIB_COMPILE_SCHEMAS_EXECUTABLE)
-	message (FATAL_ERROR "glib-compile-schemas not found")
-endif ()
-
-set (GSETTINGS_DIR "${PROJECT_SOURCE_DIR}/share")
-set (GSETTINGS_SCHEMAS "${GSETTINGS_DIR}/org.logdiag.gschema.xml")
-
-add_custom_target (${PROJECT_NAME}_gschema_check
-	COMMAND ${GLIB_COMPILE_SCHEMAS_EXECUTABLE} --dry-run "${GSETTINGS_DIR}"
-	DEPENDS "${GSETTINGS_SCHEMAS}"
-	COMMENT "Checking GSettings schema files" VERBATIM)
-
-if (OPTION_NOINSTALL)
-	set (GSETTINGS_COMPILED_SCHEMA "${PROJECT_BINARY_DIR}/gschemas.compiled")
-
-	add_custom_command (OUTPUT "${GSETTINGS_COMPILED_SCHEMA}"
-		COMMAND ${GLIB_COMPILE_SCHEMAS_EXECUTABLE}
-			"--targetdir=${PROJECT_BINARY_DIR}" "${GSETTINGS_DIR}"
-		DEPENDS "${GSETTINGS_SCHEMAS}"
-		COMMENT "Compiling GSettings schema files" VERBATIM)
-	add_custom_target (${PROJECT_NAME}_gschema ALL
-		DEPENDS "${GSETTINGS_COMPILED_SCHEMA}")
 endif ()
 
 # Installation

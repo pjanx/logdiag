@@ -155,34 +155,33 @@ if (WIN32)
 	list (APPEND logdiag_SOURCES share/logdiag.rc)
 endif ()
 
-# Generate a configure file
-add_definitions (-DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_36)
-add_definitions (-DGLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_36)
-configure_file (config.h.in ${PROJECT_BINARY_DIR}/config.h)
-include_directories (${PROJECT_BINARY_DIR})
-
 # Generate marshallers
-find_program (GLIB_GENMARSHAL_EXECUTABLE glib-genmarshal)
-if (NOT GLIB_GENMARSHAL_EXECUTABLE)
-	message (FATAL_ERROR "glib-genmarshal not found")
-endif ()
-
 function (glib_genmarshal listfile prefix)
-	get_filename_component (basename "${listfile}" NAME_WE)
-	set (command_base ${GLIB_GENMARSHAL_EXECUTABLE} --prefix ${prefix}
+	find_program (GLIB_GENMARSHAL_EXECUTABLE glib-genmarshal)
+	if (NOT GLIB_GENMARSHAL_EXECUTABLE)
+		message (FATAL_ERROR "glib-genmarshal not found")
+	endif ()
+
+	get_filename_component (_basename "${listfile}" NAME_WE)
+	set (_command_base ${GLIB_GENMARSHAL_EXECUTABLE} --prefix ${prefix}
 		"${listfile}")
 
-	add_custom_command (OUTPUT ${basename}.c ${basename}.h
-		COMMAND ${command_base} --body   > ${basename}.c
-		COMMAND ${command_base} --header > ${basename}.h
+	add_custom_command (OUTPUT ${_basename}.c ${_basename}.h
+		COMMAND ${_command_base} --body   > ${_basename}.c
+		COMMAND ${_command_base} --header > ${_basename}.h
 		DEPENDS "${listfile}"
 		COMMENT "Generating marshallers source files" VERBATIM)
 endfunction ()
 
 glib_genmarshal (${PROJECT_SOURCE_DIR}/liblogdiag/ld-marshal.list ld_marshal)
 
-include_directories (${PROJECT_SOURCE_DIR})
-include_directories (${GTK3_INCLUDE_DIRS} ${Lua_INCLUDE_DIRS})
+# Generate a configure file
+add_definitions (-DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_36)
+add_definitions (-DGLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_36)
+configure_file (config.h.in ${PROJECT_BINARY_DIR}/config.h)
+
+include_directories (${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}
+	${GTK3_INCLUDE_DIRS} ${Lua_INCLUDE_DIRS})
 set (logdiag_LIBS ${GTK3_LIBRARIES} ${Lua_LIBRARIES} m)
 
 if (WIN32)

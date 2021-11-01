@@ -1,4 +1,3 @@
 /build
 /win32-depends
-/liblogdiag/ld-marshal.[ch]
 /CMakeLists.txt.user

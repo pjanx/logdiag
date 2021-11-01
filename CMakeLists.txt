@@ -100,7 +100,7 @@ endforeach ()
 
 # Project source files
 set (liblogdiag_SOURCES
-	liblogdiag/ld-marshal.c
+	${PROJECT_BINARY_DIR}/ld-marshal.c
 	liblogdiag/ld-types.c
 	liblogdiag/ld-undo-action.c
 	liblogdiag/ld-diagram.c
@@ -117,9 +117,9 @@ set (liblogdiag_SOURCES
 	liblogdiag/ld-lua.c
 	liblogdiag/ld-lua-symbol.c)
 set (liblogdiag_HEADERS
+	${PROJECT_BINARY_DIR}/ld-marshal.h
 	${PROJECT_BINARY_DIR}/config.h
 	liblogdiag/liblogdiag.h
-	liblogdiag/ld-marshal.h
 	liblogdiag/ld-types.h
 	liblogdiag/ld-undo-action.h
 	liblogdiag/ld-diagram.h
@@ -167,36 +167,19 @@ if (NOT GLIB_GENMARSHAL_EXECUTABLE)
 	message (FATAL_ERROR "glib-genmarshal not found")
 endif ()
 
-function (glib_genmarshal base prefix)
-	get_filename_component (base_path "${base}" PATH)
-	get_filename_component (base_name "${base}" NAME)
-	set (command_base ${GLIB_GENMARSHAL_EXECUTABLE}
-		--prefix ${prefix} "${base_name}.list")
+function (glib_genmarshal listfile prefix)
+	get_filename_component (basename "${listfile}" NAME_WE)
+	set (command_base ${GLIB_GENMARSHAL_EXECUTABLE} --prefix ${prefix}
+		"${listfile}")
 
-	# On Windows, the final makefile may contain:
-	#   cd e:\abc && ...
-	# That won't actually change the directory. We have to do:
-	#   cd e:\abc && e: && ...
-	if (WIN32 AND "${base_path}" MATCHES "^.:[/\\\\]")
-		string (SUBSTRING "${base_path}" 0 2 base_drive)
-		set (command_base "${base_drive}" && "${command_base}")
-	endif ()
-
-	# NOTE: VERBATIM would cause problems, so it is not used here
-	add_custom_command (OUTPUT ${base}.c
-		COMMAND ${command_base} --body   > "${base_name}.c"
-		DEPENDS "${base}.list"
-		WORKING_DIRECTORY "${base_path}"
-		COMMENT "Generating marshallers source file")
-	add_custom_command (OUTPUT ${base}.h
-		COMMAND ${command_base} --header > "${base_name}.h"
-		DEPENDS "${base}.list"
-		WORKING_DIRECTORY "${base_path}"
-		COMMENT "Generating marshallers header file")
+	add_custom_command (OUTPUT ${basename}.c ${basename}.h
+		COMMAND ${command_base} --body   > ${basename}.c
+		COMMAND ${command_base} --header > ${basename}.h
+		DEPENDS "${listfile}"
+		COMMENT "Generating marshallers source files" VERBATIM)
 endfunction ()
 
-glib_genmarshal (${PROJECT_SOURCE_DIR}/liblogdiag/ld-marshal
-	ld_marshal)
+glib_genmarshal (${PROJECT_SOURCE_DIR}/liblogdiag/ld-marshal.list ld_marshal)
 
 include_directories (${PROJECT_SOURCE_DIR})
 include_directories (${GTK3_INCLUDE_DIRS} ${Lua_INCLUDE_DIRS})
@@ -427,7 +410,7 @@ set (CPACK_RPM_PACKAGE_LICENSE "ISC")
 set (CPACK_RPM_PACKAGE_URL "${project_URL}")
 
 set (CPACK_SOURCE_GENERATOR "TGZ;ZIP")
-set (CPACK_SOURCE_IGNORE_FILES "/\\\\.git;/build;/CMakeLists.txt.user;/win32-depends;/liblogdiag/ld-marshal.[ch]")
+set (CPACK_SOURCE_IGNORE_FILES "/\\\\.git;/build;/CMakeLists.txt.user;/win32-depends")
 set (CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}")
 
 include (CPack)

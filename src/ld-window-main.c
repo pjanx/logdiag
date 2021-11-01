@@ -274,8 +274,8 @@ ld_window_main_init (LdWindowMain *self)
 		priv->action_group, 0);
 
 	error = NULL;
-	gtk_ui_manager_add_ui_from_file
-		(priv->ui_manager, PROJECT_SHARE_DIR "gui/window-main.ui", &error);
+	gtk_ui_manager_add_ui_from_resource
+		(priv->ui_manager, "/logdiag/logdiag.ui", &error);
 	if (error)
 	{
 		g_message ("building UI failed: %s", error->message);
@@ -1153,6 +1153,10 @@ static void
 on_action_about (GtkAction *action, LdWindowMain *self)
 {
 	GtkWidget *about_dialog;
+	GBytes *license;
+
+	license = g_resources_lookup_data ("/logdiag/LICENSE",
+		G_RESOURCE_LOOKUP_FLAGS_NONE, NULL);
 
 	about_dialog = g_object_new (GTK_TYPE_ABOUT_DIALOG,
 		"program-name", PROJECT_NAME,
@@ -1160,9 +1164,11 @@ on_action_about (GtkAction *action, LdWindowMain *self)
 		"version", PROJECT_VERSION,
 		"translator-credits", _("translator-credits"),
 		"copyright", "Copyright 2010 - 2021 Přemysl Eric Janouch",
+		"license", g_bytes_get_data (license, NULL),
 		"website", PROJECT_URL,
 		NULL);
 
+	g_bytes_unref (license);
 	g_signal_connect (about_dialog, "activate-link",
 		G_CALLBACK (on_action_about_activate_link), self);
 

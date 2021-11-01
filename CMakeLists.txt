@@ -143,6 +143,7 @@ set (logdiag_TESTS
 	diagram)
 
 set (logdiag_SOURCES
+	${PROJECT_BINARY_DIR}/gresource.c
 	src/ld-window-main.c
 	src/logdiag.c)
 set (logdiag_HEADERS
@@ -174,6 +175,48 @@ function (glib_genmarshal listfile prefix)
 endfunction ()
 
 glib_genmarshal (${PROJECT_SOURCE_DIR}/liblogdiag/ld-marshal.list ld_marshal)
+
+# Generate resources
+function (glib_compile_resources xml target)
+	find_program (GLIB_COMPILE_RESOURCES_EXECUTABLE glib-compile-resources)
+	if (NOT GLIB_COMPILE_RESOURCES_EXECUTABLE)
+		message (FATAL_ERROR "glib-compile-resources not found")
+	endif ()
+
+	# glib-compile-resources reads paths relative to its working directory
+	get_filename_component (_xml_path "${xml}" PATH)
+
+	# On Windows, the final Makefile may contain:
+	#   cd e:\abc && ...
+	# That won't actually change the directory. We have to do:
+	#   cd e:\abc && e: && ...
+	set (_prefix)
+	if (WIN32 AND "${_xml_path}" MATCHES "^.:[/\\\\]")
+		string (SUBSTRING "${_xml_path}" 0 2 _xml_drive)
+		set (_prefix ${_xml_drive} &&)
+	endif ()
+
+	# VERBATIM would cause problems, so it is not used here
+	add_custom_command (OUTPUT ${target}
+		COMMAND ${_prefix} ${GLIB_COMPILE_RESOURCES_EXECUTABLE}
+		--generate-source --target ${target} "${xml}" DEPENDS "${xml}"
+		WORKING_DIRECTORY "${_xml_path}" COMMENT "Compiling resources")
+
+	# This refuses to accept drive changes, but it also needn't succeed
+	execute_process (COMMAND ${GLIB_COMPILE_RESOURCES_EXECUTABLE}
+		--generate-dependencies "${xml}"
+		WORKING_DIRECTORY "${_xml_path}" OUTPUT_VARIABLE _deps)
+	string (REPLACE "\n" ";" _deps "${_deps}")
+	foreach (_dep ${_deps})
+		set_property (SOURCE "${target}"
+			APPEND PROPERTY OBJECT_DEPENDS "${_xml_path}/${_dep}")
+	endforeach ()
+
+	configure_file ("${xml}" glib-compile-resources.stamp COPYONLY)
+endfunction ()
+
+glib_compile_resources (${PROJECT_SOURCE_DIR}/share/logdiag.gresource.xml
+	${PROJECT_BINARY_DIR}/gresource.c)
 
 # Generate a configure file
 add_definitions (-DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_36)
@@ -349,7 +392,7 @@ else ()
 endif ()
 
 install (DIRECTORY docs/user-guide DESTINATION share/doc/${PROJECT_NAME})
-install (DIRECTORY share/gui share/library DESTINATION share/${PROJECT_NAME})
+install (DIRECTORY share/library DESTINATION share/${PROJECT_NAME})
 install (FILES ${GSETTINGS_SCHEMAS} DESTINATION share/glib-2.0/schemas)
 install (CODE " # DESTDIR is not in use on Windows (WIN32 is only native here!)
 	if (WIN32 OR \"\$ENV{DESTDIR}\" STREQUAL \"\")

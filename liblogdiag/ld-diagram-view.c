@@ -3002,6 +3002,9 @@ ld_diagram_view_get_export_bounds (LdDiagramView *self, LdRectangle *rect)
 {
 	LdRectangle intermediate;
 
+	/* Presumably, cairo_recording_surface_ink_extents() could also be used,
+	 * though DrawData::exposed_rect currently stands in the way.
+	 */
 	get_diagram_bounds (self, &intermediate);
 	ld_diagram_view_diagram_to_widget_coords_rect (self, &intermediate, rect);
 	return ld_diagram_view_get_scale_in_px (self);

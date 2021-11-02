@@ -23,6 +23,7 @@ local render = function (cr)
 	cr:curve_to (3, 0, 2, 2, 0, 2)
 	cr:line_to (-2, 2)
 	cr:curve_to (-1, 1, -1, -1, -2, -2)
+	cr:close_path ()
 	cr:stroke ()
 
 	-- The terminals

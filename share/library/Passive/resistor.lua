@@ -42,7 +42,7 @@ local render = function (cr)
 	cr:line_to (1.5, -0.5)
 	cr:line_to (1.5, 0.5)
 	cr:line_to (-1.5, 0.5)
-	cr:line_to (-1.5, -0.5)
+	cr:close_path ()
 
 	-- The terminals
 	cr:move_to (-2, 0)

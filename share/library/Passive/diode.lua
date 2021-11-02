@@ -48,7 +48,7 @@ local render = function (cr)
 	cr:move_to (-1, -1)
 	cr:line_to (1, 0)
 	cr:line_to (-1, 1)
-	cr:line_to (-1, -1)
+	cr:close_path ()
 
 	-- The vertical line
 	cr:move_to (1, 1)

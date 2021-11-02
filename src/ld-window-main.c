@@ -757,6 +757,9 @@ diagram_open (LdWindowMain *self, const gchar *filename)
 
 	ld_diagram_set_modified (self->priv->diagram, FALSE);
 	diagram_set_filename (self, g_strdup (filename));
+
+	ld_diagram_view_set_x (self->priv->view, 0);
+	ld_diagram_view_set_y (self->priv->view, 0);
 	return TRUE;
 }
 

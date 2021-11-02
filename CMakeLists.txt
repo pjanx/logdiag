@@ -68,9 +68,11 @@ endif ()
 # Dependencies
 find_package (PkgConfig REQUIRED)
 pkg_check_modules (GTK3 REQUIRED gtk+-3.0 json-glib-1.0)
+link_directories (${GTK3_LIBRARY_DIRS})
 
 if (NOT WIN32)
 	pkg_search_module (Lua REQUIRED lua>=5.2 lua5.3 lua-5.3 lua5.2 lua-5.2)
+	link_directories (${Lua_LIBRARY_DIRS})
 else ()
 	# For whatever reason this now seems to be required
 	set (LUA_INCLUDE_DIR "${WIN32_DEPENDS_PATH}/include")
@@ -82,9 +84,6 @@ else ()
 	set (Lua_LIBRARIES ${LUA_LIBRARIES})
 	set (Lua_INCLUDE_DIRS ${LUA_INCLUDE_DIR})
 endif ()
-
-# This actually fucks up MinGW cross-compilation if omitted
-link_directories (${GTK3_LIBRARY_DIRS})
 
 # Localization
 find_package (Gettext REQUIRED)

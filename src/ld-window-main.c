@@ -712,9 +712,10 @@ diagram_save (LdWindowMain *self, GtkWindow *dialog_parent,
 static gboolean
 diagram_open (LdWindowMain *self, const gchar *filename)
 {
-	GError *error;
+	GError *error = NULL;
+	GFile *file;
+	gchar *uri;
 
-	error = NULL;
 	ld_diagram_load_from_file (self->priv->diagram, filename, &error);
 	if (error)
 	{
@@ -747,6 +748,12 @@ diagram_open (LdWindowMain *self, const gchar *filename)
 		g_error_free (error);
 		return FALSE;
 	}
+
+	file = g_file_new_for_path (filename);
+	uri = g_file_get_uri (file);
+	g_object_unref (file);
+	gtk_recent_manager_add_item (gtk_recent_manager_get_default (), uri);
+	g_free (uri);
 
 	ld_diagram_set_modified (self->priv->diagram, FALSE);
 	diagram_set_filename (self, g_strdup (filename));

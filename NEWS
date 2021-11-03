@@ -1,3 +1,14 @@
+Version 0.3.0
+ - Added basic print functionality (lines may have the wrong width).
+ - Fine-tuned rendering of a few symbols.
+ - Bound toggling of the grid to the # key, following Inkscape.
+ - Ensured all opened files are added to the list of recent files.
+ - View position is reset when opening files.
+ - Made the user guide available from the Help menu.
+ - The website link in the About dialog now opens on Windows XP.
+ - Put the project's license in the About dialog.
+ - Made Windows builds considerably slimmer.
+
 Version 0.2.1
  - Set up grounds for 64-bit Windows builds using the latest GTK+ 3.
  - Made the Windows installer ask to uninstall previous versions first.

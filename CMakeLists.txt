@@ -1,6 +1,6 @@
 # The last version with Windows XP support is 3.13, we want to keep that
 cmake_minimum_required (VERSION 3.10)
-project (logdiag VERSION 0.2.1 DESCRIPTION "Schematic editor" LANGUAGES C)
+project (logdiag VERSION 0.3.0 DESCRIPTION "Schematic editor" LANGUAGES C)
 
 # Options
 option (OPTION_CLANG_TIDY "Enable use of clang-tidy" OFF)

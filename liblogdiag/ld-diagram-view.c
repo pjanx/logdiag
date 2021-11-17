@@ -2591,7 +2591,9 @@ on_drag_motion (GtkWidget *widget, GdkDragContext *drag_ctx,
 	/* Discard leftovers from any previous unsuccessful drag. */
 	if (self->priv->dnd_left)
 	{
-		g_object_unref (self->priv->dnd_symbol);
+		/* The Wayland backend does a leave-drop-leave sequence. */
+		if (self->priv->dnd_symbol)
+			g_object_unref (self->priv->dnd_symbol);
 		self->priv->dnd_symbol = NULL;
 		self->priv->dnd_left = FALSE;
 	}

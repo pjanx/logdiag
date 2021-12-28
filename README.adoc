@@ -66,10 +66,13 @@ FindPkgConfig.cmake module to say:
  separate_arguments(_pkgconfig_invoke_result UNIX_COMMAND "${_pkgconfig_invoke_result}")
 
 Run the following command in the directory with source files to automatically
-fetch and set up all dependencies (note that Windows XP is no longer able to
-download from HTTPS sources, you'll have to run this externally):
+fetch and set up all dependencies:
 
  > cmake -P Win32Depends.cmake
+
+Note that on Windows XP, CMake will fail to download those files, even with
+https://emailarchitect.net/easendmail/sdk/html/object_tls12.htm[updates].
+You will have to run the script externally.
 
 Reserve a directory for an out-of-source build and let CMake prepare the build:
 

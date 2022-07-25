@@ -9,6 +9,7 @@ option (OPTION_GTKDOC "For developers only--enable use of gtk-doc" OFF)
 option (BUILD_TESTING "Build tests" OFF)
 
 # Project information
+set (project_ID "name.janouch.${PROJECT_NAME}")
 set (project_URL "https://git.janouch.name/p/logdiag")
 
 # For custom modules
@@ -245,7 +246,7 @@ if (NOT GLIB_COMPILE_SCHEMAS_EXECUTABLE)
 endif ()
 
 set (GSETTINGS_DIR "${PROJECT_SOURCE_DIR}/share")
-set (GSETTINGS_SCHEMAS "${GSETTINGS_DIR}/org.logdiag.gschema.xml")
+set (GSETTINGS_SCHEMAS "${GSETTINGS_DIR}/${PROJECT_NAME}.gschema.xml")
 
 if (OPTION_NOINSTALL)
 	set (GSETTINGS_COMPILED_SCHEMA "${PROJECT_BINARY_DIR}/gschemas.compiled")
@@ -391,7 +392,8 @@ endif ()
 
 install (DIRECTORY docs/user-guide DESTINATION share/doc/${PROJECT_NAME})
 install (DIRECTORY share/library DESTINATION share/${PROJECT_NAME})
-install (FILES ${GSETTINGS_SCHEMAS} DESTINATION share/glib-2.0/schemas)
+install (FILES ${GSETTINGS_SCHEMAS} DESTINATION share/glib-2.0/schemas
+	RENAME "${project_ID}.gschema.xml")
 install (CODE " # DESTDIR is not in use on Windows (WIN32 is only native here!)
 	if (WIN32 OR \"\$ENV{DESTDIR}\" STREQUAL \"\")
 		execute_process (COMMAND \"${GLIB_COMPILE_SCHEMAS_EXECUTABLE}\"

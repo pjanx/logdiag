@@ -127,16 +127,16 @@ main (int argc, char *argv[])
 	textdomain (GETTEXT_DOMAIN);
 
 #ifdef PROJECT_GSETTINGS_DIR
-	/* This is enabled when the build is set up for developing, so that the
-	 * application can find its schema. It might also find use when
-	 * installing the application into a location that's missing from
+	/* This is enabled when the build is set up for development,
+	 * so that the application can find its schema. It might also find use
+	 * when installing the application into a location that's missing from
 	 * g_get_system_data_dirs(), for example /usr/local or ~/.local.
 	 */
 	g_setenv ("GSETTINGS_SCHEMA_DIR", PROJECT_GSETTINGS_DIR, 0);
 #endif /* PROJECT_GSETTINGS_DIR */
 
 #ifdef _WIN32
-	/* Don't be unneccessarily limited by the system ANSI codepage. */
+	/* Don't be unneccessarily limited by the system's ANSI codepage. */
 	/* g_win32_get_command_line() should replace this code for GLib >= 2.40. */
 	argv_overriden = get_utf8_args (&argc, &argv);
 	if (argv_overriden)

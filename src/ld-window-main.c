@@ -389,7 +389,7 @@ ld_window_main_init (LdWindowMain *self)
 	gtk_widget_show_all (GTK_WIDGET (self));
 
 	/* Set up GSettings. */
-	priv->settings = g_settings_new ("org." PROJECT_NAME);
+	priv->settings = g_settings_new (PROJECT_ID);
 
 	g_settings_bind (priv->settings, "show-main-toolbar",
 		gtk_action_group_get_action (priv->action_group,

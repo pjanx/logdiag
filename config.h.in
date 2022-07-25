@@ -10,6 +10,7 @@
 
 #define PROJECT_NAME "${PROJECT_NAME}"
 #define PROJECT_VERSION "${PROJECT_VERSION}"
+#define PROJECT_ID "${project_ID}"
 #define PROJECT_URL "${project_URL}"
 
 #cmakedefine OPTION_NOINSTALL

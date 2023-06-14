@@ -41,6 +41,7 @@ if (CONVERT_EXECUTABLE AND NOT WIN32)
 	set (icon_svg ${icon_base}/scalable/apps/logdiag.svg)
 	set (icon_size_list 16x16 32x32 48x48)
 
+	# ImageMagick very oddly outperforms rsvg-convert with our specific SVG
 	set (icon_png_list)
 	set (icon_symbolic_list)
 	foreach (icon_size ${icon_size_list})
@@ -59,6 +60,8 @@ if (CONVERT_EXECUTABLE AND NOT WIN32)
 			PROPERTIES SYMBOLIC TRUE)
 	endforeach ()
 
+	# Symbolic targets prevent the icons from being either cleaned,
+	# or pointlessly regenerated slightly differently
 	set (icon_ico ${PROJECT_SOURCE_DIR}/share/logdiag.ico)
 	add_custom_target (${PROJECT_NAME}_icons
 		DEPENDS ${icon_symbolic_list}

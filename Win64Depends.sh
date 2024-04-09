@@ -57,7 +57,8 @@ configure() {
 		> lib/gdk-pixbuf-2.0/2.10.0/loaders.cache
 
 	# pkgconf has a command line option for this, but CMake can't pass it.
-	sed -i "s|^prefix=/mingw64|prefix=$(pwd)|" {share,lib}/pkgconfig/*.pc
+	sed -i "s|^prefix=/mingw64|prefix=$(pwd)|" \
+		share/pkgconfig/*.pc lib/pkgconfig/*.pc
 }
 
 mkdir -p win32-depends
